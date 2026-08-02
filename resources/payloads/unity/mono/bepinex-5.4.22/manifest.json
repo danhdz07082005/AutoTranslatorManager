@@ -1,0 +1,11 @@
+{
+    "engine": "Unity Mono",
+    "bepinex": "5.4.22",
+    "xunity": "5.3.0",
+    "supported_unity": [
+        "2018",
+        "2019",
+        "2020",
+        "2021"
+    ]
+}
