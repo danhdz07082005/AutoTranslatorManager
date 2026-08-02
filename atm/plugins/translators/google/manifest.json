@@ -1,0 +1,11 @@
+{
+    "id": "google",
+    "name": "Google Translator",
+    "version": "1.0.0",
+    "author": "ATM Team",
+    "description": "Dịch văn bản bằng Google Translate miễn phí.",
+    "minimum_launcher_version": "1.0.0",
+    "entry": "plugin.py",
+    "class": "GooglePlugin",
+    "checksum": ""
+}
