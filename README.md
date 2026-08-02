@@ -1,4 +1,40 @@
-# Auto Translator Manager
+# Auto Translator Manager (Tiếng Việt)
+
+Một trình quản lý mã nguồn mở, thông minh dùng để dịch tự động các tựa game (Unity, RenPy) mà không làm rác thư mục gốc của game.
+
+Auto Translator Manager (ATM) được thiết kế để tách biệt bộ máy dịch thuật (như XUnity.AutoTranslator) ra khỏi thư mục game của bạn. Hệ thống sẽ **tự động tiêm (inject)** bộ dịch vào game mỗi khi bạn ấn chơi, đảm bảo file game gốc của bạn sạch sẽ 100%. Nền tảng này còn có hệ thống Plugin mạnh mẽ, cho phép bạn đổi qua lại giữa các máy dịch AI (DeepL, Google, v.v.) chỉ với 1 click.
+
+## 🚀 Hướng Dẫn Nhanh
+
+1. **Tải về:** Lấy file `AutoTranslator.exe` mới nhất tại trang [Releases](../../releases).
+2. **Khởi chạy:** Chạy trực tiếp file exe, không cần cài đặt Python.
+3. **Thêm Game:** Chọn file chạy (`.exe`) của tựa game bạn muốn dịch.
+4. **Chơi ngay:** Bấm nút "Start" và tận hưởng game đã được dịch tự động!
+
+## 📚 Tài Liệu Hướng Dẫn
+
+Để xem chi tiết hơn, vui lòng tham khảo các thư mục `docs/`:
+
+- [Hướng dẫn Cài đặt](docs/installation.md)
+- [Tổng quan Kiến trúc Hệ thống](docs/architecture.md)
+- [Hướng dẫn Tạo Plugin Mới](docs/plugin-development.md)
+- [Các câu hỏi thường gặp (FAQ)](docs/faq.md)
+
+## 🛠️ Công Nghệ Sử Dụng
+
+- **Python 3.12+**
+- **CustomTkinter** (Giao diện Dark-mode hiện đại).
+- **Pytest** (Tự động kiểm thử).
+- **Ruff, Black, MyPy** (Quản lý chất lượng mã nguồn).
+
+## 🤝 Tham Gia Đóng Góp
+
+Mã nguồn mở tuyệt vời là nhờ sự đóng góp của cộng đồng. Mọi ý tưởng và dòng code của bạn đều được **chào đón nồng nhiệt**. 
+Vui lòng đọc file [PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md) trước khi gửi bản vá.
+
+---
+
+# Auto Translator Manager (English)
 
 A smart, open-source centralized launcher for auto-translating games (Unity, RenPy) without polluting game directories.
 
