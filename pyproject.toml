@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auto-translator-manager"
+version = "1.0.0"
+description = "A smart, open-source centralized launcher for auto-translating games (Unity, RenPy) without polluting game directories."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "AutoTranslatorManager Contributors" }
+]
+dependencies = [
+    "customtkinter>=5.2.2",
+    "requests>=2.31.0",
+    "pydantic>=2.7.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "black>=24.0.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+    "pre-commit>=3.7.0",
+    "pyinstaller>=6.5.0"
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
