@@ -1,7 +1,5 @@
 # Auto Translator Manager
 
-![Auto Translator Manager](docs/assets/banner.png)
-
 A smart, open-source centralized launcher for auto-translating games (Unity, RenPy) without polluting game directories.
 
 Auto Translator Manager (ATM) is designed to separate the translation engine (like XUnity.AutoTranslator) from your game directory. It dynamically injects the translation runtime into the game only when you play, ensuring your game files remain 100% clean. It features a robust plugin system, allowing you to seamlessly swap between translation engines (DeepL, Google, etc.).
