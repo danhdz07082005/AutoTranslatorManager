@@ -1,0 +1,21 @@
+name: Bug Report
+description: Có lỗi xảy ra trong quá trình sử dụng? Hãy báo cho chúng tôi!
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Mô tả lỗi (Bug Description)
+      description: Lỗi gì đã xảy ra?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Cách tái hiện (How to reproduce)
+      description: Các bước dẫn tới lỗi này.
+  - type: input
+    id: version
+    attributes:
+      label: Phiên bản Launcher
+      description: Vd: 1.0.0
