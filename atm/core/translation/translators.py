@@ -1,6 +1,8 @@
 import urllib.request
 import urllib.parse
 import json
+import concurrent.futures
+import json
 from typing import List, Dict, Optional
 from atm.utils.logger import get_logger
 from atm.core.translation.cache_manager import TranslationCache

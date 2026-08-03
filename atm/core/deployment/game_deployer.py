@@ -29,18 +29,21 @@ class GameDeployer:
         EventBus.publish(SystemEvents.GAME_STARTING, profile)
 
         # 1. Copy (Deploy)
-        if not os.path.exists(payload_dir):
-            logger.error(f"Payload directory not found: {payload_dir}")
-            EventBus.publish(SystemEvents.ERROR_OCCURRED, "Payload not found!")
-            return
-            
-        # Đối với RenPy, payload (file .rpy) phải nằm trong thư mục con 'game'
-        dest_dir = game_dir
-        if profile.engine == "RenPy":
-            dest_dir = os.path.join(game_dir, "game")
-            os.makedirs(dest_dir, exist_ok=True)
+        if payload_dir:
+            if not os.path.exists(payload_dir):
+                logger.error(f"Payload directory not found: {payload_dir}")
+                EventBus.publish(SystemEvents.ERROR_OCCURRED, "Payload not found!")
+                return
+                
+            # Đối với RenPy, payload (file .rpy) phải nằm trong thư mục con 'game'
+            dest_dir = game_dir
+            if profile.engine == "RenPy":
+                dest_dir = os.path.join(game_dir, "game")
+                os.makedirs(dest_dir, exist_ok=True)
 
-        self._deployed_items = copy_payload(payload_dir, dest_dir)
+            self._deployed_items = copy_payload(payload_dir, dest_dir)
+        else:
+            self._deployed_items = []
         
         # Tạo file thông báo cho user
         info_file = os.path.join(game_dir, "ATM_IS_RUNNING.txt")

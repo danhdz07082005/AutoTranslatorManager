@@ -244,3 +244,34 @@ class BackendApi:
         except Exception as e:
             logger.error(f"Delete error: {e}")
             return {"status": "error", "error": str(e)}
+
+    def get_cache_entries(self):
+        """Lấy danh sách cache để hiển thị lên Grid Editor"""
+        from atm.core.translation.cache_manager import TranslationCache
+        cache = TranslationCache()
+        data = {}
+        for src_lang, target_dict in cache.data.items():
+            for tgt_lang, texts in target_dict.items():
+                for original, translated in texts.items():
+                    data[original] = translated
+        return {"status": "success", "data": data}
+
+    def update_cache_entry(self, game_id, key, value):
+        """Cập nhật một mục trong Cache từ Grid Editor"""
+        profile = self.profile_repo.get_by_id(game_id)
+        if not profile: 
+            return {"status": "error", "error": "Game not found"}
+            
+        source_lang = profile.input_lang
+        target_lang = profile.output_lang
+        if source_lang == "auto":
+            # Nếu là auto, trong cache_manager nó vẫn lưu theo key "auto" hoặc tuỳ translator
+            # Tạm thời lưu chung cho auto
+            pass
+            
+        from atm.core.translation.cache_manager import TranslationCache
+        cache = TranslationCache()
+        cache.set(source_lang, target_lang, key, value)
+        cache.save_to_disk()
+        logger.info(f"Updated cache manually: {key} -> {value}")
+        return {"status": "success"}
