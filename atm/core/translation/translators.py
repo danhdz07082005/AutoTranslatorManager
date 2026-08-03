@@ -2,7 +2,8 @@ import urllib.request
 import urllib.parse
 import json
 import concurrent.futures
-import json
+import time
+import random
 from typing import List, Dict, Optional
 from atm.utils.logger import get_logger
 from atm.core.translation.cache_manager import TranslationCache
@@ -80,9 +81,12 @@ class GoogleTranslator(BaseTranslator):
                 # Fallback to original
                 pass
                 
-        # Dùng ThreadPoolExecutor với max_workers an toàn (khoảng 15) để Google không chặn IP
-        with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
-            futures = [executor.submit(translate_single, i, t) for i, t in enumerate(texts)]
+        # Dùng ThreadPoolExecutor với max_workers = 3 để tránh Google chặn IP
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+            futures = []
+            for i, t in enumerate(texts):
+                futures.append(executor.submit(translate_single, i, t))
+                time.sleep(0.3) # Rate limit cho an toàn
             concurrent.futures.wait(futures)
                 
         return translated_texts

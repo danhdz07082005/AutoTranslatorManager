@@ -83,9 +83,9 @@ class ATMHandler(BaseHTTPRequestHandler):
         elif self.path == '/api/games/update-settings':
             result = self.api.update_game_settings(
                 body.get('game_id', ''),
-                body.get('input_lang', 'auto'),
-                body.get('output_lang', 'vi'),
-                body.get('translator', 'google'),
+                body.get('input_lang', None),
+                body.get('output_lang', None),
+                body.get('translator', None),
                 body.get('glossary', None)
             )
             self._json_response(result)

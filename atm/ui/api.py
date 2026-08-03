@@ -107,15 +107,17 @@ class BackendApi:
 
         return None  # User cancelled
 
-    def update_game_settings(self, game_id, input_lang, output_lang, translator, glossary=None):
+    def update_game_settings(self, game_id, input_lang=None, output_lang=None, translator=None, glossary=None):
         """Cập nhật ngôn ngữ, bộ dịch, và từ điển cá nhân cho game"""
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
 
-        profile.input_lang = input_lang
-        profile.output_lang = output_lang
-        if translator:
+        if input_lang is not None:
+            profile.input_lang = input_lang
+        if output_lang is not None:
+            profile.output_lang = output_lang
+        if translator is not None:
             profile.translator = translator
         if glossary is not None:
             profile.glossary = glossary
@@ -250,7 +252,7 @@ class BackendApi:
         from atm.core.translation.cache_manager import TranslationCache
         cache = TranslationCache()
         data = {}
-        for src_lang, target_dict in cache.data.items():
+        for src_lang, target_dict in cache.cache.items():
             for tgt_lang, texts in target_dict.items():
                 for original, translated in texts.items():
                     data[original] = translated
