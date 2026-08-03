@@ -3,7 +3,7 @@ import json
 import shutil
 from typing import List, Dict, Any, Callable
 from atm.config.schema import GameProfile
-from atm.core.translation import get_translator
+from atm.core.translation.translators import GoogleTranslator, DeepLTranslator
 from atm.storage.repositories.settings_repository import SettingsRepository
 from atm.utils.logger import get_logger
 
@@ -83,7 +83,11 @@ class RPGMakerTranslator:
         json_files = [f for f in os.listdir(data_dir) if f.endswith(".json")]
         total_files = len(json_files)
         
-        translator = get_translator(getattr(profile, "translator", "google"), self.settings)
+        translator_id = getattr(profile, "translator", "google")
+        if translator_id == "deepl" and self.settings and self.settings.deepl_api_key:
+            translator = DeepLTranslator(self.settings.deepl_api_key)
+        else:
+            translator = GoogleTranslator()
         
         for idx, filename in enumerate(json_files):
             file_path = os.path.join(data_dir, filename)
