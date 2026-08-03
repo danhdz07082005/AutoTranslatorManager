@@ -39,15 +39,16 @@ def test_full_api_game_lifecycle_flow(temp_profiles_dir, tmp_path, monkeypatch):
     assert games[0]["id"] == game_id
     assert games[0]["input_lang"] == "auto"
 
-    # STEP 3: Cập nhật ngôn ngữ (update_game_lang)
-    update_res = api.update_game_lang(game_id, input_lang="ja", output_lang="vi")
-    assert update_res.get("status") == "success"
+    # STEP 3: Cập nhật ngôn ngữ (update_game_settings)
+    update_res = api.update_game_settings(game_id, input_lang="ja", output_lang="vi", translator="deepl")
+    assert update_res["status"] == "success"
 
     # Kiểm tra xem thay đổi ngôn ngữ đã được ghi nhận chưa
     updated_games = api.get_games()
     assert len(updated_games) == 1
     assert updated_games[0]["input_lang"] == "ja"
     assert updated_games[0]["output_lang"] == "vi"
+    assert updated_games[0]["translator"] == "deepl"
 
     # STEP 4: Xóa game (delete_game)
     delete_res = api.delete_game(game_id)
@@ -73,8 +74,8 @@ def test_add_game_cancelled_dialog(temp_profiles_dir, monkeypatch):
 def test_update_non_existent_game(temp_profiles_dir):
     """Kiểm tra báo lỗi khi cập nhật ngôn ngữ cho game ID không tồn tại."""
     api = BackendApi()
-    res = api.update_game_lang("invalid_game_id_123", "en", "vi")
-    assert res.get("status") == "error"
+    res = api.update_game_settings("invalid_game_id_123", "en", "vi", "google")
+    assert res["status"] == "error"
     assert "Game not found" in res.get("error", "")
 
 

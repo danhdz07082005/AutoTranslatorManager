@@ -2,6 +2,7 @@ import os
 from typing import List, Any
 from atm.core.events.event_bus import EventBus, SystemEvents
 from atm.core.deployment.process_monitor import ProcessMonitor
+from atm.storage.repositories.settings_repository import SettingsRepository
 from atm.utils.file_system import copy_payload, cleanup_items
 from atm.utils.logger import get_logger
 from atm.config.schema import GameProfile
@@ -55,15 +56,27 @@ class GameDeployer:
             from_lang = profile.input_lang if profile.input_lang and profile.input_lang != "auto" else "ja"
             to_lang = profile.output_lang if profile.output_lang else "vi"
             
+            # Load API Key if needed
+            settings = SettingsRepository().load()
+            
+            is_deepl = getattr(profile, "translator", "google") == "deepl"
+            endpoint = "DeepLTranslateLegitimate" if is_deepl else "GoogleTranslateV2"
+            
             with open(config_file, "w", encoding="utf-8") as f:
                 f.write("[Service]\n")
-                f.write("Endpoint=GoogleTranslateV2\n\n")
+                f.write(f"Endpoint={endpoint}\n\n")
                 f.write("[General]\n")
                 f.write(f"Language={to_lang}\n")
                 f.write(f"FromLanguage={from_lang}\n\n")
                 f.write("[Behaviour]\n")
                 f.write("MaxCharactersPerTranslation=1000\n")
                 f.write("IgnoreWhitespaceInDialogue=False\n")
+                
+                if is_deepl:
+                    f.write("\n[DeepLLegitimate]\n")
+                    f.write("ExecutableLocation=\n")
+                    f.write(f"ApiKey={settings.deepl_api_key}\n")
+                    f.write("Free=True\n")
             
             # Thêm thư mục config vào danh sách để xóa (nếu trước đó không có config)
             if config_dir not in self._deployed_items:

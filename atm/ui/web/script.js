@@ -8,10 +8,37 @@ let languages = {};
 // --- Khởi tạo ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log('[ATM] Frontend ready. Loading data...');
+    loadSettings();
     loadLanguages();
     loadGames();
     setupAddGameButton();
 });
+
+// --- Settings ---
+async function loadSettings() {
+    try {
+        const settings = await apiGet('settings');
+        document.getElementById('theme-toggle').checked = settings.dark_mode;
+        document.getElementById('deepl-api-key').value = settings.deepl_api_key || '';
+        document.body.classList.toggle('theme-light', !settings.dark_mode);
+    } catch (e) {
+        console.error('Failed to load settings:', e);
+    }
+}
+
+async function saveSettings() {
+    const isDark = document.getElementById('theme-toggle').checked;
+    const apiKey = document.getElementById('deepl-api-key').value;
+    
+    document.body.classList.toggle('theme-light', !isDark);
+    
+    try {
+        await apiPost('settings', { dark_mode: isDark, deepl_api_key: apiKey });
+        showToast('⚙️ Đã lưu cấu hình');
+    } catch (e) {
+        showToast('Lỗi lưu cấu hình', true);
+    }
+}
 
 // --- API Helpers ---
 async function apiGet(endpoint) {
@@ -145,6 +172,13 @@ async function loadGames() {
             </div>
             <div class="lang-row">
                 <div class="lang-group">
+                    <label>Engine Dịch</label>
+                    <select class="lang-select" data-game-id="${game.id}" data-lang-type="translator" onchange="onLangChange(this)">
+                        <option value="google" ${game.translator === 'google' ? 'selected' : ''}>Google Translate</option>
+                        <option value="deepl" ${game.translator === 'deepl' ? 'selected' : ''}>DeepL API (Pro)</option>
+                    </select>
+                </div>
+                <div class="lang-group">
                     <label>Ngôn ngữ gốc</label>
                     <select class="lang-select" data-game-id="${game.id}" data-lang-type="input" onchange="onLangChange(this)">
                         ${buildLangOptions(game.input_lang, false)}
@@ -183,12 +217,14 @@ async function onLangChange(selectEl) {
 
     const inputSelect = card.querySelector('[data-lang-type="input"]');
     const outputSelect = card.querySelector('[data-lang-type="output"]');
+    const transSelect = card.querySelector('[data-lang-type="translator"]');
 
     try {
-        await apiPost('games/update-lang', {
+        await apiPost('games/update-settings', {
             game_id: gameId,
             input_lang: inputSelect.value,
-            output_lang: outputSelect.value
+            output_lang: outputSelect.value,
+            translator: transSelect ? transSelect.value : 'google'
         });
         showToast('🌐 Đã cập nhật ngôn ngữ');
     } catch (e) {

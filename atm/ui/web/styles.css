@@ -13,6 +13,16 @@
     --success: #10b981;
 }
 
+body.theme-light {
+    --bg-base: #f1f5f9;
+    --bg-sidebar: rgba(255, 255, 255, 0.7);
+    --bg-card: rgba(255, 255, 255, 0.7);
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --border-color: rgba(0, 0, 0, 0.1);
+    --accent-glow: rgba(59, 130, 246, 0.3);
+}
+
 * {
     margin: 0;
     padding: 0;

@@ -7,6 +7,7 @@ class AppSettings(BaseModel):
     auto_update: bool = Field(default=True, description="Tự động cập nhật payload/plugins")
     dark_mode: bool = Field(default=True, description="Giao diện nền tối")
     language: str = Field(default="vi", description="Ngôn ngữ của Launcher")
+    deepl_api_key: str = Field(default="", description="API Key cho DeepL (nếu có)")
 
 class GameProfile(BaseModel):
     """Đại diện cho một Game Profile."""

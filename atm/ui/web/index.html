@@ -93,20 +93,20 @@
                 <div class="settings-card">
                     <div class="setting-item">
                         <div>
-                            <h4>Auto-update Plugins</h4>
-                            <p>Tự động cập nhật bộ máy dịch khi có phiên bản mới.</p>
+                            <h4>Giao diện tối (Dark Mode)</h4>
+                            <p>Bật/tắt chế độ màn hình nền tối.</p>
                         </div>
                         <label class="switch">
-                            <input type="checkbox" checked>
+                            <input type="checkbox" id="theme-toggle" onchange="saveSettings()">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="setting-item">
+                    <div class="setting-item" style="display: flex; flex-direction: column; align-items: stretch; gap: 10px;">
                         <div>
-                            <h4>Ngôn ngữ đầu ra mặc định</h4>
-                            <p>Ngôn ngữ mặc định khi thêm game mới.</p>
+                            <h4>DeepL API Key</h4>
+                            <p>Nhập API Key hợp lệ của DeepL để dịch thuật chất lượng cao.</p>
                         </div>
-                        <span class="setting-value">Vietnamese</span>
+                        <input type="text" id="deepl-api-key" placeholder="Nhập DeepL API Key..." onchange="saveSettings()" style="padding: 10px; background: rgba(15, 23, 42, 0.6); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; width: 100%;">
                     </div>
                 </div>
             </section>

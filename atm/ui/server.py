@@ -33,6 +33,8 @@ class ATMHandler(BaseHTTPRequestHandler):
             self._json_response(self.api.get_games())
         elif self.path == '/api/languages':
             self._json_response(self.api.get_languages())
+        elif self.path == '/api/settings':
+            self._json_response(self.api.get_settings())
         else:
             self._json_response({"error": "Not found"}, 404)
 
@@ -56,11 +58,19 @@ class ATMHandler(BaseHTTPRequestHandler):
             result = self.api.delete_game(body.get('game_id', ''))
             self._json_response(result)
 
-        elif self.path == '/api/games/update-lang':
-            result = self.api.update_game_lang(
+        elif self.path == '/api/settings':
+            result = self.api.update_settings(
+                body.get('dark_mode', True),
+                body.get('deepl_api_key', '')
+            )
+            self._json_response(result)
+
+        elif self.path == '/api/games/update-settings':
+            result = self.api.update_game_settings(
                 body.get('game_id', ''),
                 body.get('input_lang', 'auto'),
-                body.get('output_lang', 'vi')
+                body.get('output_lang', 'vi'),
+                body.get('translator', 'google')
             )
             self._json_response(result)
 

@@ -3,6 +3,7 @@ import uuid
 import threading
 import webview
 from atm.storage.repositories.profile_repository import ProfileRepository
+from atm.storage.repositories.settings_repository import SettingsRepository
 from atm.config.schema import GameProfile
 from atm.core.detectors.game_detector import GameDetector
 from atm.utils.logger import get_logger
@@ -34,6 +35,7 @@ SUPPORTED_LANGUAGES = {
 class BackendApi:
     def __init__(self):
         self.profile_repo = ProfileRepository()
+        self.settings_repo = SettingsRepository()
         self.window = None
         self.active_deployers = {}  # game_id -> deployer
 
@@ -43,6 +45,19 @@ class BackendApi:
     def get_languages(self):
         """Trả về danh sách ngôn ngữ cho dropdown"""
         return SUPPORTED_LANGUAGES
+
+    def get_settings(self):
+        """Trả về cấu hình hiện tại"""
+        settings = self.settings_repo.load()
+        return settings.model_dump()
+
+    def update_settings(self, dark_mode, deepl_api_key):
+        """Cập nhật cấu hình"""
+        settings = self.settings_repo.load()
+        settings.dark_mode = dark_mode
+        settings.deepl_api_key = deepl_api_key
+        self.settings_repo.save(settings)
+        return {"status": "success"}
 
     def get_games(self):
         """Trả về danh sách game profile cho JS"""
@@ -89,16 +104,18 @@ class BackendApi:
 
         return None  # User cancelled
 
-    def update_game_lang(self, game_id, input_lang, output_lang):
-        """Cập nhật ngôn ngữ input/output cho game"""
+    def update_game_settings(self, game_id, input_lang, output_lang, translator):
+        """Cập nhật ngôn ngữ và bộ dịch cho game"""
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
 
         profile.input_lang = input_lang
         profile.output_lang = output_lang
+        if translator:
+            profile.translator = translator
         self.profile_repo.save(profile)
-        logger.info(f"Updated languages for {profile.game_name}: {input_lang} -> {output_lang}")
+        logger.info(f"Updated settings for {profile.game_name}: {input_lang} -> {output_lang}, engine: {translator}")
         return {"status": "success"}
 
     def start_game(self, game_id):
