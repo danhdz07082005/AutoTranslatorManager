@@ -44,7 +44,7 @@ class GameDeployer:
                 
                 # Xóa rác rpy cũ nếu có
                 try:
-                    for junk in ["realtimetrans_old.rpy", "transconfig_old.rpy"]:
+                    for junk in ["realtimetrans_old.rpy", "realtimetrans_old.rpyc", "transconfig_old.rpy", "transconfig_old.rpyc"]:
                         junk_path = os.path.join(dest_dir, junk)
                         if os.path.exists(junk_path):
                             os.remove(junk_path)
