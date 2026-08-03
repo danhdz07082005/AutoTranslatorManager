@@ -38,9 +38,7 @@ class GameDeployer:
             # Đối với RenPy, payload (file .rpy) phải nằm trong thư mục con 'game'
             dest_dir = game_dir
             if profile.engine == "RenPy":
-                import shutil
-                from atm.utils.file_system import FileSystem
-                renpy_payload_dir = os.path.join("data", "payloads", "renpy_realtime")
+
                 dest_dir = os.path.join(game_dir, "game")
                 os.makedirs(dest_dir, exist_ok=True)
                 
