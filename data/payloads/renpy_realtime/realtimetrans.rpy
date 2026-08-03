@@ -1276,7 +1276,7 @@ init -999 python:
     def _send_batch_translation_request_requests(html_content, target_lang):
         try:
             import random
-            api_key = "YOUR_GOOGLE_API_KEY"
+            api_key = ""
             url = "https://translate-pa.googleapis.com/v1/translateHtml"
             headers = {
                 "Accept": "/",
@@ -1310,7 +1310,7 @@ init -999 python:
         import json
         import random
         import urllib2
-        api_key = "YOUR_GOOGLE_API_KEY"
+        api_key = ""
         url = "https://translate-pa.googleapis.com/v1/translateHtml"
         headers = {
             "Accept": "/",
