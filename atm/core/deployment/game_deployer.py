@@ -35,31 +35,28 @@ class GameDeployer:
                 EventBus.publish(SystemEvents.ERROR_OCCURRED, "Payload not found!")
                 return
                 
-            # Copy RenPy payload files
-            import shutil
-            from atm.utils.file_system import FileSystem
-            renpy_payload_dir = os.path.join("data", "payloads", "renpy_realtime")
-            dest_dir = os.path.join(game_dir, "game")
-            os.makedirs(dest_dir, exist_ok=True)
-            for file in os.listdir(renpy_payload_dir):
-                src_file = os.path.join(renpy_payload_dir, file)
-                dest_file = os.path.join(dest_dir, file)
-                
-                # NẾu là realtimetrans.rpy thì tiêm cổng mạng và game_id vào
-                if file == "realtimetrans.rpy":
-                    with open(src_file, "r", encoding="utf-8") as f_in:
-                        content = f_in.read()
-                    
-                    port = os.environ.get('ATM_SERVER_PORT', '50010')
-                    content = content.replace("__ATM_SERVER_PORT__", str(port))
-                    content = content.replace("__ATM_GAME_ID__", profile.id)
-                    
-                    with open(dest_file, "w", encoding="utf-8") as f_out:
-                        f_out.write(content)
-                    self._deployed_items.append(dest_file)
-                else:
-                    FileSystem.copy_file_or_dir(src_file, dest_dir)
-                    self._deployed_items.append(dest_file)
+            # Đối với RenPy, payload (file .rpy) phải nằm trong thư mục con 'game'
+            dest_dir = game_dir
+            if profile.engine == "RenPy":
+                dest_dir = os.path.join(game_dir, "game")
+                os.makedirs(dest_dir, exist_ok=True)
+
+            self._deployed_items = copy_payload(payload_dir, dest_dir)
+            
+            # Post-deploy modifications
+            if profile.engine == "RenPy":
+                rpy_file = os.path.join(dest_dir, "realtimetrans.rpy")
+                if os.path.exists(rpy_file):
+                    try:
+                        with open(rpy_file, "r", encoding="utf-8") as f:
+                            content = f.read()
+                        port = os.environ.get('ATM_SERVER_PORT', '50010')
+                        content = content.replace("__ATM_SERVER_PORT__", str(port))
+                        content = content.replace("__ATM_GAME_ID__", profile.id)
+                        with open(rpy_file, "w", encoding="utf-8") as f:
+                            f.write(content)
+                    except Exception as e:
+                        logger.error(f"Failed to patch realtimetrans.rpy: {e}")
         else:
             self._deployed_items = []
         
