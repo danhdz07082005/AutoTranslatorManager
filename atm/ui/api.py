@@ -137,7 +137,7 @@ class BackendApi:
 
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
-        if profile.engine in ["RPG Maker", "RenPy"]:
+        if profile.engine == "RPG Maker":
             # Dịch Offline
             self.translation_status[game_id] = {"progress": 0, "total": 100, "message": f"Đang chuẩn bị dịch {profile.engine}...", "done": False}
             self.cancel_flags[game_id] = False
