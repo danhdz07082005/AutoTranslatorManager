@@ -30,7 +30,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --name AutoTranslator --onefile --windowed --hidden-import customtkinter --hidden-import pydantic --hidden-import requests --collect-all customtkinter run_app.py
+        pyinstaller --name AutoTranslator --onefile --windowed --add-data "atm/ui/web;atm/ui/web" run_app.py
 
     - name: Create Release
       uses: softprops/action-gh-release@v1

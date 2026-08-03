@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Translator Manager</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon">ATM</div>
+                <h2>Translator</h2>
+            </div>
+            
+            <ul class="nav-links">
+                <li class="active" data-target="library-view">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    Library
+                </li>
+                <li data-target="marketplace-view">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    Plugins
+                </li>
+                <li data-target="settings-view">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    Settings
+                </li>
+            </ul>
+
+            <div class="bottom-action">
+                <button class="btn-primary" id="add-game-btn">
+                    <span>+</span> Add Game
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="content-area">
+            
+            <!-- Library View -->
+            <section id="library-view" class="view-section active">
+                <header>
+                    <h1>My Library</h1>
+                    <p class="subtitle">Manage and launch your auto-translated games</p>
+                </header>
+                
+                <div class="games-grid" id="games-container">
+                    <!-- Cards will be dynamically injected here -->
+                </div>
+            </section>
+
+            <!-- Plugins View -->
+            <section id="marketplace-view" class="view-section hidden">
+                <header>
+                    <h1>Plugin Marketplace</h1>
+                    <p class="subtitle">Install translation engines</p>
+                </header>
+                <div class="plugins-list">
+                    <div class="plugin-card">
+                        <div class="plugin-info">
+                            <h3>Google Translate</h3>
+                            <p>Free, fast, no API key required. Perfect for general usage.</p>
+                            <span class="badge installed">Installed</span>
+                        </div>
+                    </div>
+                    <div class="plugin-card">
+                        <div class="plugin-info">
+                            <h3>DeepL AI</h3>
+                            <p>High quality AI translation. Requires API key or Pro account.</p>
+                            <span class="badge">Available</span>
+                        </div>
+                        <button class="btn-secondary">Install</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section id="settings-view" class="view-section hidden">
+                <header>
+                    <h1>Settings</h1>
+                    <p class="subtitle">Configure your launcher experience</p>
+                </header>
+                <div class="settings-card">
+                    <div class="setting-item">
+                        <div>
+                            <h4>Hardware Acceleration</h4>
+                            <p>Use GPU for smoother UI rendering.</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <div>
+                            <h4>Auto-update Plugins</h4>
+                            <p>Keep your translation engines up to date automatically.</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden">
+        <span id="toast-message">Notification</span>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>

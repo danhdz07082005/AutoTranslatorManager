@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel, Field
 
 class AppSettings(BaseModel):
@@ -10,6 +11,7 @@ class AppSettings(BaseModel):
 class GameProfile(BaseModel):
     """Đại diện cho một Game Profile."""
     version: int = Field(default=1)
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique ID")
     game_name: str = Field(..., description="Tên hiển thị của game")
     exe_path: str = Field(..., description="Đường dẫn tuyệt đối đến file chạy của game")
     engine: str = Field(default="Unity IL2CPP", description="Engine (Unity Mono, Unity IL2CPP, RenPy)")

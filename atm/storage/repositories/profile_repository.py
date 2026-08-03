@@ -16,7 +16,7 @@ class ProfileRepository:
         if not os.path.exists(PROFILES_DIR):
             os.makedirs(PROFILES_DIR, exist_ok=True)
             
-    def load_all(self) -> List[GameProfile]:
+    def get_all(self) -> List[GameProfile]:
         profiles = []
         for filename in os.listdir(PROFILES_DIR):
             if filename.endswith(".json"):
@@ -39,9 +39,7 @@ class ProfileRepository:
             return None
             
     def save(self, profile: GameProfile) -> None:
-        # Tên file dựa trên game_name (xóa ký tự đặc biệt)
-        safe_name = "".join(c for c in profile.game_name if c.isalnum() or c in (' ', '_')).strip().replace(' ', '_')
-        filename = f"{safe_name}.json"
+        filename = f"{profile.id}.json"
         filepath = os.path.join(PROFILES_DIR, filename)
         
         try:
@@ -51,7 +49,8 @@ class ProfileRepository:
         except Exception as e:
             logger.error(f"Failed to save profile {filename}: {e}")
             
-    def delete(self, filename: str) -> bool:
+    def delete(self, game_id: str) -> bool:
+        filename = f"{game_id}.json"
         filepath = os.path.join(PROFILES_DIR, filename)
         if os.path.exists(filepath):
             try:
@@ -61,3 +60,7 @@ class ProfileRepository:
             except Exception as e:
                 logger.error(f"Failed to delete profile {filename}: {e}")
         return False
+        
+    def get_by_id(self, game_id: str) -> Optional[GameProfile]:
+        filename = f"{game_id}.json"
+        return self.load(filename)
