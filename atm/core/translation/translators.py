@@ -60,24 +60,28 @@ class BaseTranslator:
 
 class GoogleTranslator(BaseTranslator):
     def _do_translate_batch(self, texts: List[str], target_lang: str = "vi", source_lang: str = "auto") -> List[str]:
-        """Dịch từng đoạn text thông qua Google Translate (miễn phí, có thể bị rate limit)."""
-        translated_texts = []
-        for text in texts:
+        """Dịch từng đoạn text thông qua Google Translate với Đa Luồng (Multithreading)."""
+        translated_texts = list(texts)
+        
+        def translate_single(index, text):
             if not text.strip():
-                translated_texts.append(text)
-                continue
-                
+                return
             try:
-                # Sử dụng API nội bộ hoặc thư viện nếu cần, tạm dùng fallback đơn giản
                 url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl={source_lang}&tl={target_lang}&dt=t&q={urllib.parse.quote(text)}"
                 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req) as response:
                     data = json.loads(response.read().decode('utf-8'))
                     translated = "".join([sentence[0] for sentence in data[0]])
-                    translated_texts.append(translated)
+                    translated_texts[index] = translated
             except Exception as e:
                 logger.error(f"Google translate error for text '{text[:20]}...': {e}")
-                translated_texts.append(text) # Fallback to original
+                # Fallback to original
+                pass
+                
+        # Dùng ThreadPoolExecutor với max_workers an toàn (khoảng 15) để Google không chặn IP
+        with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
+            futures = [executor.submit(translate_single, i, t) for i, t in enumerate(texts)]
+            concurrent.futures.wait(futures)
                 
         return translated_texts
 

@@ -86,75 +86,95 @@ class RPGMakerTranslator:
             shutil.copytree(data_dir, backup_dir)
             
         json_files = [f for f in os.listdir(backup_dir) if f.endswith(".json")]
-        total_files = len(json_files)
         
         translator_id = getattr(profile, "translator", "google")
         if translator_id == "deepl" and self.settings and self.settings.deepl_api_key:
             translator = DeepLTranslator(self.settings.deepl_api_key)
         else:
             translator = GoogleTranslator()
-        
-        for idx, filename in enumerate(json_files):
-            if is_cancelled and is_cancelled():
-                logger.info("Translation cancelled by user.")
-                return False
-
-            source_file_path = os.path.join(backup_dir, filename)
-            dest_file_path = os.path.join(data_dir, filename)
             
-            if progress_callback:
-                progress_callback(idx, total_files, f"Đang dịch {filename}...")
-                
+        # Pass 1: Quét toàn bộ để lấy tổng số câu
+        file_datas = []
+        total_batches = 0
+        batch_size = 50
+        
+        if progress_callback:
+            progress_callback(0, 100, "Đang quét dữ liệu game...")
+            
+        for filename in json_files:
+            source_file_path = os.path.join(backup_dir, filename)
             try:
                 with open(source_file_path, "r", encoding="utf-8-sig") as f:
                     content = f.read()
                     if not content:
                         continue
                     data = json.loads(content)
-                    
-                # Trích xuất text
                 texts = self._extract_texts_from_json(data)
-                # Loại bỏ trùng lặp
                 unique_texts = list(set(texts))
-                
                 if unique_texts:
-                    # Dịch batch
-                    # Hạn chế số lượng mỗi batch (VD: 50 câu / 1 lần gọi API)
-                    batch_size = 50
-                    translated_texts = []
-                    for i in range(0, len(unique_texts), batch_size):
-                        if is_cancelled and is_cancelled():
-                            logger.info("Translation cancelled by user midway during batch.")
-                            return False
-                            
-                        batch = unique_texts[i:i+batch_size]
-                        
-                        # Apply Custom Glossary (Từ điển cá nhân)
-                        processed_batch = []
-                        glossary = getattr(profile, "glossary", {})
-                        for text in batch:
-                            processed_text = text
-                            if glossary:
-                                for k, v in glossary.items():
-                                    processed_text = processed_text.replace(k, v)
-                            processed_batch.append(processed_text)
-                            
-                        res = translator.translate_batch(processed_batch, target_lang=profile.output_lang, source_lang=profile.input_lang)
-                        translated_texts.extend(res)
-                        
-                    translated_map = dict(zip(unique_texts, translated_texts))
-                    
-                    # Thay thế text
-                    new_data = self._replace_texts_in_json(data, translated_map)
-                    
-                    # Ghi đè lại file
-                    with open(dest_file_path, "w", encoding="utf-8") as f:
-                        json.dump(new_data, f, ensure_ascii=False)
-                        
+                    file_datas.append({
+                        "filename": filename,
+                        "data": data,
+                        "unique_texts": unique_texts
+                    })
+                    total_batches += (len(unique_texts) + batch_size - 1) // batch_size
             except Exception as e:
-                logger.error(f"Failed to translate {filename}: {e}")
+                logger.error(f"Error scanning {filename}: {e}")
+                
+        # Pass 2: Dịch thực tế và update progress theo batch
+        current_batch = 0
+        
+        for file_info in file_datas:
+            if is_cancelled and is_cancelled():
+                logger.info("Translation cancelled by user.")
+                return False
+
+            filename = file_info["filename"]
+            data = file_info["data"]
+            unique_texts = file_info["unique_texts"]
+            dest_file_path = os.path.join(data_dir, filename)
+            
+            translated_texts = []
+            
+            for i in range(0, len(unique_texts), batch_size):
+                if is_cancelled and is_cancelled():
+                    logger.info("Translation cancelled by user midway during batch.")
+                    return False
+                    
+                if progress_callback:
+                    percent = int((current_batch / max(1, total_batches)) * 100)
+                    progress_callback(percent, 100, f"Đang dịch {filename} ({percent}%)")
+                    
+                batch = unique_texts[i:i+batch_size]
+                
+                # Apply Custom Glossary (Từ điển cá nhân)
+                processed_batch = []
+                glossary = getattr(profile, "glossary", {})
+                for text in batch:
+                    processed_text = text
+                    if glossary:
+                        for k, v in glossary.items():
+                            processed_text = processed_text.replace(k, v)
+                    processed_batch.append(processed_text)
+                    
+                res = translator.translate_batch(processed_batch, target_lang=profile.output_lang, source_lang=profile.input_lang)
+                translated_texts.extend(res)
+                
+                current_batch += 1
+                
+            translated_map = dict(zip(unique_texts, translated_texts))
+            
+            # Thay thế text
+            new_data = self._replace_texts_in_json(data, translated_map)
+            
+            # Ghi đè lại file
+            try:
+                with open(dest_file_path, "w", encoding="utf-8") as f:
+                    json.dump(new_data, f, ensure_ascii=False)
+            except Exception as e:
+                logger.error(f"Failed to write translated {filename}: {e}")
                 
         if progress_callback:
-            progress_callback(total_files, total_files, "Hoàn tất dịch!")
+            progress_callback(100, 100, "Hoàn tất dịch!")
             
         return True
