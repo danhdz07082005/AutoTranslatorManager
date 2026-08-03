@@ -1507,7 +1507,7 @@ init -999 python:
             print("ATM Batch translation error: {}".format(e))
             return texts
 
-    def _patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+        def _patched_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
             if host in _DNS_CACHE:
                 cached = _DNS_CACHE[host]
                 try:

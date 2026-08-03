@@ -1,4 +1,4 @@
-import os
+﻿import os
 import json
 import threading
 from atm.utils.logger import get_logger
@@ -44,6 +44,13 @@ class TranslationCache:
         with self._cache_lock:
             return self.cache.get(source_lang, {}).get(target_lang, {}).get(text)
 
+    def _enforce_limit(self, source_lang: str, target_lang: str, max_size: int = 50000):
+        target_dict = self.cache.get(source_lang, {}).get(target_lang, {})
+        if len(target_dict) > max_size:
+            keys_to_delete = list(target_dict.keys())[:5000]
+            for k in keys_to_delete:
+                del target_dict[k]
+
     def set(self, source_lang: str, target_lang: str, text: str, translated: str):
         with self._cache_lock:
             if source_lang not in self.cache:
@@ -52,6 +59,7 @@ class TranslationCache:
                 self.cache[source_lang][target_lang] = {}
             
             self.cache[source_lang][target_lang][text] = translated
+            self._enforce_limit(source_lang, target_lang)
 
     def set_batch(self, source_lang: str, target_lang: str, texts: list, translated_texts: list):
         with self._cache_lock:
@@ -63,6 +71,8 @@ class TranslationCache:
             for i, text in enumerate(texts):
                 if i < len(translated_texts):
                     self.cache[source_lang][target_lang][text] = translated_texts[i]
+            
+            self._enforce_limit(source_lang, target_lang)
 
     def save_to_disk(self):
         with self._cache_lock:
