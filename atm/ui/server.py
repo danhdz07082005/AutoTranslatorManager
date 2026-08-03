@@ -86,7 +86,15 @@ class ATMHandler(BaseHTTPRequestHandler):
             return
 
         if os.path.isfile(filepath):
-            mime_type = mimetypes.guess_type(filepath)[0] or 'application/octet-stream'
+            if filepath.endswith('.css'):
+                mime_type = 'text/css'
+            elif filepath.endswith('.js'):
+                mime_type = 'application/javascript'
+            elif filepath.endswith('.html'):
+                mime_type = 'text/html'
+            else:
+                mime_type = mimetypes.guess_type(filepath)[0] or 'application/octet-stream'
+                
             with open(filepath, 'rb') as f:
                 content = f.read()
             self.send_response(200)
