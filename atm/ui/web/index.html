@@ -129,6 +129,25 @@
         </main>
     </div>
 
+    <!-- Grid Editor Modal -->
+    <div id="editor-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 800px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3 data-i18n="editor.title">Trình quản lý Cache (Grid Editor)</h3>
+                <button class="btn-close" onclick="closeEditorModal()">×</button>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <input type="text" id="editor-search" class="themed-input" placeholder="Tìm kiếm văn bản gốc hoặc bản dịch..." style="width: 100%; padding: 8px;" oninput="filterEditorCache()">
+            </div>
+            <div id="editor-list" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                <!-- Dữ liệu cache sẽ được render ở đây -->
+            </div>
+            <div style="margin-top: 16px; text-align: right; color: var(--text-secondary); font-size: 12px;">
+                *Sửa trực tiếp bản dịch ở đây sẽ có tác dụng ngay lập tức cho lần dịch tiếp theo.
+            </div>
+        </div>
+    </div>
+
     <!-- Glossary Modal -->
     <div id="glossary-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">

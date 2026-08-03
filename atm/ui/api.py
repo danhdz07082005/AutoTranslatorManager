@@ -181,30 +181,18 @@ class BackendApi:
         elif profile.engine == "Unity IL2CPP":
             payload_dir = os.path.join(base_dir, "data", "payloads", "bepinex_il2cpp")
             engine_req = "Unity IL2CPP"
+        elif profile.engine == "RenPy":
+            payload_dir = os.path.join(base_dir, "data", "payloads", "renpy_realtime")
+            engine_req = "RenPy"
         else:
-            return {
-                "status": "error",
-                "error": f"Engine {profile.engine} chưa được hỗ trợ auto-deploy."
-            }
+            return {"status": "error", "error": f"Engine {profile.engine} is not supported for real-time launch."}
 
-        if not os.path.exists(payload_dir) or len(os.listdir(payload_dir)) == 0:
-            os.makedirs(payload_dir, exist_ok=True)
-            return {
-                "status": "error",
-                "error": f"Thiếu Payload BepInEx cho {engine_req}!\nLỗi hệ thống: Thư mục payload trống."
-            }
-
+        # Khởi tạo Deployer
         deployer = GameDeployer()
         self.active_deployers[game_id] = deployer
-
-        # Chạy deploy trên thread riêng để không block UI
-        def run_deploy():
-            try:
-                deployer.deploy_and_launch(profile, payload_dir)
-            except Exception as e:
-                logger.error(f"Deploy error: {e}")
-
-        t = threading.Thread(target=run_deploy, daemon=True)
+        
+        # Deploy và Launch (chạy background)
+        t = threading.Thread(target=deployer.deploy_and_launch, args=(profile, payload_dir), daemon=True)
         t.start()
         return {"status": "success"}
 

@@ -40,6 +40,8 @@ class ATMHandler(BaseHTTPRequestHandler):
             query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             game_id = query.get('game_id', [''])[0]
             self._json_response(self.api.get_translation_status(game_id))
+        elif self.path == '/api/cache/get':
+            self._json_response(self.api.get_cache_entries())
         else:
             self._json_response({"error": "Not found"}, 404)
 
@@ -61,6 +63,14 @@ class ATMHandler(BaseHTTPRequestHandler):
 
         elif self.path == '/api/games/delete':
             result = self.api.delete_game(body.get('game_id', ''))
+            self._json_response(result)
+            
+        elif self.path == '/api/cache/update':
+            result = self.api.update_cache_entry(
+                body.get('game_id', ''),
+                body.get('key', ''),
+                body.get('value', '')
+            )
             self._json_response(result)
 
         elif self.path == '/api/settings':

@@ -127,7 +127,93 @@ function changeUILanguage() {
     updateUIStrings();
 }
 
-// --- Khởi tạo ---
+// --- Grid Editor Modal ---
+let editorCacheData = {};
+let currentEditorGameId = null;
+
+async function openEditorModal(gameId) {
+    currentEditorGameId = gameId;
+    document.getElementById('editor-modal').style.display = 'flex';
+    document.getElementById('editor-search').value = '';
+    
+    try {
+        const res = await fetch('/api/cache/get');
+        const data = await res.json();
+        if (data.status === 'success') {
+            editorCacheData = data.data || {};
+            renderEditorList();
+        } else {
+            showToast('Lỗi tải Cache', true);
+        }
+    } catch (e) {
+        showToast('Lỗi kết nối Cache', true);
+    }
+}
+
+function closeEditorModal() {
+    document.getElementById('editor-modal').style.display = 'none';
+}
+
+function renderEditorList() {
+    const list = document.getElementById('editor-list');
+    list.innerHTML = '';
+    const query = document.getElementById('editor-search').value.toLowerCase();
+    
+    let count = 0;
+    for (const [key, value] of Object.entries(editorCacheData)) {
+        if (query && !key.toLowerCase().includes(query) && !value.toLowerCase().includes(query)) {
+            continue;
+        }
+        
+        const item = document.createElement('div');
+        item.style = 'display: flex; gap: 8px; align-items: stretch; background: rgba(0,0,0,0.1); padding: 8px; border-radius: 6px;';
+        
+        item.innerHTML = `
+            <textarea class="themed-input" readonly style="flex: 1; resize: none; min-height: 40px;">${key}</textarea>
+            <textarea class="themed-input" id="edit-val-${count}" style="flex: 1; resize: vertical; min-height: 40px;">${value}</textarea>
+            <button class="btn-icon" style="align-self: center;" onclick="saveCacheEntry('${key.replace(/'/g, "\\'")}', 'edit-val-${count}')">💾</button>
+        `;
+        list.appendChild(item);
+        count++;
+        
+        // Giới hạn hiển thị 100 kết quả để không ngốn RAM
+        if (count >= 100) {
+            const more = document.createElement('div');
+            more.style = 'text-align: center; color: var(--text-secondary); padding: 8px;';
+            more.innerText = `... và nhiều kết quả khác (Sử dụng Tìm kiếm để lọc thêm)`;
+            list.appendChild(more);
+            break;
+        }
+    }
+    if(count === 0) {
+        list.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--text-secondary);">Không tìm thấy dữ liệu.</div>';
+    }
+}
+
+function filterEditorCache() {
+    renderEditorList();
+}
+
+async function saveCacheEntry(key, textareaId) {
+    const newVal = document.getElementById(textareaId).value;
+    try {
+        const res = await apiPost('cache/update', {
+            game_id: currentEditorGameId,
+            key: key,
+            value: newVal
+        });
+        if (res.status === 'success') {
+            editorCacheData[key] = newVal;
+            showToast('Đã lưu thay đổi vào Cache!');
+        } else {
+            showToast('Lỗi lưu Cache', true);
+        }
+    } catch (e) {
+        showToast('Lỗi kết nối', true);
+    }
+}
+
+// --- Init ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log('[ATM] Frontend ready. Loading data...');
     const langSelect = document.getElementById('ui-lang-select');
@@ -333,6 +419,9 @@ async function loadGames() {
                 </button>
                 <button class="btn-icon" onclick="openGlossaryModal('${game.id}')" title="Từ điển cá nhân (Glossary)">
                     📖
+                </button>
+                <button class="btn-icon" onclick="openEditorModal('${game.id}')" title="Chỉnh sửa văn bản (Grid Editor)">
+                    📝
                 </button>
                 <button class="btn-delete" onclick="deleteGame('${game.id}')" title="Xóa game">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
