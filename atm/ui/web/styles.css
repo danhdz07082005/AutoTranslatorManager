@@ -389,7 +389,8 @@ header h1 {
     position: fixed;
     bottom: 30px;
     right: 30px;
-    background: rgba(15, 23, 42, 0.95);
+    background: var(--input-bg);
+    color: var(--text-primary);
     border: 1px solid var(--accent);
     backdrop-filter: blur(10px);
     padding: 14px 24px;

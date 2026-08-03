@@ -27,8 +27,12 @@ const i18nData = {
         "settings.subtitle": "Tùy chỉnh trải nghiệm Launcher",
         "settings.dark_mode": "Giao diện tối (Dark Mode)",
         "settings.dark_mode_desc": "Bật/tắt chế độ màn hình nền tối.",
+        "settings.accent_color": "Màu chủ đạo (Accent Color)",
+        "settings.accent_color_desc": "Tùy chỉnh màu sắc cá nhân hóa cho Launcher.",
         "settings.ui_lang": "Ngôn ngữ giao diện",
-        "settings.ui_lang_desc": "Chọn ngôn ngữ hiển thị cho Launcher."
+        "settings.ui_lang_desc": "Chọn ngôn ngữ hiển thị cho Launcher.",
+        "library.empty_title": "Chưa có game nào",
+        "library.empty_desc": "Bấm \"+ Add Game\" để bắt đầu."
     },
     en: {
         "menu.library": "Library",
@@ -50,10 +54,41 @@ const i18nData = {
         "settings.subtitle": "Customize Launcher Experience",
         "settings.dark_mode": "Dark Mode",
         "settings.dark_mode_desc": "Toggle dark background mode.",
+        "settings.accent_color": "Accent Color",
+        "settings.accent_color_desc": "Customize personalized color for the Launcher.",
         "settings.ui_lang": "UI Language",
-        "settings.ui_lang_desc": "Select the display language for the Launcher."
+        "settings.ui_lang_desc": "Select the display language for the Launcher.",
+        "library.empty_title": "No games found",
+        "library.empty_desc": "Click \"+ Add Game\" to get started."
     }
 };
+
+function hexToRgb(hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+function applyAccentColor(hexColor) {
+    if (!hexColor) return;
+    document.documentElement.style.setProperty('--accent', hexColor);
+    document.documentElement.style.setProperty('--accent-hover', hexColor); // Lười pha màu tối hơn, cứ dùng hex
+    const rgb = hexToRgb(hexColor);
+    if (rgb) {
+        document.documentElement.style.setProperty('--accent-glow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`);
+    }
+}
+
+function changeAccentColor() {
+    const picker = document.getElementById('accent-color-picker');
+    const color = picker.value;
+    applyAccentColor(color);
+    localStorage.setItem('accent_color', color);
+    showToast('🎨 Đã lưu màu chủ đạo');
+}
 
 function updateUIStrings() {
     const dict = i18nData[currentUILang] || i18nData['vi'];
@@ -79,6 +114,14 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('[ATM] Frontend ready. Loading data...');
     const langSelect = document.getElementById('ui-lang-select');
     if (langSelect) langSelect.value = currentUILang;
+    
+    const savedAccent = localStorage.getItem('accent_color');
+    if (savedAccent) {
+        const picker = document.getElementById('accent-color-picker');
+        if (picker) picker.value = savedAccent;
+        applyAccentColor(savedAccent);
+    }
+
     updateUIStrings();
     
     loadSettings();
@@ -219,10 +262,11 @@ async function loadGames() {
                     <line x1="8" y1="21" x2="16" y2="21"></line>
                     <line x1="12" y1="17" x2="12" y2="21"></line>
                 </svg>
-                <h3>Chưa có game nào</h3>
-                <p style="margin-top: 8px;">Bấm "+ Add Game" để bắt đầu.</p>
+                <h3 data-i18n="library.empty_title">Chưa có game nào</h3>
+                <p style="margin-top: 8px;" data-i18n="library.empty_desc">Bấm "+ Add Game" để bắt đầu.</p>
             </div>
         `;
+        updateUIStrings();
         return;
     }
 
@@ -279,6 +323,7 @@ async function loadGames() {
         `;
         container.appendChild(card);
     });
+    updateUIStrings();
 }
 
 // --- Language Change ---
