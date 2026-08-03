@@ -4,10 +4,83 @@
    ============================================= */
 
 let languages = {};
+let currentUILang = localStorage.getItem('ui_lang') || 'vi';
+
+const i18nData = {
+    vi: {
+        "menu.library": "Library",
+        "menu.plugins": "Plugins",
+        "menu.settings": "Settings",
+        "menu.add_game": "Add Game",
+        "library.title": "My Library",
+        "library.subtitle": "Quản lý và khởi chạy game dịch tự động",
+        "plugins.title": "Plugin Marketplace",
+        "plugins.subtitle": "Cài đặt và quản lý bộ máy dịch",
+        "plugins.google_desc": "Miễn phí, nhanh, không cần API key.",
+        "plugins.installed": "✓ Đã cài",
+        "plugins.deepl_desc": "Chất lượng dịch cao. Cần nhập API key.",
+        "plugins.ready": "Sẵn sàng",
+        "plugins.deepl_placeholder": "Nhập DeepL API Key...",
+        "plugins.libre_desc": "Mã nguồn mở, tự host được, hoàn toàn miễn phí.",
+        "plugins.coming_soon": "Sắp có",
+        "settings.title": "Settings",
+        "settings.subtitle": "Tùy chỉnh trải nghiệm Launcher",
+        "settings.dark_mode": "Giao diện tối (Dark Mode)",
+        "settings.dark_mode_desc": "Bật/tắt chế độ màn hình nền tối.",
+        "settings.ui_lang": "Ngôn ngữ giao diện",
+        "settings.ui_lang_desc": "Chọn ngôn ngữ hiển thị cho Launcher."
+    },
+    en: {
+        "menu.library": "Library",
+        "menu.plugins": "Plugins",
+        "menu.settings": "Settings",
+        "menu.add_game": "Add Game",
+        "library.title": "My Library",
+        "library.subtitle": "Manage and launch auto-translated games",
+        "plugins.title": "Plugin Marketplace",
+        "plugins.subtitle": "Install and manage translation engines",
+        "plugins.google_desc": "Free, fast, no API key required.",
+        "plugins.installed": "✓ Installed",
+        "plugins.deepl_desc": "High quality translation. API key required.",
+        "plugins.ready": "Ready",
+        "plugins.deepl_placeholder": "Enter DeepL API Key...",
+        "plugins.libre_desc": "Open source, self-hosted, completely free.",
+        "plugins.coming_soon": "Coming Soon",
+        "settings.title": "Settings",
+        "settings.subtitle": "Customize Launcher Experience",
+        "settings.dark_mode": "Dark Mode",
+        "settings.dark_mode_desc": "Toggle dark background mode.",
+        "settings.ui_lang": "UI Language",
+        "settings.ui_lang_desc": "Select the display language for the Launcher."
+    }
+};
+
+function updateUIStrings() {
+    const dict = i18nData[currentUILang] || i18nData['vi'];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) el.innerText = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (dict[key]) el.placeholder = dict[key];
+    });
+}
+
+function changeUILanguage() {
+    const select = document.getElementById('ui-lang-select');
+    currentUILang = select.value;
+    localStorage.setItem('ui_lang', currentUILang);
+    updateUIStrings();
+}
 
 // --- Khởi tạo ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log('[ATM] Frontend ready. Loading data...');
+    const langSelect = document.getElementById('ui-lang-select');
+    if (langSelect) langSelect.value = currentUILang;
+    updateUIStrings();
+    
     loadSettings();
     loadLanguages();
     loadGames();
@@ -244,6 +317,19 @@ async function startGame(gameId, btnElement) {
         btnElement.classList.remove('running');
         showToast('⏹ Game đã dừng');
         return;
+    }
+
+    // Validate DeepL API Key if selected
+    const card = document.getElementById(`card-${gameId}`);
+    if (card) {
+        const transSelect = card.querySelector('[data-lang-type="translator"]');
+        if (transSelect && transSelect.value === 'deepl') {
+            const apiKey = document.getElementById('deepl-api-key').value;
+            if (!apiKey || apiKey.trim() === '') {
+                showToast('❌ Lỗi: Bạn chưa nhập DeepL API Key trong mục Settings / Plugins!', true);
+                return;
+            }
+        }
     }
 
     // Start

@@ -19,21 +19,21 @@
             <ul class="nav-links">
                 <li class="active" data-target="library-view">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                    Library
+                    <span data-i18n="menu.library">Library</span>
                 </li>
                 <li data-target="marketplace-view">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                    Plugins
+                    <span data-i18n="menu.plugins">Plugins</span>
                 </li>
                 <li data-target="settings-view">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    Settings
+                    <span data-i18n="menu.settings">Settings</span>
                 </li>
             </ul>
 
             <div class="bottom-action">
                 <button class="btn-primary" id="add-game-btn">
-                    <span>+</span> Add Game
+                    <span>+</span> <span data-i18n="menu.add_game">Add Game</span>
                 </button>
             </div>
         </nav>
@@ -44,8 +44,8 @@
             <!-- Library View -->
             <section id="library-view" class="view-section active">
                 <header>
-                    <h1>My Library</h1>
-                    <p class="subtitle">Quản lý và khởi chạy game dịch tự động</p>
+                    <h1 data-i18n="library.title">My Library</h1>
+                    <p class="subtitle" data-i18n="library.subtitle">Quản lý và khởi chạy game dịch tự động</p>
                 </header>
                 
                 <div class="games-grid" id="games-container">
@@ -56,32 +56,32 @@
             <!-- Plugins View -->
             <section id="marketplace-view" class="view-section hidden">
                 <header>
-                    <h1>Plugin Marketplace</h1>
-                    <p class="subtitle">Cài đặt và quản lý bộ máy dịch</p>
+                    <h1 data-i18n="plugins.title">Plugin Marketplace</h1>
+                    <p class="subtitle" data-i18n="plugins.subtitle">Cài đặt và quản lý bộ máy dịch</p>
                 </header>
                 <div class="plugins-list">
                     <div class="plugin-card">
                         <div class="plugin-info">
                             <h3>Google Translate</h3>
-                            <p>Miễn phí, nhanh, không cần API key.</p>
-                            <span class="badge installed">✓ Đã cài</span>
+                            <p data-i18n="plugins.google_desc">Miễn phí, nhanh, không cần API key.</p>
+                            <span class="badge installed" data-i18n="plugins.installed">✓ Đã cài</span>
                         </div>
                     </div>
                     <div class="plugin-card" style="flex-direction: column; align-items: stretch; gap: 12px;">
                         <div class="plugin-info" style="display: flex; justify-content: space-between; width: 100%;">
                             <div>
                                 <h3>DeepL AI</h3>
-                                <p>Chất lượng dịch cao. Cần nhập API key.</p>
+                                <p data-i18n="plugins.deepl_desc">Chất lượng dịch cao. Cần nhập API key.</p>
                             </div>
-                            <span class="badge installed">Sẵn sàng</span>
+                            <span class="badge installed" data-i18n="plugins.ready">Sẵn sàng</span>
                         </div>
-                        <input type="text" id="deepl-api-key" placeholder="Nhập DeepL API Key..." onchange="saveSettings()" style="padding: 10px; border-radius: 6px; width: 100%;" class="themed-input">
+                        <input type="text" id="deepl-api-key" placeholder="Nhập DeepL API Key..." onchange="saveSettings()" style="padding: 10px; border-radius: 6px; width: 100%;" class="themed-input" data-i18n-placeholder="plugins.deepl_placeholder">
                     </div>
                     <div class="plugin-card">
                         <div class="plugin-info">
                             <h3>LibreTranslate</h3>
-                            <p>Mã nguồn mở, tự host được, hoàn toàn miễn phí.</p>
-                            <span class="badge">Sắp có</span>
+                            <p data-i18n="plugins.libre_desc">Mã nguồn mở, tự host được, hoàn toàn miễn phí.</p>
+                            <span class="badge" data-i18n="plugins.coming_soon">Sắp có</span>
                         </div>
                     </div>
                 </div>
@@ -90,19 +90,29 @@
             <!-- Settings View -->
             <section id="settings-view" class="view-section hidden">
                 <header>
-                    <h1>Settings</h1>
-                    <p class="subtitle">Tùy chỉnh trải nghiệm Launcher</p>
+                    <h1 data-i18n="settings.title">Settings</h1>
+                    <p class="subtitle" data-i18n="settings.subtitle">Tùy chỉnh trải nghiệm Launcher</p>
                 </header>
                 <div class="settings-card">
                     <div class="setting-item">
                         <div>
-                            <h4>Giao diện tối (Dark Mode)</h4>
-                            <p>Bật/tắt chế độ màn hình nền tối.</p>
+                            <h4 data-i18n="settings.dark_mode">Giao diện tối (Dark Mode)</h4>
+                            <p data-i18n="settings.dark_mode_desc">Bật/tắt chế độ màn hình nền tối.</p>
                         </div>
                         <label class="switch">
                             <input type="checkbox" id="theme-toggle" onchange="saveSettings()">
                             <span class="slider"></span>
                         </label>
+                    </div>
+                    <div class="setting-item">
+                        <div>
+                            <h4 data-i18n="settings.ui_lang">Ngôn ngữ giao diện</h4>
+                            <p data-i18n="settings.ui_lang_desc">Chọn ngôn ngữ hiển thị cho Launcher.</p>
+                        </div>
+                        <select id="ui-lang-select" onchange="changeUILanguage()" class="lang-select" style="width: 150px;">
+                            <option value="vi">Tiếng Việt</option>
+                            <option value="en">English</option>
+                        </select>
                     </div>
                 </div>
             </section>

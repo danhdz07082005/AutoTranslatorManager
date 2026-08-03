@@ -12,6 +12,7 @@
     --danger-hover: #dc2626;
     --success: #10b981;
     --input-bg: rgba(15, 23, 42, 0.6);
+    --badge-bg: rgba(255, 255, 255, 0.06);
 }
 
 body.theme-light {
@@ -23,6 +24,7 @@ body.theme-light {
     --border-color: rgba(0, 0, 0, 0.1);
     --accent-glow: rgba(59, 130, 246, 0.3);
     --input-bg: rgba(255, 255, 255, 0.8);
+    --badge-bg: rgba(0, 0, 0, 0.06);
 }
 
 body.theme-light .slider {
@@ -283,9 +285,9 @@ header h1 {
 .lang-select {
     width: 100%;
     padding: 8px 10px;
-    background: rgba(15, 23, 42, 0.6);
+    background: var(--input-bg);
     color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     font-size: 12px;
     font-family: inherit;
@@ -305,7 +307,7 @@ header h1 {
 }
 
 .lang-select option {
-    background: #1e293b;
+    background: var(--bg-base);
     color: var(--text-primary);
 }
 
@@ -438,7 +440,7 @@ header h1 {
     font-size: 11px;
     padding: 4px 10px;
     border-radius: 4px;
-    background: rgba(255,255,255,0.06);
+    background: var(--badge-bg);
     color: var(--text-secondary);
 }
 .badge.installed {
