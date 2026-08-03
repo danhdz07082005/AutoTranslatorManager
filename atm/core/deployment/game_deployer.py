@@ -34,6 +34,19 @@ class GameDeployer:
             return
 
         self._deployed_items = copy_payload(payload_dir, game_dir)
+        
+        # Tạo file thông báo cho user
+        info_file = os.path.join(game_dir, "ATM_IS_RUNNING.txt")
+        try:
+            with open(info_file, "w", encoding="utf-8") as f:
+                f.write("==== AUTO TRANSLATOR MANAGER ====\n")
+                f.write("Launcher đang chạy và đã tự động copy các file dịch thuật tạm thời vào đây.\n")
+                f.write("Khi bạn tắt game, toàn bộ các file này (bao gồm cả thư mục BepInEx) sẽ TỰ ĐỘNG BỊ XÓA sạch sẽ.\n")
+                f.write("Nếu bạn lỡ tắt đột ngột Launcher, bạn có thể tự tay xóa thư mục BepInEx và winhttp.dll mà không ảnh hưởng gì tới game gốc.\n")
+            self._deployed_items.append(info_file)
+        except Exception:
+            pass
+
         EventBus.publish(SystemEvents.DEPLOYMENT_FINISHED, self._deployed_items)
 
         # 2. Launch

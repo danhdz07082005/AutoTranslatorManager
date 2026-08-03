@@ -1,6 +1,6 @@
 @echo off
 echo Dang khoi dong Auto Translator Manager...
 echo Dang kiem tra va cai dat thu vien neu thieu...
-pip install -e . > nul 2>&1
+pip install -r requirements.txt > nul 2>&1
 python run_app.py
 pause
