@@ -23,7 +23,8 @@ Auto Translator Manager (ATM) được thiết kế để tách biệt bộ máy
 ## 🛠️ Công Nghệ Sử Dụng
 
 - **Python 3.12+**
-- **CustomTkinter** (Giao diện Dark-mode hiện đại).
+- **Web UI (HTML/CSS/JS)** (Giao diện web hiện đại, hỗ trợ Light/Dark Mode).
+- **Trình quản lý Engine dịch thuật** (Hỗ trợ Google Translate, DeepL API).
 - **Pytest** (Tự động kiểm thử).
 - **Ruff, Black, MyPy** (Quản lý chất lượng mã nguồn).
 

@@ -67,12 +67,15 @@
                             <span class="badge installed">✓ Đã cài</span>
                         </div>
                     </div>
-                    <div class="plugin-card">
-                        <div class="plugin-info">
-                            <h3>DeepL AI</h3>
-                            <p>Chất lượng dịch cao. Cần API key hoặc tài khoản Pro.</p>
-                            <span class="badge">Sắp có</span>
+                    <div class="plugin-card" style="flex-direction: column; align-items: stretch; gap: 12px;">
+                        <div class="plugin-info" style="display: flex; justify-content: space-between; width: 100%;">
+                            <div>
+                                <h3>DeepL AI</h3>
+                                <p>Chất lượng dịch cao. Cần nhập API key.</p>
+                            </div>
+                            <span class="badge installed">Sẵn sàng</span>
                         </div>
+                        <input type="text" id="deepl-api-key" placeholder="Nhập DeepL API Key..." onchange="saveSettings()" style="padding: 10px; border-radius: 6px; width: 100%;" class="themed-input">
                     </div>
                     <div class="plugin-card">
                         <div class="plugin-info">
@@ -100,13 +103,6 @@
                             <input type="checkbox" id="theme-toggle" onchange="saveSettings()">
                             <span class="slider"></span>
                         </label>
-                    </div>
-                    <div class="setting-item" style="display: flex; flex-direction: column; align-items: stretch; gap: 10px;">
-                        <div>
-                            <h4>DeepL API Key</h4>
-                            <p>Nhập API Key hợp lệ của DeepL để dịch thuật chất lượng cao.</p>
-                        </div>
-                        <input type="text" id="deepl-api-key" placeholder="Nhập DeepL API Key..." onchange="saveSettings()" style="padding: 10px; background: rgba(15, 23, 42, 0.6); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 6px; width: 100%;">
                     </div>
                 </div>
             </section>
