@@ -1,0 +1,42 @@
+name: Build ATM Executable
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Build with PyInstaller
+      run: |
+        pyinstaller --name "AutoTranslatorManager" --noconsole --add-data "atm/ui/web;atm/ui/web" --add-data "data/payloads;data/payloads" run_app.py
+
+    - name: Prepare Release Folder
+      run: |
+        mkdir release
+        move dist\AutoTranslatorManager release\
+        copy README.md release\AutoTranslatorManager\
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: AutoTranslatorManager-Windows
+        path: release/AutoTranslatorManager/
