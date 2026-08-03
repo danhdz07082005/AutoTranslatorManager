@@ -1,16 +1,19 @@
 import sys
 import os
-import tempfile
-import webview
+import threading
+import webbrowser
+import time
 
-# Tăng recursion limit để tránh lỗi AccessibilityObject trên Windows (.NET backend)
+# Tăng recursion limit để tránh lỗi (dù không còn dùng pywebview nhưng cứ giữ cho chắc)
 sys.setrecursionlimit(10000)
 
-# Đảm bảo thư mục cha được nạp vào sys.path để tránh lỗi ModuleNotFoundError
+# Đảm bảo thư mục cha được nạp vào sys.path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from atm.utils.logger import get_logger
 from atm.container.bootstrap import bootstrap_app
+from atm.ui.api import BackendApi
+from atm.ui.server import create_server
 
 def main() -> None:
     logger = get_logger(__name__, "launcher.log")
@@ -19,54 +22,45 @@ def main() -> None:
     logger.info("   AUTO TRANSLATOR MANAGER LAUNCHING     ")
     logger.info("=========================================")
     
-    # Bootstrap application (DI, Plugins, EventBus)
+    # Bootstrap application
     bootstrap_app()
     
-    # Khởi tạo Web UI Backend API
-    from atm.ui.api import BackendApi
+    # Khởi tạo API
     api = BackendApi()
     
-    # Tính toán đường dẫn tới index.html
-    if getattr(sys, 'frozen', False):
-        base_path = sys._MEIPASS
-    else:
-        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        
-    html_path = os.path.join(base_path, 'atm', 'ui', 'web', 'index.html')
+    # Khởi tạo HTTP Server trên cổng ngẫu nhiên 
+    # (hoặc cố định, nhưng để tránh xung đột cổng thì dùng cổng động)
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('', 0))
+    port = s.getsockname()[1]
+    s.close()
+
+    logger.info(f"Starting local HTTP server on port {port}")
+    server = create_server(port, api)
     
-    # Tạo thư mục tạm riêng cho WebView2 user data (tránh lỗi "resource in use")
-    storage_path = tempfile.mkdtemp(prefix="atm_webview_")
+    # Chạy server ở thread riêng
+    t = threading.Thread(target=server.serve_forever, daemon=True)
+    t.start()
     
-    # Tạo cửa sổ WebView
-    window = webview.create_window(
-        title='Auto Translator Manager', 
-        url=html_path, 
-        js_api=api,
-        width=1000,
-        height=650,
-        min_size=(800, 500)
-    )
-    api.set_window(window)
+    # Mở trình duyệt mặc định
+    url = f"http://127.0.0.1:{port}"
+    logger.info(f"Mở trình duyệt: {url}")
+    time.sleep(0.5) # Chờ server sẵn sàng
+    webbrowser.open(url)
     
-    # Chạy WebView
-    # private_mode=True (mặc định) = tạo thư mục tạm mỗi lần chạy, không bị khóa
-    # storage_path = thư mục riêng cho WebView2 data, tránh xung đột
+    print(f"\n[ATM] Giao dien dang chay tai: {url}")
+    print("[ATM] Vui long KHONG dong cua so dong lenh nay trong luc su dung!")
+    print("[ATM] (Dong cua so nay se tat hoan toan ung dung)\n")
+    
+    # Giữ main thread sống
     try:
-        webview.start(debug=False, storage_path=storage_path)
-    except Exception as e:
-        logger.error(f"WebView failed: {e}")
-        logger.info("Thử mở trình duyệt thay thế...")
-        # Fallback: mở bằng trình duyệt mặc định
-        import webbrowser
-        webbrowser.open(f"file:///{html_path}")
-        input("Nhấn Enter để thoát...")
-    finally:
-        # Dọn thư mục tạm
-        try:
-            import shutil
-            shutil.rmtree(storage_path, ignore_errors=True)
-        except Exception:
-            pass
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        logger.info("Tat server...")
+        server.shutdown()
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()

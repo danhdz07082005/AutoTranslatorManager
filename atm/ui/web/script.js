@@ -1,40 +1,34 @@
 /* =============================================
    ATM - Auto Translator Manager
-   Frontend Logic (pywebview bridge)
+   Frontend Logic (HTTP API Fetch)
    ============================================= */
 
-let apiReady = false;
 let languages = {};
 
 // --- Khởi tạo ---
-function initApp() {
-    if (apiReady) return;
-    apiReady = true;
-    console.log('[ATM] pywebview API ready. Loading data...');
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('[ATM] Frontend ready. Loading data...');
     loadLanguages();
     loadGames();
     setupAddGameButton();
+});
+
+// --- API Helpers ---
+async function apiGet(endpoint) {
+    const response = await fetch(`/api/${endpoint}`);
+    if (!response.ok) throw new Error(response.statusText);
+    return await response.json();
 }
 
-// Xử lý 2 trường hợp: pywebview bắn event TRƯỚC hoặc SAU DOMContentLoaded
-if (window.pywebview && window.pywebview.api) {
-    document.addEventListener('DOMContentLoaded', initApp);
-} else {
-    window.addEventListener('pywebviewready', () => {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initApp);
-        } else {
-            initApp();
-        }
+async function apiPost(endpoint, data = {}) {
+    const response = await fetch(`/api/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
     });
+    if (!response.ok) throw new Error(response.statusText);
+    return await response.json();
 }
-
-// Fallback: nếu sau 3 giây vẫn chưa ready, thử lại
-setTimeout(() => {
-    if (!apiReady && window.pywebview && window.pywebview.api) {
-        initApp();
-    }
-}, 3000);
 
 // --- Navigation ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -63,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- Load Languages ---
 async function loadLanguages() {
     try {
-        languages = await window.pywebview.api.get_languages();
+        languages = await apiGet('languages');
     } catch (e) {
         console.error('[ATM] Failed to load languages:', e);
         languages = {"auto": "Auto Detect", "ja": "Japanese", "vi": "Vietnamese", "en": "English"};
@@ -88,7 +82,7 @@ function setupAddGameButton() {
         btn.disabled = true;
         btn.innerHTML = '<span>⏳</span> Đang chọn...';
         try {
-            const result = await window.pywebview.api.add_game();
+            const result = await apiPost('games/add');
             if (result && result.status === 'success') {
                 showToast(`✅ Đã thêm: ${result.game.game_name}`);
                 loadGames();
@@ -111,7 +105,7 @@ async function loadGames() {
 
     let games;
     try {
-        games = await window.pywebview.api.get_games();
+        games = await apiGet('games');
     } catch (e) {
         container.innerHTML = '<div class="empty-state"><h3>Lỗi kết nối API</h3></div>';
         return;
@@ -191,7 +185,11 @@ async function onLangChange(selectEl) {
     const outputSelect = card.querySelector('[data-lang-type="output"]');
 
     try {
-        await window.pywebview.api.update_game_lang(gameId, inputSelect.value, outputSelect.value);
+        await apiPost('games/update-lang', {
+            game_id: gameId,
+            input_lang: inputSelect.value,
+            output_lang: outputSelect.value
+        });
         showToast('🌐 Đã cập nhật ngôn ngữ');
     } catch (e) {
         showToast('Lỗi cập nhật ngôn ngữ', true);
@@ -204,7 +202,7 @@ async function startGame(gameId, btnElement) {
         // Stop
         btnElement.innerText = '⏳ Đang dừng...';
         try {
-            await window.pywebview.api.stop_game(gameId);
+            await apiPost('games/stop', { game_id: gameId });
         } catch(e) {}
         btnElement.innerText = '▶ Start Translation';
         btnElement.classList.remove('running');
@@ -217,7 +215,7 @@ async function startGame(gameId, btnElement) {
     btnElement.classList.add('running');
 
     try {
-        const result = await window.pywebview.api.start_game(gameId);
+        const result = await apiPost('games/start', { game_id: gameId });
         if (result.status === 'success') {
             showToast('🚀 Game đã khởi chạy! Bấm lại để dừng.');
             btnElement.innerText = '⏹ Stop Game';
@@ -238,7 +236,7 @@ async function deleteGame(gameId) {
     if (!confirm('Bạn chắc chắn muốn xóa game này?')) return;
 
     try {
-        const result = await window.pywebview.api.delete_game(gameId);
+        const result = await apiPost('games/delete', { game_id: gameId });
         if (result.status === 'success') {
             showToast('🗑 Đã xóa game');
             // Xóa card khỏi DOM ngay lập tức

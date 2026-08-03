@@ -50,31 +50,23 @@ class BackendApi:
         return [p.model_dump() for p in profiles]
 
     def add_game(self):
-        """Mở hộp thoại file bằng pywebview native, tạo profile và trả kết quả"""
-        if not self.window:
-            return {"error": "Window not initialized"}
-
+        """Mở hộp thoại file bằng tkinter, tạo profile và trả kết quả"""
         try:
-            file_types = ('Executable Files (*.exe)', 'All files (*.*)')
-            result = self.window.create_file_dialog(
-                webview.OPEN_DIALOG,
-                allow_multiple=False,
-                file_types=file_types
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes('-topmost', True)
+            file_path = filedialog.askopenfilename(
+                title="Chọn file chạy của game (.exe)",
+                filetypes=[("Executable Files", "*.exe"), ("All files", "*.*")]
             )
-        except Exception:
-            # Fallback nếu OPEN_DIALOG bị deprecated
-            try:
-                result = self.window.create_file_dialog(
-                    dialog_type=webview.OPEN_DIALOG,
-                    allow_multiple=False,
-                    file_types=('Executable Files (*.exe)', 'All files (*.*)')
-                )
-            except Exception as e:
-                logger.error(f"File dialog error: {e}")
-                return {"error": str(e)}
+            root.destroy()
+        except Exception as e:
+            logger.error(f"File dialog error: {e}")
+            return {"error": str(e)}
 
-        if result and len(result) > 0:
-            file_path = result[0]
+        if file_path:
             game_name = os.path.basename(os.path.dirname(file_path))
             if not game_name:
                 game_name = os.path.splitext(os.path.basename(file_path))[0]

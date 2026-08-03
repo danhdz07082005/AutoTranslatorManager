@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 from atm.ui.api import BackendApi
 
 
-def test_full_api_game_lifecycle_flow(temp_profiles_dir, tmp_path):
+def test_full_api_game_lifecycle_flow(temp_profiles_dir, tmp_path, monkeypatch):
     """
     Test tích hợp luồng nghiệp vụ hoàn chỉnh của BackendApi:
     add_game -> get_games -> update_game_lang -> delete_game
@@ -18,11 +18,10 @@ def test_full_api_game_lifecycle_flow(temp_profiles_dir, tmp_path):
     data_dir.mkdir()
     (data_dir / "il2cpp_data").mkdir()
 
-    # Khởi tạo BackendApi và giả lập window dialog của pywebview
+    # Khởi tạo BackendApi và giả lập tkinter dialog
     api = BackendApi()
-    mock_window = MagicMock()
-    mock_window.create_file_dialog.return_value = [str(exe_file)]
-    api.set_window(mock_window)
+    mock_askopenfilename = MagicMock(return_value=str(exe_file))
+    monkeypatch.setattr("tkinter.filedialog.askopenfilename", mock_askopenfilename)
 
     # STEP 1: Thêm game mới (add_game)
     add_res = api.add_game()
@@ -59,13 +58,12 @@ def test_full_api_game_lifecycle_flow(temp_profiles_dir, tmp_path):
     assert len(remaining_games) == 0
 
 
-def test_add_game_cancelled_dialog(temp_profiles_dir):
+def test_add_game_cancelled_dialog(temp_profiles_dir, monkeypatch):
     """Kiểm tra khi người dùng hủy chọn file trong hộp thoại dialog."""
     api = BackendApi()
-    mock_window = MagicMock()
-    # Giả lập người dùng bấm Cancel (trả về danh sách rỗng hoặc None)
-    mock_window.create_file_dialog.return_value = []
-    api.set_window(mock_window)
+    # Giả lập người dùng bấm Cancel (trả về chuỗi rỗng)
+    mock_askopenfilename = MagicMock(return_value="")
+    monkeypatch.setattr("tkinter.filedialog.askopenfilename", mock_askopenfilename)
 
     result = api.add_game()
     assert result is None
