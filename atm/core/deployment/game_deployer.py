@@ -47,6 +47,30 @@ class GameDeployer:
         except Exception:
             pass
 
+        # Ghi đè cấu hình ngôn ngữ (Tạo file AutoTranslatorConfig.ini)
+        config_dir = os.path.join(game_dir, "BepInEx", "config")
+        os.makedirs(config_dir, exist_ok=True)
+        config_file = os.path.join(config_dir, "AutoTranslatorConfig.ini")
+        try:
+            from_lang = profile.input_lang if profile.input_lang and profile.input_lang != "auto" else "ja"
+            to_lang = profile.output_lang if profile.output_lang else "vi"
+            
+            with open(config_file, "w", encoding="utf-8") as f:
+                f.write("[Service]\n")
+                f.write("Endpoint=GoogleTranslateV2\n\n")
+                f.write("[General]\n")
+                f.write(f"Language={to_lang}\n")
+                f.write(f"FromLanguage={from_lang}\n\n")
+                f.write("[Behaviour]\n")
+                f.write("MaxCharactersPerTranslation=1000\n")
+                f.write("IgnoreWhitespaceInDialogue=False\n")
+            
+            # Thêm thư mục config vào danh sách để xóa (nếu trước đó không có config)
+            if config_dir not in self._deployed_items:
+                self._deployed_items.append(config_dir)
+        except Exception as e:
+            logger.error(f"Failed to create config file: {e}")
+
         EventBus.publish(SystemEvents.DEPLOYMENT_FINISHED, self._deployed_items)
 
         # 2. Launch

@@ -110,19 +110,24 @@ class BackendApi:
         from atm.core.deployment.game_deployer import GameDeployer
 
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        payload_dir = os.path.join(base_dir, "data", "payloads", "bepinex")
+        
+        if profile.engine == "Unity Mono":
+            payload_dir = os.path.join(base_dir, "data", "payloads", "bepinex_mono")
+            engine_req = "Unity Mono"
+        elif profile.engine == "Unity IL2CPP":
+            payload_dir = os.path.join(base_dir, "data", "payloads", "bepinex_il2cpp")
+            engine_req = "Unity IL2CPP"
+        else:
+            return {
+                "status": "error",
+                "error": f"Engine {profile.engine} chưa được hỗ trợ auto-deploy."
+            }
 
         if not os.path.exists(payload_dir) or len(os.listdir(payload_dir)) == 0:
             os.makedirs(payload_dir, exist_ok=True)
-            readme_path = os.path.join(payload_dir, "README.txt")
-            if not os.path.exists(readme_path):
-                with open(readme_path, "w", encoding="utf-8") as f:
-                    f.write("HƯỚNG DẪN CÀI ĐẶT BEPINEX + XUNITY AUTOTRANSLATOR\n")
-                    f.write("Bạn cần chép tất cả các file của BepInEx (thư mục BepInEx, winhttp.dll, doorstop_config.ini) vào thư mục này.\n")
-                    f.write("Khi ấn Start, Launcher sẽ tự động copy các file từ thư mục này vào game của bạn và xóa chúng đi khi bạn chơi xong.\n")
             return {
                 "status": "error",
-                "error": f"Thiếu Payload BepInEx!\n1. Hãy copy BepInEx + XUnity AutoTranslator vào thư mục: {payload_dir}\n2. Bấm lại nút Start."
+                "error": f"Thiếu Payload BepInEx cho {engine_req}!\nLỗi hệ thống: Thư mục payload trống."
             }
 
         deployer = GameDeployer()
