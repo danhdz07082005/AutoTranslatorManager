@@ -65,14 +65,19 @@ class RPGMakerTranslator:
 
     def translate_game(self, profile: GameProfile, progress_callback: Callable[[int, int, str], None] = None) -> bool:
         """
-        Dịch toàn bộ file JSON trong thư mục www/data.
+        Dịch toàn bộ file JSON trong thư mục data của RPG Maker.
         """
         game_dir = os.path.dirname(profile.exe_path)
-        data_dir = os.path.join(game_dir, "www", "data")
-        backup_dir = os.path.join(game_dir, "www", "data_backup")
         
-        if not os.path.exists(data_dir):
-            logger.error(f"Cannot find www/data in {game_dir}")
+        # MV thường có `www/data`, MZ thường có `data` ở ngay thư mục gốc
+        if os.path.exists(os.path.join(game_dir, "www", "data")):
+            data_dir = os.path.join(game_dir, "www", "data")
+            backup_dir = os.path.join(game_dir, "www", "data_backup")
+        elif os.path.exists(os.path.join(game_dir, "data")):
+            data_dir = os.path.join(game_dir, "data")
+            backup_dir = os.path.join(game_dir, "data_backup")
+        else:
+            logger.error(f"Cannot find data folder in {game_dir} or {game_dir}/www")
             return False
             
         # Tạo backup nếu chưa có
