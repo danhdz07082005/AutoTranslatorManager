@@ -39,6 +39,8 @@ class BackendApi:
         self.window = None
         self.active_deployers = {}  # game_id -> deployer
         self.translation_status = {}  # game_id -> {"progress": int, "total": int, "message": str, "done": bool}
+        self.cancel_flags = {}  # game_id -> bool
+        self._lock = threading.Lock()
 
     def set_window(self, window):
         self.window = window
@@ -133,6 +135,7 @@ class BackendApi:
         if profile.engine == "RPG Maker":
             # Dịch Offline cho RPG Maker
             self.translation_status[game_id] = {"progress": 0, "total": 100, "message": "Đang chuẩn bị dịch RPG Maker...", "done": False}
+            self.cancel_flags[game_id] = False
             
             def run_offline_translate():
                 translator = RPGMakerTranslator()
@@ -140,8 +143,15 @@ class BackendApi:
                 def progress_cb(current, total, msg):
                     self.translation_status[game_id] = {"progress": current, "total": total, "message": msg, "done": current >= total}
                 
+                def is_cancelled():
+                    return self.cancel_flags.get(game_id, False)
+
                 try:
-                    success = translator.translate_game(profile, progress_callback=progress_cb)
+                    success = translator.translate_game(profile, progress_callback=progress_cb, is_cancelled=is_cancelled)
+                    if self.cancel_flags.get(game_id, False):
+                        self.translation_status[game_id] = {"progress": 0, "total": 1, "message": "Đã huỷ dịch ngang chừng.", "done": True, "error": True}
+                        return
+
                     if success:
                         self.translation_status[game_id]["done"] = True
                         self.translation_status[game_id]["message"] = "Dịch xong! Bắt đầu chạy game..."
@@ -204,7 +214,13 @@ class BackendApi:
         return status
 
     def stop_game(self, game_id):
-        """Dừng game đang chạy"""
+        """Dừng game đang chạy hoặc dừng tiến trình dịch"""
+        # Nếu đang dịch, báo cờ cancel
+        if game_id in self.translation_status and not self.translation_status[game_id].get("done"):
+            self.cancel_flags[game_id] = True
+            logger.info(f"Cancelled translation for: {game_id}")
+            return {"status": "success"}
+
         if game_id in self.active_deployers:
             deployer = self.active_deployers[game_id]
             deployer.monitor.stop()

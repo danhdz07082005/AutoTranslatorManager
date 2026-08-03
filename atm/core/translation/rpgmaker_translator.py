@@ -63,7 +63,7 @@ class RPGMakerTranslator:
                 data[i] = self._replace_texts_in_json(data[i], translated_map)
         return data
 
-    def translate_game(self, profile: GameProfile, progress_callback: Callable[[int, int, str], None] = None) -> bool:
+    def translate_game(self, profile: GameProfile, progress_callback: Callable[[int, int, str], None] = None, is_cancelled: Callable[[], bool] = None) -> bool:
         """
         Dịch toàn bộ file JSON trong thư mục data của RPG Maker.
         """
@@ -85,7 +85,7 @@ class RPGMakerTranslator:
             logger.info("Creating backup for RPG Maker data...")
             shutil.copytree(data_dir, backup_dir)
             
-        json_files = [f for f in os.listdir(data_dir) if f.endswith(".json")]
+        json_files = [f for f in os.listdir(backup_dir) if f.endswith(".json")]
         total_files = len(json_files)
         
         translator_id = getattr(profile, "translator", "google")
@@ -95,12 +95,18 @@ class RPGMakerTranslator:
             translator = GoogleTranslator()
         
         for idx, filename in enumerate(json_files):
-            file_path = os.path.join(data_dir, filename)
+            if is_cancelled and is_cancelled():
+                logger.info("Translation cancelled by user.")
+                return False
+
+            source_file_path = os.path.join(backup_dir, filename)
+            dest_file_path = os.path.join(data_dir, filename)
+            
             if progress_callback:
                 progress_callback(idx, total_files, f"Đang dịch {filename}...")
                 
             try:
-                with open(file_path, "r", encoding="utf-8-sig") as f:
+                with open(source_file_path, "r", encoding="utf-8-sig") as f:
                     content = f.read()
                     if not content:
                         continue
@@ -117,6 +123,10 @@ class RPGMakerTranslator:
                     batch_size = 50
                     translated_texts = []
                     for i in range(0, len(unique_texts), batch_size):
+                        if is_cancelled and is_cancelled():
+                            logger.info("Translation cancelled by user midway during batch.")
+                            return False
+                            
                         batch = unique_texts[i:i+batch_size]
                         res = translator.translate_batch(batch, target_lang=profile.output_lang, source_lang=profile.input_lang)
                         translated_texts.extend(res)
@@ -127,7 +137,7 @@ class RPGMakerTranslator:
                     new_data = self._replace_texts_in_json(data, translated_map)
                     
                     # Ghi đè lại file
-                    with open(file_path, "w", encoding="utf-8") as f:
+                    with open(dest_file_path, "w", encoding="utf-8") as f:
                         json.dump(new_data, f, ensure_ascii=False)
                         
             except Exception as e:
