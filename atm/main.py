@@ -36,6 +36,8 @@ def main() -> None:
     port = s.getsockname()[1]
     s.close()
 
+    api.server_port = port
+    os.environ['ATM_SERVER_PORT'] = str(port)
     logger.info(f"Starting local HTTP server on port {port}")
     server = create_server(port, api)
     

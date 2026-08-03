@@ -277,3 +277,81 @@ class BackendApi:
         cache.save_to_disk()
         logger.info(f"Updated cache manually: {key} -> {value}")
         return {"status": "success"}
+
+    def translate_texts_realtime(self, game_id, texts):
+        """Xử lý dịch mảng văn bản thời gian thực từ payload game (RenPy/Unity)"""
+        profile = self.profile_repo.get_by_id(game_id)
+        if not profile:
+            return {"status": "error", "error": "Game not found"}
+        
+        source_lang = profile.input_lang if profile.input_lang else "auto"
+        target_lang = profile.output_lang if profile.output_lang else "vi"
+        glossary = getattr(profile, "glossary", {})
+        if not glossary: glossary = {}
+
+        from atm.core.translation.cache_manager import TranslationCache
+        cache = TranslationCache()
+        
+        translated_texts = []
+        uncached_texts = []
+        uncached_indices = []
+
+        # 1. Tra từ điển cá nhân & Cache trước
+        for i, text in enumerate(texts):
+            if not text.strip():
+                translated_texts.append(text)
+                continue
+                
+            # Tra Từ điển cá nhân
+            if text in glossary:
+                translated_texts.append(glossary[text])
+                continue
+                
+            # Tra Cache
+            cached_val = cache.get(source_lang, target_lang, text)
+            if cached_val:
+                translated_texts.append(cached_val)
+                continue
+                
+            # Chưa có trong cache/glossary
+            translated_texts.append(text) # Giữ chỗ
+            uncached_texts.append(text)
+            uncached_indices.append(i)
+            
+        # 2. Dịch các từ chưa có qua API
+        if uncached_texts:
+            translator_name = getattr(profile, "translator", "google")
+            
+            from atm.core.translation.translators import GoogleTranslator, DeepLTranslator
+            if translator_name == "deepl":
+                from atm.storage.repositories.settings_repository import SettingsRepository
+                settings = SettingsRepository().load()
+                deepl_key = getattr(settings, "deepl_api_key", "")
+                if deepl_key:
+                    translator = DeepLTranslator(deepl_key)
+                else:
+                    translator = GoogleTranslator()
+            else:
+                translator = GoogleTranslator()
+                
+            try:
+                newly_translated = translator.translate_batch(uncached_texts, target_lang, source_lang)
+                
+                # Lưu ngược vào mảng kết quả và vào Cache
+                cache_updates_src = []
+                cache_updates_tgt = []
+                for idx_in_uncached, original_idx in enumerate(uncached_indices):
+                    if idx_in_uncached < len(newly_translated):
+                        final_text = newly_translated[idx_in_uncached]
+                        translated_texts[original_idx] = final_text
+                        cache_updates_src.append(uncached_texts[idx_in_uncached])
+                        cache_updates_tgt.append(final_text)
+                
+                if cache_updates_src:
+                    cache.set_batch(source_lang, target_lang, cache_updates_src, cache_updates_tgt)
+                    cache.save_to_disk()
+                    
+            except Exception as e:
+                logger.error(f"Realtime translation error: {e}")
+                
+        return {"status": "success", "translated_texts": translated_texts}
