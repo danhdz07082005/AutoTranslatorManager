@@ -24,12 +24,13 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt || pip install .
+        pip install -r requirements.txt
+        pip install customtkinter requests pydantic
         pip install pyinstaller
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --name AutoTranslator --onefile --windowed --collect-all customtkinter run_app.py
+        pyinstaller --name AutoTranslator --onefile --windowed --hidden-import customtkinter --hidden-import pydantic --hidden-import requests --collect-all customtkinter run_app.py
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
