@@ -126,12 +126,33 @@
         </main>
     </div>
 
-    <!-- Notification Toast -->
-    <div id="toast" class="toast">
-        <span id="toast-message">Notification</span>
+    <!-- Glossary Modal -->
+    <div id="glossary-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 data-i18n="glossary.title">Từ điển cá nhân (Glossary)</h3>
+                <button class="btn-close" onclick="closeGlossaryModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p data-i18n="glossary.desc" style="color: var(--text-secondary); margin-bottom: 12px; font-size: 13px;">Thêm các cặp từ để không bị dịch sai (VD: Tên nhân vật, Chiêu thức). Từ điển áp dụng riêng cho game này.</p>
+                <div id="glossary-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 12px;"></div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="glossary-source" class="themed-input" placeholder="Từ gốc (Tiếng Nhật)" style="flex: 1; padding: 8px; border-radius: 6px;">
+                    <input type="text" id="glossary-target" class="themed-input" placeholder="Dịch thành (Tiếng Việt)" style="flex: 1; padding: 8px; border-radius: 6px;">
+                    <button class="btn-primary" onclick="addGlossaryEntry()" style="width: auto; padding: 8px 16px;">Thêm</button>
+                </div>
+            </div>
+            <div class="modal-footer" style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
+                <button class="btn-delete" style="padding: 8px 16px;" onclick="closeGlossaryModal()">Đóng</button>
+                <button class="btn-start" style="width: auto; padding: 8px 16px;" onclick="saveGlossary()">Lưu thay đổi</button>
+            </div>
+        </div>
     </div>
 
-    <!-- JavaScript -->
+    <div id="toast" class="toast">
+        <span id="toast-message">Đã lưu cấu hình</span>
+    </div>
+    
     <script src="script.js"></script>
 </body>
 </html>

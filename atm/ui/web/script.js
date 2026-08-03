@@ -32,7 +32,9 @@ const i18nData = {
         "settings.ui_lang": "Ngôn ngữ giao diện",
         "settings.ui_lang_desc": "Chọn ngôn ngữ hiển thị cho Launcher.",
         "library.empty_title": "Chưa có game nào",
-        "library.empty_desc": "Bấm \"+ Add Game\" để bắt đầu."
+        "library.empty_desc": "Bấm \"+ Add Game\" để bắt đầu.",
+        "glossary.title": "Từ điển cá nhân (Glossary)",
+        "glossary.desc": "Thêm các cặp từ để không bị dịch sai (VD: Tên nhân vật, Chiêu thức). Từ điển áp dụng riêng cho game này."
     },
     en: {
         "menu.library": "Library",
@@ -59,7 +61,9 @@ const i18nData = {
         "settings.ui_lang": "UI Language",
         "settings.ui_lang_desc": "Select the display language for the Launcher.",
         "library.empty_title": "No games found",
-        "library.empty_desc": "Click \"+ Add Game\" to get started."
+        "library.empty_desc": "Click \"+ Add Game\" to get started.",
+        "glossary.title": "Custom Glossary",
+        "glossary.desc": "Add word pairs to prevent mistranslations (e.g., Character names, Skills). This glossary applies only to this game."
     }
 };
 
@@ -313,6 +317,9 @@ async function loadGames() {
                 <button class="btn-start" id="btn-start-${game.id}" onclick="startGame('${game.id}', this)">
                     ▶ Start Translation
                 </button>
+                <button class="btn-icon" onclick="openGlossaryModal('${game.id}')" title="Từ điển cá nhân (Glossary)">
+                    📖
+                </button>
                 <button class="btn-delete" onclick="deleteGame('${game.id}')" title="Xóa game">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline>
@@ -321,6 +328,8 @@ async function loadGames() {
                 </button>
             </div>
         `;
+        // Store glossary internally on the card element
+        card.dataset.glossary = JSON.stringify(game.glossary || {});
         container.appendChild(card);
     });
     updateUIStrings();

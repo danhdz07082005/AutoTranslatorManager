@@ -19,3 +19,4 @@ class GameProfile(BaseModel):
     translator: str = Field(default="google", description="ID của translator plugin")
     input_lang: str = Field(default="ja", description="Ngôn ngữ gốc")
     output_lang: str = Field(default="vi", description="Ngôn ngữ dịch")
+    glossary: dict = Field(default_factory=dict, description="Từ điển cá nhân (Original -> Translated)")

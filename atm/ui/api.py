@@ -107,8 +107,8 @@ class BackendApi:
 
         return None  # User cancelled
 
-    def update_game_settings(self, game_id, input_lang, output_lang, translator):
-        """Cập nhật ngôn ngữ và bộ dịch cho game"""
+    def update_game_settings(self, game_id, input_lang, output_lang, translator, glossary=None):
+        """Cập nhật ngôn ngữ, bộ dịch, và từ điển cá nhân cho game"""
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
@@ -117,6 +117,8 @@ class BackendApi:
         profile.output_lang = output_lang
         if translator:
             profile.translator = translator
+        if glossary is not None:
+            profile.glossary = glossary
         self.profile_repo.save(profile)
         logger.info(f"Updated settings for {profile.game_name}: {input_lang} -> {output_lang}, engine: {translator}")
         return {"status": "success"}

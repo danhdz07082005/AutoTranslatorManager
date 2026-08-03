@@ -128,7 +128,18 @@ class RPGMakerTranslator:
                             return False
                             
                         batch = unique_texts[i:i+batch_size]
-                        res = translator.translate_batch(batch, target_lang=profile.output_lang, source_lang=profile.input_lang)
+                        
+                        # Apply Custom Glossary (Từ điển cá nhân)
+                        processed_batch = []
+                        glossary = getattr(profile, "glossary", {})
+                        for text in batch:
+                            processed_text = text
+                            if glossary:
+                                for k, v in glossary.items():
+                                    processed_text = processed_text.replace(k, v)
+                            processed_batch.append(processed_text)
+                            
+                        res = translator.translate_batch(processed_batch, target_lang=profile.output_lang, source_lang=profile.input_lang)
                         translated_texts.extend(res)
                         
                     translated_map = dict(zip(unique_texts, translated_texts))
