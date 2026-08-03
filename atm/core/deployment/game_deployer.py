@@ -33,8 +33,14 @@ class GameDeployer:
             logger.error(f"Payload directory not found: {payload_dir}")
             EventBus.publish(SystemEvents.ERROR_OCCURRED, "Payload not found!")
             return
+            
+        # Đối với RenPy, payload (file .rpy) phải nằm trong thư mục con 'game'
+        dest_dir = game_dir
+        if profile.engine == "RenPy":
+            dest_dir = os.path.join(game_dir, "game")
+            os.makedirs(dest_dir, exist_ok=True)
 
-        self._deployed_items = copy_payload(payload_dir, game_dir)
+        self._deployed_items = copy_payload(payload_dir, dest_dir)
         
         # Tạo file thông báo cho user
         info_file = os.path.join(game_dir, "ATM_IS_RUNNING.txt")
@@ -59,28 +65,44 @@ class GameDeployer:
             # Load API Key if needed
             settings = SettingsRepository().load()
             
-            is_deepl = getattr(profile, "translator", "google") == "deepl"
-            endpoint = "DeepLTranslateLegitimate" if is_deepl else "GoogleTranslateV2"
-            
-            with open(config_file, "w", encoding="utf-8") as f:
-                f.write("[Service]\n")
-                f.write(f"Endpoint={endpoint}\n\n")
-                f.write("[General]\n")
-                f.write(f"Language={to_lang}\n")
-                f.write(f"FromLanguage={from_lang}\n\n")
-                f.write("[Behaviour]\n")
-                f.write("MaxCharactersPerTranslation=1000\n")
-                f.write("IgnoreWhitespaceInDialogue=False\n")
+            # Ghi file AutoTranslatorConfig.ini cho BepInEx (Unity)
+            if profile.engine != "RenPy":
+                is_deepl = getattr(profile, "translator", "google") == "deepl"
+                endpoint = "DeepLTranslateLegitimate" if is_deepl else "GoogleTranslateV2"
                 
-                if is_deepl:
-                    f.write("\n[DeepLLegitimate]\n")
-                    f.write("ExecutableLocation=\n")
-                    f.write(f"ApiKey={settings.deepl_api_key}\n")
-                    f.write("Free=True\n")
-            
-            # Thêm thư mục config vào danh sách để xóa (nếu trước đó không có config)
-            if config_dir not in self._deployed_items:
-                self._deployed_items.append(config_dir)
+                with open(config_file, "w", encoding="utf-8") as f:
+                    f.write("[Service]\n")
+                    f.write(f"Endpoint={endpoint}\n\n")
+                    f.write("[General]\n")
+                    f.write(f"Language={to_lang}\n")
+                    f.write(f"FromLanguage={from_lang}\n\n")
+                    f.write("[Behaviour]\n")
+                    f.write("MaxCharactersPerTranslation=1000\n")
+                    f.write("IgnoreWhitespaceInDialogue=False\n")
+                    
+                    if is_deepl:
+                        f.write("\n[DeepLLegitimate]\n")
+                        f.write("ExecutableLocation=\n")
+                        f.write(f"ApiKey={settings.deepl_api_key}\n")
+                        f.write("Free=True\n")
+                
+                # Thêm thư mục config vào danh sách để xóa (nếu trước đó không có config)
+                if config_dir not in self._deployed_items:
+                    self._deployed_items.append(config_dir)
+                    
+            else:
+                # Ghi cấu hình cho RenPy Real-time hook
+                renpy_config_file = os.path.join(dest_dir, "transconfig.rpy")
+                if os.path.exists(renpy_config_file):
+                    with open(renpy_config_file, "r", encoding="utf-8") as f:
+                        rpy_content = f.read()
+                    
+                    # Update target_language in config
+                    rpy_content = rpy_content.replace('default persistent.target_languages = {"google" : "vi", "bing" : "vi", "freellm" : "vi", "yandex" : "vi"}',
+                                                      f'default persistent.target_languages = {{"google" : "{to_lang}", "bing" : "{to_lang}", "freellm" : "{to_lang}", "yandex" : "{to_lang}"}}')
+                                                      
+                    with open(renpy_config_file, "w", encoding="utf-8") as f:
+                        f.write(rpy_content)
         except Exception as e:
             logger.error(f"Failed to create config file: {e}")
 
