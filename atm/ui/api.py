@@ -137,8 +137,8 @@ class BackendApi:
 
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
-        if profile.engine == "RPG Maker":
-            # Dịch Offline
+        if profile.engine in ("RPG Maker", "RenPy"):
+            # Dịch Offline cho RPG Maker và RenPy
             self.translation_status[game_id] = {"progress": 0, "total": 100, "message": f"Đang chuẩn bị dịch {profile.engine}...", "done": False}
             self.cancel_flags[game_id] = False
             
@@ -162,8 +162,8 @@ class BackendApi:
 
                     if success:
                         self.translation_status[game_id]["done"] = True
-                        self.translation_status[game_id]["message"] = "Dịch xong! Bắt đầu chạy game..."
-                        # Chạy game sau khi dịch xong
+                        self.translation_status[game_id]["message"] = "Dịch xong! Đang khởi động game..."
+                        # Chạy game sau khi dịch xong (không cần payload cho offline)
                         deployer = GameDeployer()
                         self.active_deployers[game_id] = deployer
                         deployer.deploy_and_launch(profile, None)
@@ -183,9 +183,6 @@ class BackendApi:
         elif profile.engine == "Unity IL2CPP":
             payload_dir = os.path.join(base_dir, "data", "payloads", "bepinex_il2cpp")
             engine_req = "Unity IL2CPP"
-        elif profile.engine == "RenPy":
-            payload_dir = os.path.join(base_dir, "data", "payloads", "renpy_realtime")
-            engine_req = "RenPy"
         else:
             return {"status": "error", "error": f"Engine {profile.engine} is not supported for real-time launch."}
 

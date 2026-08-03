@@ -114,10 +114,16 @@ class RenPyTranslator:
                             line_indices.append(i)
                             prefixes.append(prefix)
                             
-                # Dịch text theo batch
+                # Dịch text theo batch (có tích hợp Cache)
                 if texts_to_translate:
                     batch_size = 50
                     glossary = getattr(profile, "glossary", {})
+                    if not glossary: glossary = {}
+                    
+                    from atm.core.translation.cache_manager import TranslationCache
+                    cache = TranslationCache()
+                    source_lang = profile.input_lang if profile.input_lang else "auto"
+                    target_lang = profile.output_lang if profile.output_lang else "vi"
                     
                     for start in range(0, len(texts_to_translate), batch_size):
                         if is_cancelled and is_cancelled():
@@ -125,19 +131,46 @@ class RenPyTranslator:
                             
                         batch = texts_to_translate[start:start+batch_size]
                         
-                        # Apply Glossary
-                        processed_batch = []
-                        for t in batch:
-                            pt = t
-                            if glossary:
-                                for k, v in glossary.items():
-                                    pt = pt.replace(k, v)
-                            processed_batch.append(pt)
-                            
-                        res = translator.translate_batch(processed_batch, target_lang=profile.output_lang, source_lang=profile.input_lang)
+                        # Tách batch thành cached vs uncached
+                        cached_results = {}
+                        uncached_texts = []
+                        uncached_batch_indices = []
+                        
+                        for bi, t in enumerate(batch):
+                            # Tra glossary trước
+                            if t in glossary:
+                                cached_results[bi] = glossary[t]
+                                continue
+                            # Tra cache
+                            cached_val = cache.get(source_lang, target_lang, t)
+                            if cached_val:
+                                cached_results[bi] = cached_val
+                                continue
+                            uncached_texts.append(t)
+                            uncached_batch_indices.append(bi)
+                        
+                        # Dịch phần chưa có cache
+                        uncached_results = []
+                        if uncached_texts:
+                            uncached_results = translator.translate_batch(uncached_texts, target_lang=target_lang, source_lang=source_lang)
+                            # Lưu vào cache
+                            cache.set_batch(source_lang, target_lang, uncached_texts, uncached_results)
+                            cache.save_to_disk()
+                        
+                        # Ghép lại kết quả theo đúng thứ tự
+                        final_results = [None] * len(batch)
+                        for bi, val in cached_results.items():
+                            final_results[bi] = val
+                        for ui, bi in enumerate(uncached_batch_indices):
+                            if ui < len(uncached_results):
+                                final_results[bi] = uncached_results[ui]
+                            else:
+                                final_results[bi] = batch[bi]  # fallback
                         
                         # Cập nhật lại vào lines
-                        for i, translated in enumerate(res):
+                        for i, translated in enumerate(final_results):
+                            if translated is None:
+                                translated = batch[i]
                             idx_in_lines = line_indices[start + i]
                             pref = prefixes[start + i]
                             # Escaping quotes
