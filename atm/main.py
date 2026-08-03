@@ -1,5 +1,6 @@
 import sys
 import os
+import tempfile
 import webview
 
 # Tăng recursion limit để tránh lỗi AccessibilityObject trên Windows (.NET backend)
@@ -33,6 +34,9 @@ def main() -> None:
         
     html_path = os.path.join(base_path, 'atm', 'ui', 'web', 'index.html')
     
+    # Tạo thư mục tạm riêng cho WebView2 user data (tránh lỗi "resource in use")
+    storage_path = tempfile.mkdtemp(prefix="atm_webview_")
+    
     # Tạo cửa sổ WebView
     window = webview.create_window(
         title='Auto Translator Manager', 
@@ -44,8 +48,25 @@ def main() -> None:
     )
     api.set_window(window)
     
-    # Chạy WebView - dùng private_mode=False để tránh lỗi COM trên một số máy Windows
-    webview.start(debug=False, private_mode=False)
+    # Chạy WebView
+    # private_mode=True (mặc định) = tạo thư mục tạm mỗi lần chạy, không bị khóa
+    # storage_path = thư mục riêng cho WebView2 data, tránh xung đột
+    try:
+        webview.start(debug=False, storage_path=storage_path)
+    except Exception as e:
+        logger.error(f"WebView failed: {e}")
+        logger.info("Thử mở trình duyệt thay thế...")
+        # Fallback: mở bằng trình duyệt mặc định
+        import webbrowser
+        webbrowser.open(f"file:///{html_path}")
+        input("Nhấn Enter để thoát...")
+    finally:
+        # Dọn thư mục tạm
+        try:
+            import shutil
+            shutil.rmtree(storage_path, ignore_errors=True)
+        except Exception:
+            pass
 
 if __name__ == "__main__":
     main()
