@@ -1310,7 +1310,7 @@ init -999 python:
         import json
         import random
         import urllib2
-        api_key = ""
+        api_key = "AIzaSyATBXajvzQLTDHEQbcpq0Ihe0vWDHmO520"
         url = "https://translate-pa.googleapis.com/v1/translateHtml"
         headers = {
             "Accept": "/",
@@ -2685,3 +2685,357 @@ init -999 python:
         socket.getaddrinfo = _patched_getaddrinfo
 init -998 python:
     # Helper to call the freellm API (used by accurate mode).
+    def call_freellm_chat(messages, urlindex=None, temperature=None, model_override=None):
+        import json
+        import random
+        import uuid
+        import string
+
+        if temperature is None:
+            temperature = persistent.temperature
+        if urlindex is None or urlindex == "random":
+            urlindex = random.randint(0, 1)
+
+        if model_override is None or model_override == "random":
+            model = random.choice(persistent.accurate_model_list)
+        else:
+            model = model_override
+
+        urls = [
+            "https://netwrck.com/api/chatpred_or",
+            "https://api.deepai.org/hacking_is_a_serious_crime"
+        ]
+        headers_list = [
+            {
+                'authority': 'netwrck.com',
+                'accept': '*/*',
+                'accept-language': 'en-US,en;q=0.9',
+                'content-type': 'application/json',
+                'origin': 'https://netwrck.com',
+                'referer': 'https://netwrck.com/',
+                'user-agent': random.choice(USER_AGENTS),
+                "DNT": "1",
+                "Sec-CH-UA": '"Not/A)Brand";v="99", "Google Chrome";v="127", "Chromium";v="127"',
+                "Sec-CH-UA-Mobile": "?0",
+                "Sec-CH-UA-Platform": 'Windows'
+            },
+            {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "api-key": "tryit-53926507126-2c8a2543c7b5638ca6b92b6e53ef2d2b",
+                "Accept": "*/*",
+                "Accept-Encoding": "gzip, deflate, br, zstd",
+                "Accept-Language": "en-US,en;q=0.9",
+                "User-Agent": random.choice(USER_AGENTS),
+                "DNT": "1",
+                "Sec-CH-UA": '"Not/A)Brand";v="99", "Google Chrome";v="127", "Chromium";v="127"',
+                "Sec-CH-UA-Mobile": "?0",
+                "Sec-CH-UA-Platform": 'Windows'
+            }
+        ]
+        url = urls[urlindex]
+        headers = headers_list[urlindex]
+
+        formatted_prompt = format_prompt(messages, add_special_tokens=True, do_continue=True)
+        data_payload = [
+            {
+                "query": formatted_prompt,
+                "examples": [],
+                "model_name": model,
+                "temperature": temperature,
+            },
+            {
+                "chat_style": "chat",
+                "chatHistory": json.dumps(messages),
+                "model": model,
+                "temperature": temperature,
+                "hacker_is_stinky": "very_stinky"
+            }
+        ]
+        data = data_payload[urlindex]
+        try:
+            if REQUESTS_AVAILABLE:
+                session = session_manager.get_session()
+                if urlindex in (0, 1):
+                    cookies = {"__Host-session": uuid.uuid4().hex, '__cf_bm': uuid.uuid4().hex}
+                    session.cookies.update(cookies)
+                if urlindex == 0:
+                    response = session.post(url, data=json.dumps(data), headers=headers,
+                                            proxies=session_manager._current_proxies, timeout=persistent.timeout)
+                    response.encoding = 'utf-8'
+                    return fix_unicode_escapes(response.text.strip())
+                else:
+                    response = session.post(url, headers=headers, data=data,
+                                            proxies=session_manager._current_proxies, timeout=persistent.timeout)
+                    return response.text.strip()
+            else:
+                import urllib2
+                import urllib
+                if urlindex == 0:
+                    req = urllib2.Request(url, json.dumps(data), headers)
+                else:
+                    req = urllib2.Request(url, urllib.urlencode(data), headers)
+                global urllib2_opener
+                response = urllib2_opener.open(req, timeout=persistent.timeout)
+                result = response.read()
+                if urlindex == 0:
+                    return fix_unicode_escapes(result.strip())
+                else:
+                    try:
+                        import gzip
+                        import StringIO
+                        buffer = StringIO.StringIO(result)
+                        f = gzip.GzipFile(fileobj=buffer)
+                        result = f.read()
+                    except:
+                        pass
+                    return result.strip()
+        except Exception as e:
+            print("accu error :", urlindex, model, e)
+
+    def call_LLM_chat(messages, original_texts, target_lang=persistent.target_languages["LLM"]):
+        try:
+            provider = "openai"
+            if REQUESTS_AVAILABLE:
+                translated_html = _llm_request_requests(messages, provider)
+            else:
+                translated_html = _llm_request_urllib2(messages, provider)
+            if not translated_html:
+                return original_texts
+            return translated_html
+        except Exception as e:
+            print(str(e))
+            return original_texts
+
+    
+
+    def translate_accurate_batch(texts, speakers, history_list, target_lang=persistent.target_languages["google"]):
+        if not texts:
+            return
+        try:
+            google_translations = []
+            originals = texts
+
+            history_text = "\n".join(history_list) if history_list else get_previous_dialogue()
+            combined_html, original_texts = text_to_comhtml(texts)
+            translated_combined_html = _send_batch_translation_request(combined_html, target_lang)
+            speaker_map = {idx: speakers[idx] if idx < len(speakers) else "unknown"  for idx in range(len(original_texts))}
+
+            translated_html = accurate_translate_batch_html(combined_html, translated_combined_html, original_texts,
+                                                            speaker_map, target_lang, history_text)
+            if persistent.translation_service == "LLM":
+                translated_texts = _parse_llm_response(translated_html, original_texts)
+            else:
+                translated_texts = comhtml_to_text(translated_html, original_texts)
+
+            if not isinstance(translated_texts, dict):
+                for text in texts:
+                    mdata.PENDING_TRANSLATIONS[text] = None
+                return
+            diff1 = list(set(texts) - set(translated_texts.keys()))
+            if len(diff1) > 0:
+                for text in diff1:
+                    mdata.PENDING_TRANSLATIONS[text] = None
+            if translated_texts != texts and len(texts) == len(list(translated_texts.keys())):
+                bad_patterns = ["src=", "meta name=", "rel=", "meta content="]
+                for original, translated in translated_texts.items():
+                    if any(pattern in translated for pattern in bad_patterns) or (''.join(original.split()).lower() == ''.join(translated.split()).lower()):
+                        mdata.PENDING_TRANSLATIONS[original] = None
+
+                process_translation_results(translated_texts)
+            else:
+                for text in texts:
+                    mdata.PENDING_TRANSLATIONS[text] = None
+        except Exception as e:
+            print("accurate batch error",str(e))
+            for text in texts:
+                mdata.PENDING_TRANSLATIONS[text] = None
+            return
+
+init 999 python:
+    _original_say_menu_text_filter = config.say_menu_text_filter
+
+    def translation_chain_filter(text):
+        current_text = text
+        if (not persistent.enable_translation) or (persistent.PRESCAN_FLAG == 0):
+            return current_text
+        if _original_say_menu_text_filter is not None:
+            try:
+                current_text = _original_say_menu_text_filter(text)
+            except Exception as e:
+                print("Original filter error: {}".format(e))
+
+        if current_text in mdata.translation_cache:
+            return current_text
+        if (current_text not in mdata.retry_texts_set) and (current_text not in mdata.PRESCAN_TEXTS) and (current_text not in mdata.translated_set):
+            mdata.PENDING_TRANSLATIONS[current_text] = None
+        return current_text
+
+    config.say_menu_text_filter = translation_chain_filter
+
+init 999 python:
+    def screenshot_and_compress(screenshot_path=None):
+        import os
+        if screenshot_path is None:
+            screenshot_path = os.path.join(renpy.config.savedir, "ocr_temp.jpg")
+        renpy.screenshot(screenshot_path)
+        if not os.path.exists(screenshot_path):
+            raise Exception("Screenshot failed")
+        return screenshot_path
+
+    def _ocr_space_api_urllib2(image_path, api_key="helloworld", engine=3):
+        import urllib
+        import urllib2
+        import base64
+        import json
+        with open(image_path, 'rb') as f:
+            image_data = f.read()
+        b64 = base64.b64encode(image_data)
+        b64 = b'data:image/jpeg;base64,' + b64
+        params = {
+            'OCREngine': engine,
+            'isTable': 'true',
+            'detectOrientation': 'true',
+            'scale': 'true',
+            'base64Image': b64
+        }
+        url = "https://api.ocr.space/parse/image"
+        headers = {'apikey': api_key}
+        req = urllib2.Request(url, urllib.urlencode(params), headers)
+        response = urllib2_opener.open(req, timeout=60)
+        return json.loads(response.read())
+
+    def ocr_space_api(image_path, api_key="helloworld", engine=3):
+        import json
+        url = "https://api.ocr.space/parse/image"
+        payload = {
+            'apikey': api_key,
+            'OCREngine': engine,
+            'isTable': 'true',
+            'detectOrientation': 'true',
+            'scale': 'true',
+        }
+        try:
+            if REQUESTS_AVAILABLE:
+                with open(image_path, 'rb') as f:
+                    files = {'file': f}
+                    session = session_manager.get_session()
+                    r = session.post(url, files=files, data=payload,
+                                    proxies=session_manager._current_proxies,
+                                    timeout=60)
+                    resp = r.json()
+                    parsed = resp.get('ParsedResults', [])
+                    if parsed:
+                        return parsed[0].get('ParsedText', '').strip()
+                    return resp
+            else:
+                resp = _ocr_space_api_urllib2(image_path, api_key, engine=3)
+                parsed = resp.get('ParsedResults', [])
+                if parsed:
+                    return parsed[0].get('ParsedText', '').strip()
+                return resp
+        except Exception as e:
+            renpy.notify("OCR request failed: " + str(e))
+            return str(e)
+
+    def ocr_invoke(image_path):
+        original_text = ocr_space_api(image_path, persistent.ocr_api_key, engine=3)
+        if not original_text:
+            renpy.notify("OCR failed to get original texts")
+            print("OCR failed to get original texts")
+            return
+        else:
+            renpy.notify("OCR results:{0}".format(original_text))
+            print("OCR results:", original_text)
+        renpy.show_screen("ocr_result_screen", original=original_text)
+
+    def ocr_screenshot_and_translate():
+        if not persistent.ocr_enabled:
+            return
+        temp_path = os.path.join(renpy.config.savedir, "ocr_temp.jpg")
+        image_path = screenshot_and_compress(temp_path)
+        print(image_path)
+        renpy.notify(image_path)
+        try:
+            renpy.invoke_in_thread(ocr_invoke, image_path)
+        except Exception as e:
+            renpy.notify("OCR Error: " + str(e))
+        finally:
+            try:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+            except:
+                pass
+
+    config.keymap["ocr_translate"] = ["ctrl_alt_K_o"]
+    config.underlay.append(renpy.Keymap(ocr_translate=Function(ocr_screenshot_and_translate)))
+
+screen ocr_result_screen(original):
+    modal True
+    zorder 2000
+    frame:
+        background "#000000aa"
+        xfill True
+        yfill True
+
+        vbox:
+            xalign 0.5
+            yalign 0.5
+            xsize int(0.9 * config.screen_width)
+            spacing 20
+            hbox:
+                xalign 0.5
+                label _("{}").format(persistent.translation_service) text_color "#ffffff"
+            viewport:
+                yinitial 0.0
+                scrollbars "vertical"
+                mousewheel True
+                xfill True
+                ymaximum 400
+                vbox:
+                    text original color "#ffffff"
+
+            null height 10
+            hbox:
+                xalign 0.5
+                textbutton _("Close") action Hide("ocr_result_screen")
+
+screen force_redraw():
+    timer .1 action Return()
+
+label _force_redraw:
+    call screen force_redraw
+    pause .1
+    return
+
+screen pep_hidden_marker():
+    zorder 999
+    vbox:
+        xalign persistent.x_button_pos
+        yalign persistent.y_button_pos
+        spacing 2
+        if persistent.show_toggle_button:
+            button:
+                xalign persistent.x_button_pos
+                yalign persistent.y_button_pos
+                xpadding 5
+                ypadding 5
+                text "<<<":
+                    if persistent.display_translation:
+                        color "#9a9af8"
+                    else:
+                        color "#f7a0a3ff"
+                action Function(toggle_translation)
+        if persistent.show_ocr_button and persistent.ocr_enabled:
+            button:
+                xpadding 5
+                ypadding 5
+                text "OCR":
+                    color "#9a9af8"
+                action Function(ocr_screenshot_and_translate)
+        if persistent.show_translation_settings_button and renpy.has_screen("translation_settings"):
+            button:
+                xpadding 5
+                ypadding 5
+                text "Settings":
+                    color "#9a9af8"
+                action Show("translation_settings")
