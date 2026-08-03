@@ -593,12 +593,13 @@ function showToast(message, isError = false) {
         toast.classList.remove('show');
     }, 3000);
 }
+
 let currentGlossaryGameId = null;
 let currentGlossaryData = {};
 
 function openGlossaryModal(gameId) {
     currentGlossaryGameId = gameId;
-    const btn = document.querySelector(utton[onclick="openGlossaryModal('')"]);
+    const btn = document.querySelector(`button[onclick="openGlossaryModal('${gameId}')"]`);
     if (btn && btn.parentElement.dataset.glossary) {
         currentGlossaryData = JSON.parse(btn.parentElement.dataset.glossary);
     } else {
@@ -618,11 +619,11 @@ function renderGlossaryList() {
     for (const [src, tgt] of Object.entries(currentGlossaryData)) {
         const row = document.createElement('div');
         row.style = "display: flex; gap: 8px; margin-bottom: 8px;";
-        row.innerHTML = 
-            <input type="text" class="themed-input" value="" readonly style="flex: 1; padding: 4px; border-radius: 4px;">
-            <input type="text" class="themed-input" value="" readonly style="flex: 1; padding: 4px; border-radius: 4px;">
-            <button class="btn-delete" style="padding: 4px 8px;" onclick="removeGlossaryEntry('')">X</button>
-        ;
+        row.innerHTML = `
+            <input type="text" class="themed-input" value="${src}" readonly style="flex: 1; padding: 4px; border-radius: 4px;">
+            <input type="text" class="themed-input" value="${tgt}" readonly style="flex: 1; padding: 4px; border-radius: 4px;">
+            <button class="btn-delete" style="padding: 4px 8px;" onclick="removeGlossaryEntry('${src}')">X</button>
+        `;
         list.appendChild(row);
     }
 }
@@ -652,13 +653,13 @@ async function saveGlossary() {
             glossary: currentGlossaryData
         });
         if (res.status === 'success') {
-            showToast('�� luu T? di?n c� nh�n!');
+            showToast('Đã lưu Từ điển cá nhân!');
             closeGlossaryModal();
             loadGames();
         } else {
-            showToast('L?i luu t? di?n', true);
+            showToast('Lỗi lưu từ điển', true);
         }
     } catch(e) {
-        showToast('L?i k?t n?i', true);
+        showToast('Lỗi kết nối', true);
     }
 }
