@@ -80,20 +80,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.startGame = async function(gameId, btnElement) {
+        if (btnElement.classList.contains('running')) {
+            // Stop game logic
+            const originalText = btnElement.getAttribute('data-original-text') || "Start Translation";
+            btnElement.innerText = "Stopping...";
+            await window.pywebview.api.stop_game(gameId);
+            btnElement.innerText = originalText;
+            btnElement.classList.remove('running');
+            showToast("Game stopped");
+            return;
+        }
+        
         // Optimistic UI update
-        const originalText = btnElement.innerText;
+        btnElement.setAttribute('data-original-text', btnElement.innerText);
         btnElement.innerText = "Deploying...";
         btnElement.classList.add('running');
         
         const result = await window.pywebview.api.start_game(gameId);
         
         if (result.status === 'success') {
-            showToast("Game launched with translation!");
-            btnElement.innerText = "Running";
-            // In a real app, you might listen to events from python to reset this when game closes
+            showToast("Game launched! Click again to stop.");
+            btnElement.innerText = "Stop Game";
         } else {
             showToast("Failed to launch: " + result.error, true);
-            btnElement.innerText = originalText;
+            btnElement.innerText = btnElement.getAttribute('data-original-text') || "Start Translation";
             btnElement.classList.remove('running');
         }
     };

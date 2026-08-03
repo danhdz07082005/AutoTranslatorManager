@@ -36,3 +36,12 @@ class ProcessMonitor:
             # Nếu khởi động thất bại, gọi dọn rác ngay lập tức
             on_exit_callback()
             return False
+
+    def stop(self) -> None:
+        """Dừng tiến trình nếu đang chạy."""
+        if self.process and self.process.poll() is None:
+            logger.info("Stopping process manually...")
+            try:
+                self.process.kill()
+            except Exception as e:
+                logger.error(f"Error killing process: {e}")

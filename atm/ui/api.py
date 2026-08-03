@@ -10,6 +10,7 @@ class BackendApi:
     def __init__(self):
         self.profile_repo = ProfileRepository()
         self.window = None
+        self.active_deployers = {} # game_id -> deployer
 
     def set_window(self, window):
         self.window = window
@@ -24,12 +25,25 @@ class BackendApi:
         if not self.window:
             return {"error": "Window not initialized"}
             
-        file_types = ('Executable Files (*.exe)', 'All files (*.*)')
-        result = self.window.create_file_dialog(
-            webview.OPEN_DIALOG, 
-            allow_multiple=False, 
-            file_types=file_types
+        import tkinter as tk
+        from tkinter import filedialog
+        
+        # Tạo hidden window để dùng filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+        
+        file_path = filedialog.askopenfilename(
+            title="Chọn file chạy của Game (.exe)",
+            filetypes=[("Executable Files", "*.exe"), ("All files", "*.*")]
         )
+        root.destroy()
+        
+        if file_path:
+            # Sửa lại thành list để xử lý bên dưới (để tương thích với logic cũ)
+            result = [file_path]
+        else:
+            result = None
         
         if result and len(result) > 0:
             file_path = result[0]
@@ -60,20 +74,43 @@ class BackendApi:
         if not profile:
             return {"status": "error", "error": "Game profile not found"}
             
-        # Emit event để Bootstrap bắt và chạy
-        EventBus.publish(SystemEvents.GAME_STARTING, profile)
+        from atm.core.deployment.game_deployer import GameDeployer
+        
+        payload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "payloads", "bepinex")
+        
+        if not os.path.exists(payload_dir):
+            return {"status": "error", "error": f"Chưa cài đặt Payload (BepInEx). Xin hãy tạo thư mục {payload_dir} và cho file vào!"}
+            
+        deployer = GameDeployer()
+        self.active_deployers[game_id] = deployer
+        deployer.deploy_and_launch(profile, payload_dir)
+        return {"status": "success"}
+        
+    def stop_game(self, game_id: str):
+        if game_id in self.active_deployers:
+            deployer = self.active_deployers[game_id]
+            deployer.monitor.stop()
+            del self.active_deployers[game_id]
         return {"status": "success"}
         
     def delete_game(self, game_id: str):
         """Xóa game"""
         # (TODO: Thêm hàm delete trong repository nếu chưa có)
         try:
-            self.profile_repo.delete(game_id)
-            return {"status": "success"}
-        except Exception as e:
-            # Fallback nếu chưa implement delete trong repo
+            # Fallback xoá triệt để: Xóa bằng ID và tìm cả tên cũ
             profiles = self.profile_repo.get_all()
-            profiles = [p for p in profiles if p.id != game_id]
-            self.profile_repo._profiles = {p.id: p for p in profiles}
-            self.profile_repo._save_all()
-            return {"status": "success"}
+            for p in profiles:
+                if p.id == game_id:
+                    self.profile_repo.delete(p.id)
+                    # Thử xoá cả tên cũ
+                    safe_name = "".join(c for c in p.game_name if c.isalnum() or c in (' ', '_')).strip().replace(' ', '_')
+                    old_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "profiles", f"{safe_name}.json")
+                    if os.path.exists(old_path):
+                        os.remove(old_path)
+                    
+                    new_profiles = [prof for prof in profiles if prof.id != game_id]
+                    self.profile_repo._profiles = {prof.id: prof for prof in new_profiles}
+                    return {"status": "success"}
+            return {"status": "error", "error": "Game not found"}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
