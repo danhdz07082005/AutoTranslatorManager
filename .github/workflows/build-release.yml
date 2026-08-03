@@ -29,7 +29,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --name AutoTranslator --onefile --windowed atm/main.py
+        pyinstaller --name AutoTranslator --onefile --windowed run_app.py
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
