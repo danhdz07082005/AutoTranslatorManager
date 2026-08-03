@@ -109,7 +109,10 @@
                             <h4 data-i18n="settings.accent_color">Màu chủ đạo (Accent Color)</h4>
                             <p data-i18n="settings.accent_color_desc">Tùy chỉnh màu sắc cá nhân hóa cho Launcher.</p>
                         </div>
-                        <input type="color" id="accent-color-picker" value="#3b82f6" onchange="changeAccentColor()" style="border: none; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; background: transparent;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="color" id="accent-color-picker" value="#3b82f6" onchange="changeAccentColor()" style="border: none; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; background: transparent;">
+                            <button onclick="resetAccentColor()" class="btn-icon" title="Trở về màu gốc" style="padding: 8px;">↺</button>
+                        </div>
                     </div>
                     <div class="setting-item">
                         <div>

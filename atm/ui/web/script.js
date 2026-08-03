@@ -78,12 +78,26 @@ function hexToRgb(hex) {
 
 function applyAccentColor(hexColor) {
     if (!hexColor) return;
-    document.documentElement.style.setProperty('--accent', hexColor);
-    document.documentElement.style.setProperty('--accent-hover', hexColor); // Lười pha màu tối hơn, cứ dùng hex
-    const rgb = hexToRgb(hexColor);
-    if (rgb) {
-        document.documentElement.style.setProperty('--accent-glow', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`);
+    const picker = document.getElementById('accent-color-picker');
+    const color = picker ? picker.value : '#3b82f6';
+    document.documentElement.style.setProperty('--accent', color);
+    const rgb = hexToRgb(color);
+    if(rgb) {
+        document.documentElement.style.setProperty('--accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
     }
+    localStorage.setItem('atm_accent', color);
+}
+
+function resetAccentColor() {
+    const defaultColor = '#3b82f6'; // Màu xanh nguyên bản
+    const picker = document.getElementById('accent-color-picker');
+    if (picker) {
+        picker.value = defaultColor;
+    }
+    document.documentElement.style.setProperty('--accent', defaultColor);
+    document.documentElement.style.setProperty('--accent-rgb', '59, 130, 246');
+    localStorage.removeItem('atm_accent');
+    showToast('Đã khôi phục màu mặc định');
 }
 
 function changeAccentColor() {
