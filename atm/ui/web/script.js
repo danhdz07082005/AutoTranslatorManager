@@ -1,16 +1,51 @@
+/* =============================================
+   ATM - Auto Translator Manager
+   Frontend Logic (pywebview bridge)
+   ============================================= */
+
+let apiReady = false;
+let languages = {};
+
+// --- Khởi tạo ---
+function initApp() {
+    if (apiReady) return;
+    apiReady = true;
+    console.log('[ATM] pywebview API ready. Loading data...');
+    loadLanguages();
+    loadGames();
+    setupAddGameButton();
+}
+
+// Xử lý 2 trường hợp: pywebview bắn event TRƯỚC hoặc SAU DOMContentLoaded
+if (window.pywebview && window.pywebview.api) {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    window.addEventListener('pywebviewready', () => {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+    });
+}
+
+// Fallback: nếu sau 3 giây vẫn chưa ready, thử lại
+setTimeout(() => {
+    if (!apiReady && window.pywebview && window.pywebview.api) {
+        initApp();
+    }
+}, 3000);
+
+// --- Navigation ---
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // --- Navigation Logic ---
     const navLinks = document.querySelectorAll('.nav-links li');
     const viewSections = document.querySelectorAll('.view-section');
 
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
-            // Update active state in sidebar
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
 
-            // Show corresponding view
             const targetId = link.getAttribute('data-target');
             viewSections.forEach(view => {
                 if (view.id === targetId) {
@@ -23,116 +58,225 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     });
+});
 
-    // --- PyWebView Ready Event ---
-    window.addEventListener('pywebviewready', () => {
-        // Load initial games
-        loadGames();
+// --- Load Languages ---
+async function loadLanguages() {
+    try {
+        languages = await window.pywebview.api.get_languages();
+    } catch (e) {
+        console.error('[ATM] Failed to load languages:', e);
+        languages = {"auto": "Auto Detect", "ja": "Japanese", "vi": "Vietnamese", "en": "English"};
+    }
+}
 
-        // Add Game Button Event
-        document.getElementById('add-game-btn').addEventListener('click', async () => {
+function buildLangOptions(selectedValue, excludeAuto) {
+    let html = '';
+    for (const [code, name] of Object.entries(languages)) {
+        if (excludeAuto && code === 'auto') continue;
+        const selected = code === selectedValue ? 'selected' : '';
+        html += `<option value="${code}" ${selected}>${name}</option>`;
+    }
+    return html;
+}
+
+// --- Add Game Button ---
+function setupAddGameButton() {
+    const btn = document.getElementById('add-game-btn');
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span> Đang chọn...';
+        try {
             const result = await window.pywebview.api.add_game();
             if (result && result.status === 'success') {
-                showToast(`Added: ${result.game.game_name}`);
+                showToast(`✅ Đã thêm: ${result.game.game_name}`);
                 loadGames();
             } else if (result && result.error) {
                 showToast(result.error, true);
             }
-        });
-    });
-
-    // --- API Interactions ---
-    async function loadGames() {
-        const gamesContainer = document.getElementById('games-container');
-        gamesContainer.innerHTML = ''; // Clear current
-
-        const games = await window.pywebview.api.get_games();
-
-        if (!games || games.length === 0) {
-            gamesContainer.innerHTML = `
-                <div class="empty-state">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                    <h3>No Games Added</h3>
-                    <p style="margin-top: 8px;">Click "+ Add Game" to get started.</p>
-                </div>
-            `;
-            return;
+        } catch (e) {
+            showToast('Lỗi khi thêm game: ' + e, true);
         }
+        btn.disabled = false;
+        btn.innerHTML = '<span>+</span> Add Game';
+    });
+}
 
-        games.forEach(game => {
-            const card = document.createElement('div');
-            card.className = 'game-card';
-            
-            card.innerHTML = `
+// --- Load Games ---
+async function loadGames() {
+    const container = document.getElementById('games-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    let games;
+    try {
+        games = await window.pywebview.api.get_games();
+    } catch (e) {
+        container.innerHTML = '<div class="empty-state"><h3>Lỗi kết nối API</h3></div>';
+        return;
+    }
+
+    if (!games || games.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                </svg>
+                <h3>Chưa có game nào</h3>
+                <p style="margin-top: 8px;">Bấm "+ Add Game" để bắt đầu.</p>
+            </div>
+        `;
+        return;
+    }
+
+    games.forEach(game => {
+        const card = document.createElement('div');
+        card.className = 'game-card';
+        card.id = `card-${game.id}`;
+
+        const engineBadge = game.engine !== 'Unknown'
+            ? `<span class="engine-badge">${game.engine}</span>`
+            : '';
+
+        card.innerHTML = `
+            <div class="game-header">
                 <div class="game-info">
                     <h3 title="${game.game_name}">${game.game_name}</h3>
-                    <p title="${game.exe_path}">${game.exe_path}</p>
+                    <p class="game-path" title="${game.exe_path}">${game.exe_path}</p>
                 </div>
-                <div class="game-actions">
-                    <button class="btn-start" onclick="startGame('${game.id}', this)">Start Translation</button>
-                    <button class="btn-delete" onclick="deleteGame('${game.id}')">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
+                ${engineBadge}
+            </div>
+            <div class="lang-row">
+                <div class="lang-group">
+                    <label>Ngôn ngữ gốc</label>
+                    <select class="lang-select" data-game-id="${game.id}" data-lang-type="input" onchange="onLangChange(this)">
+                        ${buildLangOptions(game.input_lang, false)}
+                    </select>
                 </div>
-            `;
-            gamesContainer.appendChild(card);
-        });
-    }
+                <span class="lang-arrow">→</span>
+                <div class="lang-group">
+                    <label>Dịch sang</label>
+                    <select class="lang-select" data-game-id="${game.id}" data-lang-type="output" onchange="onLangChange(this)">
+                        ${buildLangOptions(game.output_lang, true)}
+                    </select>
+                </div>
+            </div>
+            <div class="game-actions">
+                <button class="btn-start" id="btn-start-${game.id}" onclick="startGame('${game.id}', this)">
+                    ▶ Start Translation
+                </button>
+                <button class="btn-delete" onclick="deleteGame('${game.id}')" title="Xóa game">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
 
-    window.startGame = async function(gameId, btnElement) {
-        if (btnElement.classList.contains('running')) {
-            // Stop game logic
-            const originalText = btnElement.getAttribute('data-original-text') || "Start Translation";
-            btnElement.innerText = "Stopping...";
+// --- Language Change ---
+async function onLangChange(selectEl) {
+    const gameId = selectEl.dataset.gameId;
+    const langType = selectEl.dataset.langType;
+    const card = document.getElementById(`card-${gameId}`);
+    if (!card) return;
+
+    const inputSelect = card.querySelector('[data-lang-type="input"]');
+    const outputSelect = card.querySelector('[data-lang-type="output"]');
+
+    try {
+        await window.pywebview.api.update_game_lang(gameId, inputSelect.value, outputSelect.value);
+        showToast('🌐 Đã cập nhật ngôn ngữ');
+    } catch (e) {
+        showToast('Lỗi cập nhật ngôn ngữ', true);
+    }
+}
+
+// --- Start / Stop Game ---
+async function startGame(gameId, btnElement) {
+    if (btnElement.classList.contains('running')) {
+        // Stop
+        btnElement.innerText = '⏳ Đang dừng...';
+        try {
             await window.pywebview.api.stop_game(gameId);
-            btnElement.innerText = originalText;
-            btnElement.classList.remove('running');
-            showToast("Game stopped");
-            return;
-        }
-        
-        // Optimistic UI update
-        btnElement.setAttribute('data-original-text', btnElement.innerText);
-        btnElement.innerText = "Deploying...";
-        btnElement.classList.add('running');
-        
-        const result = await window.pywebview.api.start_game(gameId);
-        
-        if (result.status === 'success') {
-            showToast("Game launched! Click again to stop.");
-            btnElement.innerText = "Stop Game";
-        } else {
-            showToast("Failed to launch: " + result.error, true);
-            btnElement.innerText = btnElement.getAttribute('data-original-text') || "Start Translation";
-            btnElement.classList.remove('running');
-        }
-    };
-
-    window.deleteGame = async function(gameId) {
-        if (confirm("Are you sure you want to remove this game?")) {
-            await window.pywebview.api.delete_game(gameId);
-            showToast("Game removed");
-            loadGames();
-        }
-    };
-
-    // --- Utility ---
-    function showToast(message, isError = false) {
-        const toast = document.getElementById('toast');
-        const msg = document.getElementById('toast-message');
-        msg.innerText = message;
-        
-        if (isError) {
-            toast.style.borderColor = "var(--danger)";
-            toast.style.color = "var(--danger)";
-        } else {
-            toast.style.borderColor = "var(--border-color)";
-            toast.style.color = "var(--text-primary)";
-        }
-
-        toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
+        } catch(e) {}
+        btnElement.innerText = '▶ Start Translation';
+        btnElement.classList.remove('running');
+        showToast('⏹ Game đã dừng');
+        return;
     }
-});
+
+    // Start
+    btnElement.innerText = '⏳ Đang deploy...';
+    btnElement.classList.add('running');
+
+    try {
+        const result = await window.pywebview.api.start_game(gameId);
+        if (result.status === 'success') {
+            showToast('🚀 Game đã khởi chạy! Bấm lại để dừng.');
+            btnElement.innerText = '⏹ Stop Game';
+        } else {
+            showToast('❌ ' + result.error, true);
+            btnElement.innerText = '▶ Start Translation';
+            btnElement.classList.remove('running');
+        }
+    } catch (e) {
+        showToast('❌ Lỗi: ' + e, true);
+        btnElement.innerText = '▶ Start Translation';
+        btnElement.classList.remove('running');
+    }
+}
+
+// --- Delete Game ---
+async function deleteGame(gameId) {
+    if (!confirm('Bạn chắc chắn muốn xóa game này?')) return;
+
+    try {
+        const result = await window.pywebview.api.delete_game(gameId);
+        if (result.status === 'success') {
+            showToast('🗑 Đã xóa game');
+            // Xóa card khỏi DOM ngay lập tức
+            const card = document.getElementById(`card-${gameId}`);
+            if (card) {
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    card.remove();
+                    // Nếu không còn card nào, reload để hiện empty state
+                    const container = document.getElementById('games-container');
+                    if (container && container.children.length === 0) {
+                        loadGames();
+                    }
+                }, 300);
+            }
+        } else {
+            showToast('❌ ' + (result.error || 'Lỗi không xác định'), true);
+        }
+    } catch (e) {
+        showToast('❌ Lỗi: ' + e, true);
+    }
+}
+
+// --- Toast Notification ---
+function showToast(message, isError = false) {
+    const toast = document.getElementById('toast');
+    const msg = document.getElementById('toast-message');
+    if (!toast || !msg) return;
+
+    msg.innerText = message;
+    toast.style.borderColor = isError ? 'var(--danger)' : 'var(--accent)';
+    toast.style.color = isError ? 'var(--danger)' : 'var(--text-primary)';
+
+    toast.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}

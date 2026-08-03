@@ -1,19 +1,48 @@
 import os
 import uuid
+import threading
 import webview
 from atm.storage.repositories.profile_repository import ProfileRepository
 from atm.config.schema import GameProfile
 from atm.core.detectors.game_detector import GameDetector
-from atm.core.events.event_bus import EventBus, SystemEvents
+from atm.utils.logger import get_logger
+
+logger = get_logger(__name__, "launcher.log")
+
+# Danh sách ngôn ngữ hỗ trợ
+SUPPORTED_LANGUAGES = {
+    "auto": "Auto Detect",
+    "ja": "Japanese",
+    "en": "English",
+    "zh": "Chinese (Simplified)",
+    "zh-TW": "Chinese (Traditional)",
+    "ko": "Korean",
+    "vi": "Vietnamese",
+    "th": "Thai",
+    "id": "Indonesian",
+    "ms": "Malay",
+    "fr": "French",
+    "de": "German",
+    "es": "Spanish",
+    "pt": "Portuguese",
+    "ru": "Russian",
+    "ar": "Arabic",
+    "hi": "Hindi",
+}
+
 
 class BackendApi:
     def __init__(self):
         self.profile_repo = ProfileRepository()
         self.window = None
-        self.active_deployers = {} # game_id -> deployer
+        self.active_deployers = {}  # game_id -> deployer
 
     def set_window(self, window):
         self.window = window
+
+    def get_languages(self):
+        """Trả về danh sách ngôn ngữ cho dropdown"""
+        return SUPPORTED_LANGUAGES
 
     def get_games(self):
         """Trả về danh sách game profile cho JS"""
@@ -21,96 +50,130 @@ class BackendApi:
         return [p.model_dump() for p in profiles]
 
     def add_game(self):
-        """Mở hộp thoại file, tạo profile và trả về kết quả"""
+        """Mở hộp thoại file bằng pywebview native, tạo profile và trả kết quả"""
         if not self.window:
             return {"error": "Window not initialized"}
-            
-        import tkinter as tk
-        from tkinter import filedialog
-        
-        # Tạo hidden window để dùng filedialog
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes('-topmost', True)
-        
-        file_path = filedialog.askopenfilename(
-            title="Chọn file chạy của Game (.exe)",
-            filetypes=[("Executable Files", "*.exe"), ("All files", "*.*")]
-        )
-        root.destroy()
-        
-        if file_path:
-            # Sửa lại thành list để xử lý bên dưới (để tương thích với logic cũ)
-            result = [file_path]
-        else:
-            result = None
-        
+
+        try:
+            file_types = ('Executable Files (*.exe)', 'All files (*.*)')
+            result = self.window.create_file_dialog(
+                webview.OPEN_DIALOG,
+                allow_multiple=False,
+                file_types=file_types
+            )
+        except Exception:
+            # Fallback nếu OPEN_DIALOG bị deprecated
+            try:
+                result = self.window.create_file_dialog(
+                    dialog_type=webview.OPEN_DIALOG,
+                    allow_multiple=False,
+                    file_types=('Executable Files (*.exe)', 'All files (*.*)')
+                )
+            except Exception as e:
+                logger.error(f"File dialog error: {e}")
+                return {"error": str(e)}
+
         if result and len(result) > 0:
             file_path = result[0]
             game_name = os.path.basename(os.path.dirname(file_path))
             if not game_name:
-                game_name = "Unknown Game"
-                
+                game_name = os.path.splitext(os.path.basename(file_path))[0]
+
             engine = GameDetector.detect_engine(file_path)
-            
+
             profile = GameProfile(
                 id=str(uuid.uuid4()),
                 game_name=game_name,
                 exe_path=file_path,
                 engine=engine,
                 translator="google",
-                input_lang="ja",
+                input_lang="auto",
                 output_lang="vi"
             )
-            
-            self.profile_repo.save(profile)
-            return {"status": "success", "game": profile.model_dump()}
-            
-        return None # User cancelled
 
-    def start_game(self, game_id: str):
-        """Khởi chạy game"""
+            self.profile_repo.save(profile)
+            logger.info(f"Added game profile: {profile.game_name} [{profile.id}]")
+            return {"status": "success", "game": profile.model_dump()}
+
+        return None  # User cancelled
+
+    def update_game_lang(self, game_id, input_lang, output_lang):
+        """Cập nhật ngôn ngữ input/output cho game"""
+        profile = self.profile_repo.get_by_id(game_id)
+        if not profile:
+            return {"status": "error", "error": "Game not found"}
+
+        profile.input_lang = input_lang
+        profile.output_lang = output_lang
+        self.profile_repo.save(profile)
+        logger.info(f"Updated languages for {profile.game_name}: {input_lang} -> {output_lang}")
+        return {"status": "success"}
+
+    def start_game(self, game_id):
+        """Khởi chạy game với bộ dịch"""
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game profile not found"}
-            
+
         from atm.core.deployment.game_deployer import GameDeployer
-        
-        payload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "payloads", "bepinex")
-        
+
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        payload_dir = os.path.join(base_dir, "data", "payloads", "bepinex")
+
         if not os.path.exists(payload_dir):
-            return {"status": "error", "error": f"Chưa cài đặt Payload (BepInEx). Xin hãy tạo thư mục {payload_dir} và cho file vào!"}
-            
+            return {
+                "status": "error",
+                "error": f"Chưa có Payload (BepInEx). Tạo thư mục: {payload_dir}"
+            }
+
         deployer = GameDeployer()
         self.active_deployers[game_id] = deployer
-        deployer.deploy_and_launch(profile, payload_dir)
+
+        # Chạy deploy trên thread riêng để không block UI
+        def run_deploy():
+            try:
+                deployer.deploy_and_launch(profile, payload_dir)
+            except Exception as e:
+                logger.error(f"Deploy error: {e}")
+
+        t = threading.Thread(target=run_deploy, daemon=True)
+        t.start()
         return {"status": "success"}
-        
-    def stop_game(self, game_id: str):
+
+    def stop_game(self, game_id):
+        """Dừng game đang chạy"""
         if game_id in self.active_deployers:
             deployer = self.active_deployers[game_id]
             deployer.monitor.stop()
             del self.active_deployers[game_id]
+            logger.info(f"Stopped game: {game_id}")
         return {"status": "success"}
-        
-    def delete_game(self, game_id: str):
-        """Xóa game"""
-        # (TODO: Thêm hàm delete trong repository nếu chưa có)
+
+    def delete_game(self, game_id):
+        """Xóa game profile (cả file JSON)"""
         try:
-            # Fallback xoá triệt để: Xóa bằng ID và tìm cả tên cũ
-            profiles = self.profile_repo.get_all()
-            for p in profiles:
-                if p.id == game_id:
-                    self.profile_repo.delete(p.id)
-                    # Thử xoá cả tên cũ
-                    safe_name = "".join(c for c in p.game_name if c.isalnum() or c in (' ', '_')).strip().replace(' ', '_')
-                    old_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "profiles", f"{safe_name}.json")
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
-                    
-                    new_profiles = [prof for prof in profiles if prof.id != game_id]
-                    self.profile_repo._profiles = {prof.id: prof for prof in new_profiles}
-                    return {"status": "success"}
-            return {"status": "error", "error": "Game not found"}
+            # Xóa bằng ID (tên file mới)
+            deleted = self.profile_repo.delete(game_id)
+
+            # Dọn cả file profile cũ (tên theo game_name) nếu còn sót
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            profiles_dir = os.path.join(base_dir, "data", "profiles")
+            if os.path.isdir(profiles_dir):
+                for f in os.listdir(profiles_dir):
+                    if f.endswith(".json"):
+                        fpath = os.path.join(profiles_dir, f)
+                        try:
+                            import json
+                            with open(fpath, "r", encoding="utf-8") as fp:
+                                data = json.load(fp)
+                            if data.get("id") == game_id:
+                                os.remove(fpath)
+                                logger.info(f"Cleaned old profile file: {f}")
+                        except Exception:
+                            pass
+
+            logger.info(f"Deleted game: {game_id}")
+            return {"status": "success"}
         except Exception as e:
+            logger.error(f"Delete error: {e}")
             return {"status": "error", "error": str(e)}

@@ -24,7 +24,6 @@ body {
     background: var(--bg-base);
     color: var(--text-primary);
     overflow: hidden;
-    /* Soft gradient background */
     background-image: 
         radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
         radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
@@ -36,9 +35,9 @@ body {
     height: 100vh;
 }
 
-/* Sidebar */
+/* ============ Sidebar ============ */
 .sidebar {
-    width: 260px;
+    width: 240px;
     background: var(--bg-sidebar);
     backdrop-filter: blur(20px);
     border-right: 1px solid var(--border-color);
@@ -84,12 +83,13 @@ body {
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     border-radius: 8px;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s ease;
     font-weight: 500;
+    font-size: 14px;
 }
 
 .nav-links li:hover {
@@ -122,6 +122,7 @@ body {
     justify-content: center;
     gap: 8px;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    font-family: inherit;
 }
 
 .btn-primary:hover {
@@ -130,7 +131,13 @@ body {
     box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
-/* Main Content */
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ============ Main Content ============ */
 .content-area {
     flex: 1;
     padding: 40px;
@@ -159,18 +166,18 @@ header {
 header h1 {
     font-size: 28px;
     font-weight: 800;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .subtitle {
     color: var(--text-secondary);
-    font-size: 15px;
+    font-size: 14px;
 }
 
-/* Games Grid */
+/* ============ Game Cards ============ */
 .games-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
     gap: 20px;
 }
 
@@ -178,41 +185,114 @@ header h1 {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    padding: 24px;
+    padding: 20px;
     backdrop-filter: blur(10px);
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
+    gap: 14px;
 }
 
 .game-card:hover {
-    transform: translateY(-5px);
-    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.12);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
 .game-info h3 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 250px;
 }
 
-.game-info p {
+.game-path {
     color: var(--text-secondary);
-    font-size: 13px;
-    margin-bottom: 20px;
+    font-size: 11px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 280px;
 }
 
+.engine-badge {
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ============ Language Selectors ============ */
+.lang-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lang-group {
+    flex: 1;
+}
+
+.lang-group label {
+    display: block;
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lang-select {
+    width: 100%;
+    padding: 8px 10px;
+    background: rgba(15, 23, 42, 0.6);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 28px;
+}
+
+.lang-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.lang-select option {
+    background: #1e293b;
+    color: var(--text-primary);
+}
+
+.lang-arrow {
+    color: var(--text-secondary);
+    font-size: 18px;
+    margin-top: 18px;
+}
+
+/* ============ Game Actions ============ */
 .game-actions {
     display: flex;
     gap: 10px;
-    margin-top: auto;
 }
 
 .btn-start {
@@ -223,8 +303,10 @@ header h1 {
     border: 1px solid rgba(16, 185, 129, 0.2);
     border-radius: 8px;
     font-weight: 600;
+    font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
+    font-family: inherit;
 }
 
 .btn-start:hover {
@@ -236,17 +318,24 @@ header h1 {
     background: rgba(245, 158, 11, 0.1);
     color: #f59e0b;
     border-color: rgba(245, 158, 11, 0.2);
-    cursor: not-allowed;
+}
+
+.btn-start.running:hover {
+    background: #f59e0b;
+    color: white;
 }
 
 .btn-delete {
-    padding: 10px 14px;
-    background: rgba(239, 68, 68, 0.1);
+    padding: 10px 12px;
+    background: rgba(239, 68, 68, 0.08);
     color: var(--danger);
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    border: 1px solid rgba(239, 68, 68, 0.15);
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-delete:hover {
@@ -254,7 +343,7 @@ header h1 {
     color: white;
 }
 
-/* Empty State */
+/* ============ Empty State ============ */
 .empty-state {
     text-align: center;
     padding: 60px 20px;
@@ -267,21 +356,23 @@ header h1 {
     opacity: 0.5;
 }
 
-/* Toast Notification */
+/* ============ Toast ============ */
 .toast {
     position: fixed;
     bottom: 30px;
     right: 30px;
-    background: rgba(15, 23, 42, 0.9);
-    border: 1px solid var(--border-color);
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--accent);
     backdrop-filter: blur(10px);
     padding: 14px 24px;
-    border-radius: 8px;
+    border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     transform: translateY(100px);
     opacity: 0;
     transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     z-index: 1000;
+    font-size: 14px;
+    pointer-events: none;
 }
 
 .toast.show {
@@ -289,7 +380,7 @@ header h1 {
     opacity: 1;
 }
 
-/* Plugins & Settings Layout */
+/* ============ Plugins & Settings ============ */
 .plugins-list, .settings-card {
     display: flex;
     flex-direction: column;
@@ -314,21 +405,28 @@ header h1 {
 .plugin-info p, .setting-item p {
     color: var(--text-secondary);
     font-size: 13px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .badge {
     font-size: 11px;
-    padding: 4px 8px;
+    padding: 4px 10px;
     border-radius: 4px;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.06);
+    color: var(--text-secondary);
 }
 .badge.installed {
     background: rgba(16, 185, 129, 0.1);
     color: var(--success);
 }
 
-/* Toggle Switch */
+.setting-value {
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* ============ Toggle Switch ============ */
 .switch {
     position: relative;
     display: inline-block;
@@ -365,4 +463,19 @@ input:checked + .slider {
 
 input:checked + .slider:before {
     transform: translateX(20px);
+}
+
+/* ============ Scrollbar ============ */
+.content-area::-webkit-scrollbar {
+    width: 6px;
+}
+.content-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+.content-area::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+}
+.content-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.2);
 }
