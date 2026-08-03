@@ -247,7 +247,7 @@ async function startGame(gameId, btnElement) {
     }
 
     // Start
-    btnElement.innerText = '⏳ Đang deploy...';
+    btnElement.innerText = '⏳ Đang khởi tạo...';
     btnElement.classList.add('running');
 
     try {
@@ -255,6 +255,11 @@ async function startGame(gameId, btnElement) {
         if (result.status === 'success') {
             showToast('🚀 Game đã khởi chạy! Bấm lại để dừng.');
             btnElement.innerText = '⏹ Stop Game';
+        } else if (result.status === 'translating') {
+            showToast('⏳ Đang tiến hành dịch offline...');
+            btnElement.innerText = '0% Đang dịch...';
+            btnElement.disabled = true; // Disable until done
+            pollTranslationProgress(gameId, btnElement);
         } else {
             showToast('❌ ' + result.error, true);
             btnElement.innerText = '▶ Start Translation';
@@ -264,6 +269,37 @@ async function startGame(gameId, btnElement) {
         showToast('❌ Lỗi: ' + e, true);
         btnElement.innerText = '▶ Start Translation';
         btnElement.classList.remove('running');
+    }
+}
+
+// --- Polling Progress cho Dịch Offline ---
+async function pollTranslationProgress(gameId, btnElement) {
+    try {
+        const status = await apiGet(`games/translation-status?game_id=${gameId}`);
+        if (status.done) {
+            btnElement.disabled = false;
+            if (status.error) {
+                showToast('❌ ' + status.message, true);
+                btnElement.innerText = '▶ Start Translation';
+                btnElement.classList.remove('running');
+            } else {
+                showToast('✅ ' + status.message);
+                btnElement.innerText = '⏹ Stop Game';
+            }
+            return;
+        }
+
+        let pct = 0;
+        if (status.total > 0) {
+            pct = Math.round((status.progress / status.total) * 100);
+        }
+        btnElement.innerText = `${pct}% Đang dịch...`;
+        
+        // Tiếp tục poll sau 1 giây
+        setTimeout(() => pollTranslationProgress(gameId, btnElement), 1000);
+    } catch (e) {
+        console.error('Polling error:', e);
+        setTimeout(() => pollTranslationProgress(gameId, btnElement), 2000);
     }
 }
 

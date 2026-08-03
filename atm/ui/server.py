@@ -6,6 +6,7 @@ import json
 import os
 import mimetypes
 import threading
+import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from atm.utils.logger import get_logger
 
@@ -35,6 +36,10 @@ class ATMHandler(BaseHTTPRequestHandler):
             self._json_response(self.api.get_languages())
         elif self.path == '/api/settings':
             self._json_response(self.api.get_settings())
+        elif self.path.startswith('/api/games/translation-status'):
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            game_id = query.get('game_id', [''])[0]
+            self._json_response(self.api.get_translation_status(game_id))
         else:
             self._json_response({"error": "Not found"}, 404)
 

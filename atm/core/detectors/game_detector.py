@@ -31,8 +31,13 @@ class GameDetector:
                 return "Unity Mono"
                 
         # Kiểm tra RenPy (thường có folder 'renpy' hoặc 'game')
-        if os.path.exists(os.path.join(game_dir, "renpy")) or os.path.exists(os.path.join(game_dir, "game", "script.rpyc")):
+        if os.path.exists(os.path.join(game_dir, "renpy")) or os.path.exists(os.path.join(game_dir, "game", "script.rpyc")) or os.path.exists(os.path.join(game_dir, "game", "archive.rpa")):
             logger.info(f"Detected RenPy game: {exe_name}")
             return "RenPy"
+            
+        # Kiểm tra RPG Maker MV/MZ
+        if os.path.exists(os.path.join(game_dir, "www", "data")) or os.path.exists(os.path.join(game_dir, "package.json")):
+            logger.info(f"Detected RPG Maker game: {exe_name}")
+            return "RPG Maker"
             
         return "Unknown"

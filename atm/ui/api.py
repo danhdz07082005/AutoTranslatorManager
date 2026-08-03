@@ -38,6 +38,7 @@ class BackendApi:
         self.settings_repo = SettingsRepository()
         self.window = None
         self.active_deployers = {}  # game_id -> deployer
+        self.translation_status = {}  # game_id -> {"progress": int, "total": int, "message": str, "done": bool}
 
     def set_window(self, window):
         self.window = window
@@ -125,9 +126,45 @@ class BackendApi:
             return {"status": "error", "error": "Game profile not found"}
 
         from atm.core.deployment.game_deployer import GameDeployer
+        from atm.core.translation import RPGMakerTranslator
 
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
+        if profile.engine == "RPG Maker":
+            # Dịch Offline cho RPG Maker
+            self.translation_status[game_id] = {"progress": 0, "total": 100, "message": "Đang chuẩn bị dịch RPG Maker...", "done": False}
+            
+            def run_offline_translate():
+                translator = RPGMakerTranslator()
+                
+                def progress_cb(current, total, msg):
+                    self.translation_status[game_id] = {"progress": current, "total": total, "message": msg, "done": current >= total}
+                
+                try:
+                    success = translator.translate_game(profile, progress_callback=progress_cb)
+                    if success:
+                        self.translation_status[game_id]["done"] = True
+                        self.translation_status[game_id]["message"] = "Dịch xong! Bắt đầu chạy game..."
+                        # Chạy game sau khi dịch xong
+                        deployer = GameDeployer()
+                        self.active_deployers[game_id] = deployer
+                        deployer.deploy_and_launch(profile, None) # Không cần payload dir cho RPG Maker
+                    else:
+                        self.translation_status[game_id] = {"progress": 0, "total": 1, "message": "Lỗi: Không tìm thấy data game.", "done": True, "error": True}
+                except Exception as e:
+                    logger.error(f"RPG Maker translate error: {e}")
+                    self.translation_status[game_id] = {"progress": 0, "total": 1, "message": f"Lỗi: {e}", "done": True, "error": True}
+
+            t = threading.Thread(target=run_offline_translate, daemon=True)
+            t.start()
+            return {"status": "translating"}
+            
+        if profile.engine == "RenPy":
+            return {
+                "status": "error",
+                "error": "Engine RenPy đang được phát triển bộ dịch Offline. Vui lòng chờ bản cập nhật sau!"
+            }
+            
         if profile.engine == "Unity Mono":
             payload_dir = os.path.join(base_dir, "data", "payloads", "bepinex_mono")
             engine_req = "Unity Mono"
@@ -160,6 +197,11 @@ class BackendApi:
         t = threading.Thread(target=run_deploy, daemon=True)
         t.start()
         return {"status": "success"}
+
+    def get_translation_status(self, game_id):
+        """Trả về tiến độ dịch offline"""
+        status = self.translation_status.get(game_id, {"progress": 0, "total": 0, "message": "", "done": True})
+        return status
 
     def stop_game(self, game_id):
         """Dừng game đang chạy"""
