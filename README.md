@@ -1,75 +1,64 @@
 # Auto Translator Manager (Tiếng Việt)
 
-Một trình quản lý mã nguồn mở, thông minh dùng để dịch tự động các tựa game (Unity, RenPy) mà không làm rác thư mục gốc của game.
+Một siêu công cụ giúp bạn dịch mượt mà các tựa game (Unity, RPG Maker, RenPy) với sức mạnh của **Google Translate** và **DeepL**, đi kèm với giao diện Web cực kỳ hiện đại. 
 
-Auto Translator Manager (ATM) được thiết kế để tách biệt bộ máy dịch thuật (như XUnity.AutoTranslator) ra khỏi thư mục game của bạn. Hệ thống sẽ **tự động tiêm (inject)** bộ dịch vào game mỗi khi bạn ấn chơi, đảm bảo file game gốc của bạn sạch sẽ 100%. Nền tảng này còn có hệ thống Plugin mạnh mẽ, cho phép bạn đổi qua lại giữa các máy dịch AI (DeepL, Google, v.v.) chỉ với 1 click.
+Điểm đặc biệt nhất của Auto Translator Manager (ATM) là nó **hoàn toàn không làm rác thư mục game gốc của bạn**. Tool sẽ tự động "tiêm" (inject) bộ dịch khi bạn bấm chơi, và dọn dẹp sạch sẽ không để lại một dấu vết nào khi bạn tắt game!
 
-## 🚀 Hướng Dẫn Nhanh
-
-1. **Tải về:** Lấy file `AutoTranslator.exe` mới nhất tại trang [Releases](../../releases).
-2. **Khởi chạy:** Chạy trực tiếp file exe, không cần cài đặt Python.
-3. **Thêm Game:** Chọn file chạy (`.exe`) của tựa game bạn muốn dịch.
-4. **Chơi ngay:** Bấm nút "Start" và tận hưởng game đã được dịch tự động!
-
-## 📚 Tài Liệu Hướng Dẫn
-
-Để xem chi tiết hơn, vui lòng tham khảo các thư mục `docs/`:
-
-- [Hướng dẫn Cài đặt](docs/installation.md)
-- [Tổng quan Kiến trúc Hệ thống](docs/architecture.md)
-- [Hướng dẫn Tạo Plugin Mới](docs/plugin-development.md)
-- [Các câu hỏi thường gặp (FAQ)](docs/faq.md)
-
-## 🛠️ Công Nghệ Sử Dụng
-
-- **Python 3.12+**
-- **Web UI (HTML/CSS/JS)** (Giao diện web hiện đại, hỗ trợ Light/Dark Mode).
-- **Trình quản lý Engine dịch thuật** (Hỗ trợ Google Translate, DeepL API).
-- **Pytest** (Tự động kiểm thử).
-- **Ruff, Black, MyPy** (Quản lý chất lượng mã nguồn).
-
-## 🤝 Tham Gia Đóng Góp
-
-Mã nguồn mở tuyệt vời là nhờ sự đóng góp của cộng đồng. Mọi ý tưởng và dòng code của bạn đều được **chào đón nồng nhiệt**. 
-Vui lòng đọc file [PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md) trước khi gửi bản vá.
+## 🌟 Các tính năng nổi bật
+- **Hỗ trợ Đa Engine:** Tương thích hoàn hảo với các tựa game Unity (Mono/IL2CPP), RPG Maker (VX, MV, MZ) và RenPy.
+- **Trình chỉnh sửa Dịch thuật (Grid Editor):** Chỉnh sửa tay các đoạn dịch sai trực tiếp trên giao diện lưới siêu nhẹ. Sửa xong là vào game cập nhật luôn!
+- **Từ điển Cá nhân (Glossary):** Gặp tên riêng (như "Sakura") bị dịch bậy? Chỉ cần thêm vào Từ điển, hệ thống sẽ bảo vệ từ đó vĩnh viễn.
+- **Bộ nhớ đệm thông minh (Cache):** Dịch một lần, lưu lại dùng mãi mãi. Giúp bạn không bị tốn dung lượng API và load game cực nhanh ở các lần sau.
+- **Dịch thời gian thực (RenPy Real-time):** Hỗ trợ Hook Real-time cho RenPy, vào game là dịch, không cần chờ Decompile.
+- **Giao diện Web siêu mượt:** Có chế độ Light/Dark Mode, tuỳ biến màu sắc giao diện theo sở thích của bạn.
 
 ---
 
-# Auto Translator Manager (English)
+## 🚀 Hướng Dẫn Sử Dụng Nhanh (Dành cho người chơi)
 
-A smart, open-source centralized launcher for auto-translating games (Unity, RenPy) without polluting game directories.
+1. **Tải về:** Lấy file `AutoTranslatorManager-Windows.zip` mới nhất tại trang [Releases](../../releases) trên Github.
+2. **Khởi chạy:** Giải nén và chạy trực tiếp file `AutoTranslatorManager.exe`. (Không cần cài đặt Python hay bất kỳ phần mềm nào khác).
+3. **Thêm Game:** Bấm nút **"Thêm Game Mới"** và trỏ đến file `.exe` của tựa game bạn muốn dịch.
+4. **Chơi ngay:** Chọn ngôn ngữ (ví dụ: Nhật -> Việt), chọn công cụ dịch (Google / DeepL), và bấm **"Start"**. Game sẽ tự mở lên và chữ sẽ tự động hoá thành Tiếng Việt!
 
-Auto Translator Manager (ATM) is designed to separate the translation engine (like XUnity.AutoTranslator) from your game directory. It dynamically injects the translation runtime into the game only when you play, ensuring your game files remain 100% clean. It features a robust plugin system, allowing you to seamlessly swap between translation engines (DeepL, Google, etc.).
+---
 
-## 🚀 Quick Start
+## 🔑 Hướng dẫn lấy API Key của DeepL (Khuyên dùng)
+Phần mềm mặc định dùng Google Translate (Hoàn toàn miễn phí, không cần key). Nhưng nếu bạn muốn văn bản dịch có cảm xúc, sát nghĩa và mượt mà hơn, hãy dùng DeepL. 
 
-1. **Download:** Grab the latest `AutoTranslator.exe` from the [Releases](../../releases) page.
-2. **Launch:** Run the executable. No Python installation required.
-3. **Add Game:** Point the launcher to your game's `.exe` file.
-4. **Play:** Click "Start" and enjoy your auto-translated game!
+**Cách lấy DeepL API Key miễn phí (500.000 ký tự / tháng):**
+1. Truy cập trang đăng ký chính thức của DeepL: [DeepL API Free](https://www.deepl.com/pro-api).
+2. Nhấn nút **Sign up for free** và tạo tài khoản. *(DeepL có thể yêu cầu bạn nhập thông tin thẻ Visa/Mastercard để chống bot spam tạo tài khoản rác. Đừng lo, họ sẽ không trừ tiền của bạn đâu).*
+3. Sau khi đăng nhập thành công, nhấn vào biểu tượng Avatar góc trên bên phải -> Chọn **Account** (Tài khoản) -> Chuyển sang tab **Account Summary**.
+4. Cuộn xuống dưới cùng trang, bạn sẽ thấy dòng **Authentication Key for DeepL API** (Một đoạn mã dài kết thúc bằng `:fx`).
+5. Copy đoạn mã đó.
+6. Mở phần mềm Auto Translator Manager, nhấn vào nút **Cài đặt** ⚙️ góc trên bên phải.
+7. Dán Key vào ô **DeepL API Key** và bấm **Lưu thay đổi**.
+8. Bùm! Bây giờ bạn chỉ việc ra ngoài màn hình chính, đổi Engine dịch sang DeepL và tận hưởng bản dịch chất lượng cao!
 
-## 📚 Documentation
+---
 
-For detailed guides, please refer to the `docs/` folder:
+## 💻 Dành cho Lập trình viên (Developers)
 
-- [Installation Guide](docs/installation.md)
-- [Architecture Overview](docs/architecture.md)
-- [Plugin Development Guide](docs/plugin-development.md)
-- [Frequently Asked Questions (FAQ)](docs/faq.md)
+Nếu bạn muốn chỉnh sửa, chạy mã nguồn trực tiếp hoặc tham gia đóng góp:
 
-## 🛠️ Built With
+1. **Clone mã nguồn:**
+   ```bash
+   git clone https://github.com/danhdz07082005/AutoTranslatorManager.git
+   ```
+2. **Cài đặt thư viện:**
+   Dự án yêu cầu Python 3.10+.
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. **Khởi chạy:**
+   ```bash
+   python run_app.py
+   # Hoặc click đúp vào file start.bat
+   ```
 
-- **Python 3.12+**
-- **CustomTkinter** for a modern, dark-themed UI.
-- **Pytest** for end-to-end testing.
-- **Ruff, Black, MyPy** for code quality.
+## 🤝 Tham Gia Đóng Góp
+Mã nguồn mở tuyệt vời là nhờ sự đóng góp của cộng đồng. Mọi ý tưởng (Bổ sung thêm engine, tối ưu code...) của bạn đều được **chào đón nồng nhiệt**. 
 
-## 🤝 Contributing
-
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**. 
-
-Please read our [PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+## 📄 Bản quyền
+Dự án được phân phối dưới giấy phép MIT License. Mọi cấu hình cá nhân, Cache dịch thuật và API Key của bạn đều được lưu trữ hoàn toàn cục bộ trên máy bạn (`data/config.json`) và tuyệt đối an toàn.
