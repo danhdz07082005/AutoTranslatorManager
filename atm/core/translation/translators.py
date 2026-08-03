@@ -3,15 +3,63 @@ import urllib.parse
 import json
 from typing import List, Dict, Optional
 from atm.utils.logger import get_logger
+from atm.core.translation.cache_manager import TranslationCache
 
 logger = get_logger(__name__, "launcher.log")
 
 class BaseTranslator:
+    def __init__(self):
+        self.cache = TranslationCache()
+
     def translate_batch(self, texts: List[str], target_lang: str = "vi", source_lang: str = "auto") -> List[str]:
+        if not texts:
+            return []
+            
+        final_results = []
+        uncached_texts = []
+        uncached_indices = []
+
+        # 1. Kiem tra cache
+        for i, text in enumerate(texts):
+            if not text.strip():
+                final_results.append(text)
+                continue
+                
+            cached_val = self.cache.get(source_lang, target_lang, text)
+            if cached_val is not None:
+                final_results.append(cached_val)
+            else:
+                final_results.append(None) # Placeholder
+                uncached_texts.append(text)
+                uncached_indices.append(i)
+
+        # 2. Goi API cho cac text chua co trong cache
+        if uncached_texts:
+            logger.info(f"Translating {len(uncached_texts)} uncached texts out of {len(texts)}...")
+            try:
+                translated_uncached = self._do_translate_batch(uncached_texts, target_lang, source_lang)
+                
+                # 3. Luu vao cache va ket qua final
+                self.cache.set_batch(source_lang, target_lang, uncached_texts, translated_uncached)
+                self.cache.save_to_disk()
+                
+                for i, idx in enumerate(uncached_indices):
+                    if i < len(translated_uncached):
+                        final_results[idx] = translated_uncached[i]
+                    else:
+                        final_results[idx] = uncached_texts[i] # Fallback neu API tra thieu
+            except Exception as e:
+                logger.error(f"Error in _do_translate_batch: {e}")
+                for i, idx in enumerate(uncached_indices):
+                    final_results[idx] = uncached_texts[i] # Fallback
+                    
+        return final_results
+
+    def _do_translate_batch(self, texts: List[str], target_lang: str, source_lang: str) -> List[str]:
         raise NotImplementedError
 
 class GoogleTranslator(BaseTranslator):
-    def translate_batch(self, texts: List[str], target_lang: str = "vi", source_lang: str = "auto") -> List[str]:
+    def _do_translate_batch(self, texts: List[str], target_lang: str = "vi", source_lang: str = "auto") -> List[str]:
         """Dịch từng đoạn text thông qua Google Translate (miễn phí, có thể bị rate limit)."""
         translated_texts = []
         for text in texts:
@@ -35,12 +83,13 @@ class GoogleTranslator(BaseTranslator):
 
 class DeepLTranslator(BaseTranslator):
     def __init__(self, api_key: str):
+        super().__init__()
         self.api_key = api_key
         self.api_url = "https://api.deepl.com/v2/translate"
         if api_key.endswith(":fx"):
             self.api_url = "https://api-free.deepl.com/v2/translate"
 
-    def translate_batch(self, texts: List[str], target_lang: str = "VI", source_lang: Optional[str] = None) -> List[str]:
+    def _do_translate_batch(self, texts: List[str], target_lang: str = "VI", source_lang: Optional[str] = None) -> List[str]:
         """Sử dụng DeepL API hỗ trợ mảng văn bản để tối ưu."""
         if not self.api_key:
             logger.warning("DeepL API Key is empty. Falling back to original texts.")
