@@ -4,11 +4,7 @@ import threading
 import webbrowser
 import time
 
-# Tăng recursion limit để tránh lỗi (dù không còn dùng pywebview nhưng cứ giữ cho chắc)
-sys.setrecursionlimit(10000)
 
-# Đảm bảo thư mục cha được nạp vào sys.path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from atm.utils.logger import get_logger
 from atm.container.bootstrap import bootstrap_app

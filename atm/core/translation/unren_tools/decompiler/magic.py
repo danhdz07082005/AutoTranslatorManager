@@ -396,6 +396,12 @@ class FakePackageLoader(object):
         else:
             return None
 
+    def find_spec(self, fullname, path, target=None):
+        if fullname == self.root or fullname.startswith(self.root + "."):
+            import importlib.machinery
+            return importlib.machinery.ModuleSpec(fullname, self)
+        return None
+
     def load_module(self, fullname):
         return FakePackage(fullname)
 

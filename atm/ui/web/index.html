@@ -125,6 +125,15 @@
                         </select>
                     </div>
                 </div>
+                <div class="settings-card" style="margin-top: 18px;">
+                    <div class="setting-item">
+                        <div>
+                            <h4>Translation Memory threshold</h4>
+                            <p>Only show fuzzy suggestions at or above this similarity. Suggestions are never applied automatically.</p>
+                        </div>
+                        <input id="tm-threshold" type="number" min="0.50" max="1" step="0.01" value="0.85" onchange="saveSettings()" class="themed-input" style="width: 82px; padding: 8px;">
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -159,14 +168,42 @@
                 <p data-i18n="glossary.desc" style="color: var(--text-secondary); margin-bottom: 12px; font-size: 13px;">Thêm các cặp từ để không bị dịch sai (VD: Tên nhân vật, Chiêu thức). Từ điển áp dụng riêng cho game này.</p>
                 <div id="glossary-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 12px;"></div>
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" id="glossary-source" class="themed-input" placeholder="Từ gốc (Tiếng Nhật)" style="flex: 1; padding: 8px; border-radius: 6px;">
-                    <input type="text" id="glossary-target" class="themed-input" placeholder="Dịch thành (Tiếng Việt)" style="flex: 1; padding: 8px; border-radius: 6px;">
+                    <input type="text" id="glossary-source" class="themed-input" data-i18n-placeholder="glossary.source_placeholder" placeholder="Từ gốc (bất kỳ ngôn ngữ)" style="flex: 1; padding: 8px; border-radius: 6px;">
+                    <input type="text" id="glossary-target" class="themed-input" data-i18n-placeholder="glossary.target_placeholder" placeholder="Dịch thành" style="flex: 1; padding: 8px; border-radius: 6px;">
                     <button class="btn-primary" onclick="addGlossaryEntry()" style="width: auto; padding: 8px 16px;">Thêm</button>
                 </div>
             </div>
             <div class="modal-footer" style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
-                <button class="btn-delete" style="padding: 8px 16px;" onclick="closeGlossaryModal()">Đóng</button>
-                <button class="btn-start" style="width: auto; padding: 8px 16px;" onclick="saveGlossary()">Lưu thay đổi</button>
+                <button class="btn-delete" style="padding: 8px 16px;" onclick="closeGlossaryModal()" data-i18n="btn.close">Đóng</button>
+                <button class="btn-start" style="width: auto; padding: 8px 16px;" onclick="saveGlossary()" data-i18n="btn.save">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Translation Memory Modal -->
+    <div id="translation-memory-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 700px; max-width: 95%;">
+            <div class="modal-header">
+                <h3>Translation Memory suggestions</h3>
+                <button class="btn-close" onclick="closeTranslationMemoryModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: var(--text-secondary); margin-bottom: 12px; font-size: 13px;">Suggestions need your confirmation before they are saved or used.</p>
+                <textarea id="tm-source-text" class="themed-input" placeholder="Text to look up" style="width: 100%; min-height: 80px; box-sizing: border-box; padding: 8px;"></textarea>
+                <div style="display: flex; gap: 8px; margin: 10px 0; align-items: center;">
+                    <label for="tm-category">Category</label>
+                    <select id="tm-category" class="lang-select" style="width: 160px;">
+                        <option value="dialogue">dialogue</option>
+                        <option value="ui">ui</option>
+                        <option value="item">item</option>
+                        <option value="skill">skill</option>
+                        <option value="actor_name">actor name</option>
+                        <option value="system">system</option>
+                        <option value="unknown" selected>unknown</option>
+                    </select>
+                    <button class="btn-primary" onclick="findTranslationMemorySuggestions()" style="width: auto; padding: 8px 16px;">Find suggestions</button>
+                </div>
+                <div id="tm-suggestions" style="max-height: 320px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;"></div>
             </div>
         </div>
     </div>

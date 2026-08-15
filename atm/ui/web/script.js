@@ -8,13 +8,13 @@ let currentUILang = localStorage.getItem('ui_lang') || 'vi';
 
 const i18nData = {
     vi: {
-        "menu.library": "Library",
-        "menu.plugins": "Plugins",
-        "menu.settings": "Settings",
-        "menu.add_game": "Add Game",
-        "library.title": "My Library",
+        "menu.library": "Thư viện",
+        "menu.plugins": "Bổ trợ",
+        "menu.settings": "Cài đặt",
+        "menu.add_game": "Thêm Game",
+        "library.title": "Thư viện Game",
         "library.subtitle": "Quản lý và khởi chạy game dịch tự động",
-        "plugins.title": "Plugin Marketplace",
+        "plugins.title": "Kho bổ trợ",
         "plugins.subtitle": "Cài đặt và quản lý bộ máy dịch",
         "plugins.google_desc": "Miễn phí, nhanh, không cần API key.",
         "plugins.installed": "✓ Đã cài",
@@ -23,18 +23,43 @@ const i18nData = {
         "plugins.deepl_placeholder": "Nhập DeepL API Key...",
         "plugins.libre_desc": "Mã nguồn mở, tự host được, hoàn toàn miễn phí.",
         "plugins.coming_soon": "Sắp có",
-        "settings.title": "Settings",
+        "settings.title": "Cài đặt",
         "settings.subtitle": "Tùy chỉnh trải nghiệm Launcher",
         "settings.dark_mode": "Giao diện tối (Dark Mode)",
         "settings.dark_mode_desc": "Bật/tắt chế độ màn hình nền tối.",
-        "settings.accent_color": "Màu chủ đạo (Accent Color)",
+        "settings.accent_color": "Màu chủ đạo",
         "settings.accent_color_desc": "Tùy chỉnh màu sắc cá nhân hóa cho Launcher.",
         "settings.ui_lang": "Ngôn ngữ giao diện",
         "settings.ui_lang_desc": "Chọn ngôn ngữ hiển thị cho Launcher.",
         "library.empty_title": "Chưa có game nào",
-        "library.empty_desc": "Bấm \"+ Add Game\" để bắt đầu.",
-        "glossary.title": "Từ điển cá nhân (Glossary)",
-        "glossary.desc": "Thêm các cặp từ để không bị dịch sai (VD: Tên nhân vật, Chiêu thức). Từ điển áp dụng riêng cho game này."
+        "library.empty_desc": "Bấm \"+ Thêm Game\" để bắt đầu.",
+        "glossary.title": "Từ điển cá nhân",
+        "glossary.desc": "Thêm các cặp từ để không bị dịch sai (VD: Tên nhân vật, Chiêu thức). Từ điển áp dụng riêng cho game này.",
+        "card.engine": "Engine Dịch",
+        "card.source_lang": "Ngôn ngữ gốc",
+        "card.target_lang": "Dịch sang",
+        "card.start": "▶ Bắt đầu dịch",
+        "card.stop": "⏹ Dừng Game",
+        "card.stopping": "⏳ Đang dừng...",
+        "card.initializing": "⏳ Đang khởi tạo...",
+        "card.translating": "đang dịch",
+        "card.glossary_tooltip": "Từ điển cá nhân",
+        "card.editor_tooltip": "Chỉnh sửa văn bản",
+        "card.delete_tooltip": "Xóa game",
+        "toast.lang_updated": "🌐 Đã cập nhật ngôn ngữ",
+        "toast.lang_error": "Lỗi cập nhật ngôn ngữ",
+        "toast.game_stopped": "⏹ Game đã dừng",
+        "toast.game_started": "🚀 Game đã khởi chạy! Bấm lại để dừng.",
+        "toast.translating": "⏳ Đang tiến hành dịch offline... Bấm Stop để huỷ.",
+        "toast.no_deepl_key": "❌ Lỗi: Bạn chưa nhập DeepL API Key trong mục Cài đặt / Bổ trợ!",
+        "toast.game_deleted": "🗑 Đã xóa game",
+        "toast.unknown_error": "Lỗi không xác định",
+        "toast.glossary_saved": "Đã lưu Từ điển cá nhân!",
+        "toast.glossary_error": "Lỗi lưu từ điển",
+        "toast.connection_error": "Lỗi kết nối",
+        "confirm.delete_game": "Bạn chắc chắn muốn xóa game này?",
+        "glossary.source_placeholder": "Từ gốc (bất kỳ ngôn ngữ)",
+        "glossary.target_placeholder": "Dịch thành"
     },
     en: {
         "menu.library": "Library",
@@ -63,9 +88,39 @@ const i18nData = {
         "library.empty_title": "No games found",
         "library.empty_desc": "Click \"+ Add Game\" to get started.",
         "glossary.title": "Custom Glossary",
-        "glossary.desc": "Add word pairs to prevent mistranslations (e.g., Character names, Skills). This glossary applies only to this game."
+        "glossary.desc": "Add word pairs to prevent mistranslations (e.g., Character names, Skills). This glossary applies only to this game.",
+        "card.engine": "Translation Engine",
+        "card.source_lang": "Source Language",
+        "card.target_lang": "Target Language",
+        "card.start": "▶ Start Translation",
+        "card.stop": "⏹ Stop Game",
+        "card.stopping": "⏳ Stopping...",
+        "card.initializing": "⏳ Initializing...",
+        "card.translating": "translating",
+        "card.glossary_tooltip": "Custom Glossary",
+        "card.editor_tooltip": "Text Editor",
+        "card.delete_tooltip": "Delete game",
+        "toast.lang_updated": "🌐 Language updated",
+        "toast.lang_error": "Failed to update language",
+        "toast.game_stopped": "⏹ Game stopped",
+        "toast.game_started": "🚀 Game launched! Click again to stop.",
+        "toast.translating": "⏳ Offline translation in progress... Press Stop to cancel.",
+        "toast.no_deepl_key": "❌ Error: DeepL API Key not found. Enter it in Settings / Plugins!",
+        "toast.game_deleted": "🗑 Game deleted",
+        "toast.unknown_error": "Unknown error",
+        "toast.glossary_saved": "Glossary saved!",
+        "toast.glossary_error": "Failed to save glossary",
+        "toast.connection_error": "Connection error",
+        "confirm.delete_game": "Are you sure you want to delete this game?",
+        "glossary.source_placeholder": "Source word (any language)",
+        "glossary.target_placeholder": "Translate to"
     }
 };
+
+// Helper: lấy chuỗi i18n
+function t(key) {
+    return (i18nData[currentUILang] && i18nData[currentUILang][key]) || (i18nData['en'] && i18nData['en'][key]) || key;
+}
 
 function hexToRgb(hex) {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -240,6 +295,8 @@ async function loadSettings() {
         const settings = await apiGet('settings');
         document.getElementById('theme-toggle').checked = settings.dark_mode;
         document.getElementById('deepl-api-key').value = settings.deepl_api_key || '';
+        const tmThreshold = document.getElementById('tm-threshold');
+        if (tmThreshold) tmThreshold.value = settings.translation_memory_threshold ?? 0.85;
         document.body.classList.toggle('theme-light', !settings.dark_mode);
     } catch (e) {
         console.error('Failed to load settings:', e);
@@ -249,11 +306,17 @@ async function loadSettings() {
 async function saveSettings() {
     const isDark = document.getElementById('theme-toggle').checked;
     const apiKey = document.getElementById('deepl-api-key').value;
+    const tmThreshold = document.getElementById('tm-threshold');
+    const translationMemoryThreshold = tmThreshold ? Number(tmThreshold.value) : 0.85;
     
     document.body.classList.toggle('theme-light', !isDark);
     
     try {
-        await apiPost('settings', { dark_mode: isDark, deepl_api_key: apiKey });
+        await apiPost('settings', {
+            dark_mode: isDark,
+            deepl_api_key: apiKey,
+            translation_memory_threshold: translationMemoryThreshold
+        });
         showToast('⚙️ Đã lưu cấu hình');
     } catch (e) {
         showToast('Lỗi lưu cấu hình', true);
@@ -393,21 +456,21 @@ async function loadGames() {
             </div>
             <div class="lang-row">
                 <div class="lang-group">
-                    <label>Engine Dịch</label>
+                    <label>${t('card.engine')}</label>
                     <select class="lang-select" data-game-id="${game.id}" data-lang-type="translator" onchange="onLangChange(this)">
                         <option value="google" ${game.translator === 'google' ? 'selected' : ''}>Google Translate</option>
                         <option value="deepl" ${game.translator === 'deepl' ? 'selected' : ''}>DeepL API (Pro)</option>
                     </select>
                 </div>
                 <div class="lang-group">
-                    <label>Ngôn ngữ gốc</label>
+                    <label>${t('card.source_lang')}</label>
                     <select class="lang-select" data-game-id="${game.id}" data-lang-type="input" onchange="onLangChange(this)">
                         ${buildLangOptions(game.input_lang, false)}
                     </select>
                 </div>
                 <span class="lang-arrow">→</span>
                 <div class="lang-group">
-                    <label>Dịch sang</label>
+                    <label>${t('card.target_lang')}</label>
                     <select class="lang-select" data-game-id="${game.id}" data-lang-type="output" onchange="onLangChange(this)">
                         ${buildLangOptions(game.output_lang, true)}
                     </select>
@@ -415,15 +478,18 @@ async function loadGames() {
             </div>
             <div class="game-actions">
                 <button class="btn-start" id="btn-start-${game.id}" onclick="startGame('${game.id}', this)">
-                    ▶ Start Translation
+                    ${t('card.start')}
                 </button>
-                <button class="btn-icon" onclick="openGlossaryModal('${game.id}')" title="Từ điển cá nhân (Glossary)">
+                <button class="btn-icon" onclick="openGlossaryModal('${game.id}')" title="${t('card.glossary_tooltip')}">
                     📖
                 </button>
-                <button class="btn-icon" onclick="openEditorModal('${game.id}')" title="Chỉnh sửa văn bản (Grid Editor)">
+                <button class="btn-icon" onclick="openTranslationMemoryModal('${game.id}')" title="Translation Memory suggestions">
+                    TM
+                </button>
+                <button class="btn-icon" onclick="openEditorModal('${game.id}')" title="${t('card.editor_tooltip')}">
                     📝
                 </button>
-                <button class="btn-delete" onclick="deleteGame('${game.id}')" title="Xóa game">
+                <button class="btn-delete" onclick="deleteGame('${game.id}')" title="${t('card.delete_tooltip')}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -456,9 +522,9 @@ async function onLangChange(selectEl) {
             output_lang: outputSelect.value,
             translator: transSelect ? transSelect.value : 'google'
         });
-        showToast('🌐 Đã cập nhật ngôn ngữ');
+        showToast(t('toast.lang_updated'));
     } catch (e) {
-        showToast('Lỗi cập nhật ngôn ngữ', true);
+        showToast(t('toast.lang_error'), true);
     }
 }
 
@@ -466,13 +532,13 @@ async function onLangChange(selectEl) {
 async function startGame(gameId, btnElement) {
     if (btnElement.classList.contains('running')) {
         // Stop
-        btnElement.innerText = '⏳ Đang dừng...';
+        btnElement.innerText = t('card.stopping');
         try {
             await apiPost('games/stop', { game_id: gameId });
         } catch(e) {}
-        btnElement.innerText = '▶ Start Translation';
+        btnElement.innerText = t('card.start');
         btnElement.classList.remove('running');
-        showToast('⏹ Game đã dừng');
+        showToast(t('toast.game_stopped'));
         return;
     }
 
@@ -483,34 +549,35 @@ async function startGame(gameId, btnElement) {
         if (transSelect && transSelect.value === 'deepl') {
             const apiKey = document.getElementById('deepl-api-key').value;
             if (!apiKey || apiKey.trim() === '') {
-                showToast('❌ Lỗi: Bạn chưa nhập DeepL API Key trong mục Settings / Plugins!', true);
+                showToast(t('toast.no_deepl_key'), true);
                 return;
             }
         }
     }
 
     // Start
-    btnElement.innerText = '⏳ Đang khởi tạo...';
+    btnElement.innerText = t('card.initializing');
     btnElement.classList.add('running');
 
     try {
         const result = await apiPost('games/start', { game_id: gameId });
         if (result.status === 'success') {
-            showToast('🚀 Game đã khởi chạy! Bấm lại để dừng.');
-            btnElement.innerText = '⏹ Stop Game';
+            showToast(t('toast.game_started'));
+            btnElement.innerText = t('card.stop');
         } else if (result.status === 'translating') {
-            showToast('⏳ Đang tiến hành dịch offline...');
-            btnElement.innerText = '0% Đang dịch...';
-            btnElement.disabled = true; // Disable until done
+            showToast(t('toast.translating'));
+            btnElement.innerText = `⏹ Stop (${t('card.translating')}...)`;
+            btnElement.disabled = false;
+            btnElement.classList.add('running');
             pollTranslationProgress(gameId, btnElement);
         } else {
             showToast('❌ ' + result.error, true);
-            btnElement.innerText = '▶ Start Translation';
+            btnElement.innerText = t('card.start');
             btnElement.classList.remove('running');
         }
     } catch (e) {
-        showToast('❌ Lỗi: ' + e, true);
-        btnElement.innerText = '▶ Start Translation';
+        showToast('❌ ' + e, true);
+        btnElement.innerText = t('card.start');
         btnElement.classList.remove('running');
     }
 }
@@ -523,11 +590,11 @@ async function pollTranslationProgress(gameId, btnElement) {
             btnElement.disabled = false;
             if (status.error) {
                 showToast('❌ ' + status.message, true);
-                btnElement.innerText = '▶ Start Translation';
+                btnElement.innerText = t('card.start');
                 btnElement.classList.remove('running');
             } else {
                 showToast('✅ ' + status.message);
-                btnElement.innerText = '⏹ Stop Game';
+                btnElement.innerText = t('card.stop');
             }
             return;
         }
@@ -536,7 +603,8 @@ async function pollTranslationProgress(gameId, btnElement) {
         if (status.total > 0) {
             pct = Math.round((status.progress / status.total) * 100);
         }
-        btnElement.innerText = `${pct}% Đang dịch...`;
+        btnElement.innerText = `⏹ Stop (${pct}% ${t('card.translating')}...)`;
+        btnElement.disabled = false;
         
         // Tiếp tục poll sau 1 giây
         setTimeout(() => pollTranslationProgress(gameId, btnElement), 1000);
@@ -548,13 +616,12 @@ async function pollTranslationProgress(gameId, btnElement) {
 
 // --- Delete Game ---
 async function deleteGame(gameId) {
-    if (!confirm('Bạn chắc chắn muốn xóa game này?')) return;
+    if (!confirm(t('confirm.delete_game'))) return;
 
     try {
         const result = await apiPost('games/delete', { game_id: gameId });
         if (result.status === 'success') {
-            showToast('🗑 Đã xóa game');
-            // Xóa card khỏi DOM ngay lập tức
+            showToast(t('toast.game_deleted'));
             const card = document.getElementById(`card-${gameId}`);
             if (card) {
                 card.style.transition = 'opacity 0.3s, transform 0.3s';
@@ -562,7 +629,6 @@ async function deleteGame(gameId) {
                 card.style.transform = 'scale(0.95)';
                 setTimeout(() => {
                     card.remove();
-                    // Nếu không còn card nào, reload để hiện empty state
                     const container = document.getElementById('games-container');
                     if (container && container.children.length === 0) {
                         loadGames();
@@ -570,10 +636,10 @@ async function deleteGame(gameId) {
                 }, 300);
             }
         } else {
-            showToast('❌ ' + (result.error || 'Lỗi không xác định'), true);
+            showToast('❌ ' + (result.error || t('toast.unknown_error')), true);
         }
     } catch (e) {
-        showToast('❌ Lỗi: ' + e, true);
+        showToast('❌ ' + e, true);
     }
 }
 
@@ -653,13 +719,105 @@ async function saveGlossary() {
             glossary: currentGlossaryData
         });
         if (res.status === 'success') {
-            showToast('Đã lưu Từ điển cá nhân!');
+            showToast(t('toast.glossary_saved'));
             closeGlossaryModal();
             loadGames();
         } else {
-            showToast('Lỗi lưu từ điển', true);
+            showToast(t('toast.glossary_error'), true);
         }
     } catch(e) {
-        showToast('Lỗi kết nối', true);
+        showToast(t('toast.connection_error'), true);
+    }
+}
+
+// --- Translation Memory (fuzzy suggestions require explicit confirmation) ---
+let currentTranslationMemoryGameId = null;
+
+function openTranslationMemoryModal(gameId) {
+    currentTranslationMemoryGameId = gameId;
+    document.getElementById('tm-source-text').value = '';
+    document.getElementById('tm-category').value = 'unknown';
+    document.getElementById('tm-suggestions').replaceChildren();
+    document.getElementById('translation-memory-modal').style.display = 'flex';
+}
+
+function closeTranslationMemoryModal() {
+    document.getElementById('translation-memory-modal').style.display = 'none';
+}
+
+async function findTranslationMemorySuggestions() {
+    const sourceText = document.getElementById('tm-source-text').value.trim();
+    const category = document.getElementById('tm-category').value;
+    const suggestions = document.getElementById('tm-suggestions');
+    suggestions.replaceChildren();
+    if (!sourceText) {
+        showToast('Enter text before searching Translation Memory.', true);
+        return;
+    }
+
+    const query = new URLSearchParams({
+        game_id: currentTranslationMemoryGameId,
+        text: sourceText,
+        category
+    });
+    try {
+        const response = await apiGet(`translation-memory/suggest?${query.toString()}`);
+        if (response.status !== 'success') {
+            showToast(response.error || 'Could not load Translation Memory suggestions.', true);
+            return;
+        }
+        if (!response.suggestions.length) {
+            const empty = document.createElement('p');
+            empty.style.color = 'var(--text-secondary)';
+            empty.textContent = `No suggestions at the ${Math.round(response.threshold * 100)}% threshold.`;
+            suggestions.appendChild(empty);
+            return;
+        }
+        response.suggestions.forEach((suggestion) => {
+            const item = document.createElement('div');
+            item.style = 'padding: 10px; border-radius: 6px; background: rgba(0,0,0,0.1);';
+
+            const source = document.createElement('div');
+            source.style = 'font-size: 12px; color: var(--text-secondary); margin-bottom: 6px;';
+            source.textContent = `${Math.round(suggestion.similarity * 100)}% match from: ${suggestion.source_text}`;
+
+            const translation = document.createElement('div');
+            translation.style = 'white-space: pre-wrap; margin-bottom: 8px;';
+            translation.textContent = suggestion.translated_text;
+
+            const useButton = document.createElement('button');
+            useButton.className = 'btn-start';
+            useButton.style = 'width: auto; padding: 6px 12px;';
+            useButton.textContent = 'Confirm and use';
+            useButton.addEventListener('click', () => confirmTranslationMemorySuggestion(
+                sourceText, suggestion.translated_text, category, useButton
+            ));
+            item.append(source, translation, useButton);
+            suggestions.appendChild(item);
+        });
+    } catch (error) {
+        showToast('Could not load Translation Memory suggestions.', true);
+    }
+}
+
+async function confirmTranslationMemorySuggestion(sourceText, translatedText, category, button) {
+    button.disabled = true;
+    try {
+        const result = await apiPost('translation-memory/confirm', {
+            game_id: currentTranslationMemoryGameId,
+            source_text: sourceText,
+            translated_text: translatedText,
+            category
+        });
+        if (result.status === 'success') {
+            button.textContent = 'Confirmed';
+            showToast('Translation Memory suggestion confirmed.');
+        } else {
+            button.disabled = false;
+            showToast(result.error || 'Could not confirm suggestion.', true);
+        }
+    } catch (error) {
+        button.disabled = false;
+        showToast('Could not confirm suggestion.', true);
     }
 }

@@ -20,10 +20,11 @@ def test_deploy_and_launch_missing_payload(sample_game_profile, tmp_path):
     def on_error(data):
         error_events.append(data)
 
-    EventBus.subscribe(SystemEvents.GAME_STARTING, on_starting)
-    EventBus.subscribe(SystemEvents.ERROR_OCCURRED, on_error)
+    bus = EventBus()
+    bus.subscribe(SystemEvents.GAME_STARTING, on_starting)
+    bus.subscribe(SystemEvents.ERROR_OCCURRED, on_error)
 
-    deployer = GameDeployer()
+    deployer = GameDeployer(event_bus=bus)
     missing_payload_dir = str(tmp_path / "missing_payload_dir")
 
     # Gọi hàm triển khai với payload dir không tồn tại
@@ -64,12 +65,13 @@ def test_deploy_and_launch_success_and_cleanup_flow(sample_game_profile, tmp_pat
 
     # Lắng nghe các event
     events_triggered = []
-    EventBus.subscribe(SystemEvents.GAME_STARTING, lambda d: events_triggered.append("STARTING"))
-    EventBus.subscribe(SystemEvents.DEPLOYMENT_FINISHED, lambda d: events_triggered.append("DEPLOYED"))
-    EventBus.subscribe(SystemEvents.GAME_EXITED, lambda d: events_triggered.append("EXITED"))
-    EventBus.subscribe(SystemEvents.CLEANUP_FINISHED, lambda d: events_triggered.append("CLEANED"))
+    bus = EventBus()
+    bus.subscribe(SystemEvents.GAME_STARTING, lambda d: events_triggered.append("STARTING"))
+    bus.subscribe(SystemEvents.DEPLOYMENT_FINISHED, lambda d: events_triggered.append("DEPLOYED"))
+    bus.subscribe(SystemEvents.GAME_EXITED, lambda d: events_triggered.append("EXITED"))
+    bus.subscribe(SystemEvents.CLEANUP_FINISHED, lambda d: events_triggered.append("CLEANED"))
 
-    deployer = GameDeployer()
+    deployer = GameDeployer(event_bus=bus)
     # Giả lập monitor.start_and_monitor trả về True mà không chạy tiến trình thật
     deployer.monitor.start_and_monitor = MagicMock(return_value=True)
 

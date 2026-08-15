@@ -9,6 +9,14 @@ class AppSettings(BaseModel):
     language: str = Field(default="vi", description="Ngôn ngữ của Launcher")
     deepl_api_key: str = Field(default="", description="API Key cho DeepL (nếu có)")
 
+    translation_memory_threshold: float = Field(
+        default=0.85,
+        ge=0.0,
+        le=1.0,
+        description="Translation-memory fuzzy suggestion threshold",
+    )
+
+
 class GameProfile(BaseModel):
     """Đại diện cho một Game Profile."""
     version: int = Field(default=1)

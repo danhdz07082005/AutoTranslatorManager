@@ -35,13 +35,3 @@ def temp_profiles_dir(tmp_path, monkeypatch):
     )
     return profiles_dir
 
-
-@pytest.fixture(autouse=True)
-def reset_event_bus():
-    """
-    Fixture tự động xóa toàn bộ subscribers của EventBus trước và sau mỗi test 
-    để tránh rò rỉ trạng thái giữa các bài test.
-    """
-    EventBus._subscribers.clear()
-    yield
-    EventBus._subscribers.clear()

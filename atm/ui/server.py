@@ -42,6 +42,13 @@ class ATMHandler(BaseHTTPRequestHandler):
             self._json_response(self.api.get_translation_status(game_id))
         elif self.path == '/api/cache/get':
             self._json_response(self.api.get_cache_entries())
+        elif self.path.startswith('/api/translation-memory/suggest'):
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            self._json_response(self.api.get_translation_memory_suggestions(
+                query.get('game_id', [''])[0],
+                query.get('text', [''])[0],
+                query.get('category', ['unknown'])[0],
+            ))
         else:
             self._json_response({"error": "Not found"}, 404)
 
@@ -73,10 +80,20 @@ class ATMHandler(BaseHTTPRequestHandler):
             )
             self._json_response(result)
 
+        elif self.path == '/api/translation-memory/confirm':
+            result = self.api.confirm_translation_memory_suggestion(
+                body.get('game_id', ''),
+                body.get('source_text', ''),
+                body.get('translated_text', ''),
+                body.get('category', 'unknown'),
+            )
+            self._json_response(result)
+
         elif self.path == '/api/settings':
             result = self.api.update_settings(
                 body.get('dark_mode', True),
-                body.get('deepl_api_key', '')
+                body.get('deepl_api_key', ''),
+                body.get('translation_memory_threshold', None),
             )
             self._json_response(result)
 

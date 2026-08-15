@@ -54,11 +54,19 @@ class BackendApi:
         settings = self.settings_repo.load()
         return settings.model_dump()
 
-    def update_settings(self, dark_mode, deepl_api_key):
+    def update_settings(self, dark_mode, deepl_api_key, translation_memory_threshold=None):
         """Cập nhật cấu hình"""
         settings = self.settings_repo.load()
         settings.dark_mode = dark_mode
         settings.deepl_api_key = deepl_api_key
+        if translation_memory_threshold is not None:
+            try:
+                threshold = float(translation_memory_threshold)
+            except (TypeError, ValueError):
+                return {"status": "error", "error": "Invalid translation-memory threshold"}
+            if not 0.0 <= threshold <= 1.0:
+                return {"status": "error", "error": "Translation-memory threshold must be between 0 and 1"}
+            settings.translation_memory_threshold = threshold
         self.settings_repo.save(settings)
         return {"status": "success"}
 
@@ -249,10 +257,10 @@ class BackendApi:
         from atm.core.translation.cache_manager import TranslationCache
         cache = TranslationCache()
         data = {}
-        for src_lang, target_dict in cache.cache.items():
-            for tgt_lang, texts in target_dict.items():
-                for original, translated in texts.items():
-                    data[original] = translated
+        # The editor currently displays one value per source string. Core
+        # storage still retains the context category for every entry.
+        for _source, _target, _category, original, translated in cache.iter_entries():
+            data[original] = translated
         return {"status": "success", "data": data}
 
     def update_cache_entry(self, game_id, key, value):
@@ -269,86 +277,84 @@ class BackendApi:
             pass
             
         from atm.core.translation.cache_manager import TranslationCache
+        from atm.core.translation.translation_memory import TranslationMemory
         cache = TranslationCache()
-        cache.set(source_lang, target_lang, key, value)
+        cache.set(
+            source_lang,
+            target_lang,
+            key,
+            value,
+            TranslationCache.MANUAL_CATEGORY,
+        )
         cache.save_to_disk()
+        TranslationMemory().remember(
+            key,
+            value,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            category=TranslationCache.MANUAL_CATEGORY,
+            source="user",
+            confidence="confirmed",
+        )
         logger.info(f"Updated cache manually: {key} -> {value}")
         return {"status": "success"}
 
-    def translate_texts_realtime(self, game_id, texts):
-        """Xử lý dịch mảng văn bản thời gian thực từ payload game (RenPy/Unity)"""
+    def get_translation_memory_suggestions(self, game_id, text, category="unknown"):
+        """Return fuzzy TM suggestions; callers must explicitly confirm one."""
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
-        
-        source_lang = profile.input_lang if profile.input_lang else "auto"
-        target_lang = profile.output_lang if profile.output_lang else "vi"
-        glossary = getattr(profile, "glossary", {})
-        if not glossary: glossary = {}
+        if not isinstance(text, str) or not text.strip():
+            return {"status": "error", "error": "Text is required"}
+
+        from dataclasses import asdict
+        from atm.core.translation.translation_memory import TranslationMemory
+
+        threshold = self.settings_repo.load().translation_memory_threshold
+        suggestions = TranslationMemory().suggest(
+            text,
+            source_lang=profile.input_lang or "auto",
+            target_lang=profile.output_lang or "vi",
+            category=category or "unknown",
+            threshold=threshold,
+        )
+        return {
+            "status": "success",
+            "threshold": threshold,
+            "suggestions": [asdict(suggestion) for suggestion in suggestions],
+        }
+
+    def confirm_translation_memory_suggestion(
+        self, game_id, source_text, translated_text, category="unknown"
+    ):
+        """Persist a user-approved TM suggestion and add its exact cache entry."""
+        profile = self.profile_repo.get_by_id(game_id)
+        if not profile:
+            return {"status": "error", "error": "Game not found"}
+        if not all(
+            isinstance(value, str) and value.strip()
+            for value in (source_text, translated_text)
+        ):
+            return {"status": "error", "error": "Source text and translation are required"}
 
         from atm.core.translation.cache_manager import TranslationCache
-        cache = TranslationCache()
-        
-        translated_texts = []
-        uncached_texts = []
-        uncached_indices = []
+        from atm.core.translation.translation_memory import TranslationMemory
 
-        # 1. Tra từ điển cá nhân & Cache trước
-        for i, text in enumerate(texts):
-            if not text.strip():
-                translated_texts.append(text)
-                continue
-                
-            # Tra Từ điển cá nhân
-            if text in glossary:
-                translated_texts.append(glossary[text])
-                continue
-                
-            # Tra Cache
-            cached_val = cache.get(source_lang, target_lang, text)
-            if cached_val:
-                translated_texts.append(cached_val)
-                continue
-                
-            # Chưa có trong cache/glossary
-            translated_texts.append(text) # Giữ chỗ
-            uncached_texts.append(text)
-            uncached_indices.append(i)
-            
-        # 2. Dịch các từ chưa có qua API
-        if uncached_texts:
-            translator_name = getattr(profile, "translator", "google")
-            
-            from atm.core.translation.translators import GoogleTranslator, DeepLTranslator
-            if translator_name == "deepl":
-                from atm.storage.repositories.settings_repository import SettingsRepository
-                settings = SettingsRepository().load()
-                deepl_key = getattr(settings, "deepl_api_key", "")
-                if deepl_key:
-                    translator = DeepLTranslator(deepl_key)
-                else:
-                    translator = GoogleTranslator()
-            else:
-                translator = GoogleTranslator()
-                
-            try:
-                newly_translated = translator.translate_batch(uncached_texts, target_lang, source_lang)
-                
-                # Lưu ngược vào mảng kết quả và vào Cache
-                cache_updates_src = []
-                cache_updates_tgt = []
-                for idx_in_uncached, original_idx in enumerate(uncached_indices):
-                    if idx_in_uncached < len(newly_translated):
-                        final_text = newly_translated[idx_in_uncached]
-                        translated_texts[original_idx] = final_text
-                        cache_updates_src.append(uncached_texts[idx_in_uncached])
-                        cache_updates_tgt.append(final_text)
-                
-                if cache_updates_src:
-                    cache.set_batch(source_lang, target_lang, cache_updates_src, cache_updates_tgt)
-                    cache.save_to_disk()
-                    
-            except Exception as e:
-                logger.error(f"Realtime translation error: {e}")
-                
-        return {"status": "success", "translated_texts": translated_texts}
+        source_lang = profile.input_lang or "auto"
+        target_lang = profile.output_lang or "vi"
+        safe_category = category or "unknown"
+        # A fuzzy result only reaches TM/cache after a user selected it.
+        TranslationMemory().remember(
+            source_text,
+            translated_text,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            category=safe_category,
+            source="user",
+            confidence="confirmed",
+        )
+        cache = TranslationCache()
+        cache.set(source_lang, target_lang, source_text, translated_text, safe_category)
+        cache.save_to_disk()
+        logger.info("User confirmed translation-memory suggestion for %s", profile.game_name)
+        return {"status": "success"}

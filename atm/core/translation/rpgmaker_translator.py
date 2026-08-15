@@ -1,180 +1,416 @@
-import os
+from __future__ import annotations
+
 import json
+import os
 import shutil
-from typing import List, Dict, Any, Callable
+from collections.abc import Callable, Iterator
+from pathlib import Path
+from typing import Any
+
 from atm.config.schema import GameProfile
-from atm.core.translation.translators import GoogleTranslator, DeepLTranslator
+from atm.core.translation.cache_manager import TranslationCache
+from atm.core.translation.classification import (
+    EVENT_TEXT_CODES,
+    StringClassification,
+    TranslationEntry,
+    category_for,
+    classify,
+    count_by_classification,
+    make_entry,
+    parse_note_field,
+)
+from atm.core.translation.pipeline import (
+    TranslatableString as PipelineEntry,
+    TranslationPipeline,
+)
+from atm.core.translation.translation_memory import TranslationMemory
+from atm.core.translation.translators import DeepLTranslator, GoogleTranslator
 from atm.storage.repositories.settings_repository import SettingsRepository
 from atm.utils.logger import get_logger
 
 logger = get_logger(__name__, "launcher.log")
 
+
+def _normalise_key(key: Any) -> str | None:
+    return key.casefold() if isinstance(key, str) else None
+
+
+def _event_code(node: dict[Any, Any]) -> int | None:
+    for key, value in node.items():
+        if _normalise_key(key) == "code" and isinstance(value, int):
+            return value
+    return None
+
+
+def _overlay_key(source_file: str, path: tuple[Any, ...]) -> str:
+    stem = Path(source_file).stem
+    return ".".join(str(part) for part in (stem, *path))
+
+
+def visit(
+    node: Any,
+    path: list[Any] | None = None,
+    *,
+    source_file: str = "",
+    schema: object | None = None,
+) -> Iterator[TranslationEntry]:
+    """Recursively yield only schema-confirmed player-facing strings."""
+
+    current_path = [] if path is None else path
+    yield from _visit(node, current_path, source_file=source_file, schema=schema)
+
+
+def _visit(
+    node: Any,
+    path: list[Any],
+    *,
+    source_file: str,
+    schema: object | None,
+    event_code: int | None = None,
+    inside_event_parameters: bool = False,
+) -> Iterator[TranslationEntry]:
+    if isinstance(node, str):
+        classification = classify(
+            node,
+            path,
+            source_file,
+            schema,
+            event_code=event_code,
+            inside_event_parameters=inside_event_parameters,
+        )
+        if classification is StringClassification.TRANSLATABLE:
+            yield make_entry(node, source_file, path, classification)
+        elif classification is StringClassification.SPECIAL:
+            yield from _visit_note_field(node, path, source_file)
+        return
+
+    if isinstance(node, list):
+        for index, item in enumerate(node):
+            yield from _visit(
+                item,
+                path + [index],
+                source_file=source_file,
+                schema=schema,
+                event_code=event_code,
+                inside_event_parameters=inside_event_parameters,
+            )
+        return
+
+    if isinstance(node, dict):
+        command_code = _event_code(node)
+        for key, value in node.items():
+            key_name = _normalise_key(key)
+            is_parameters = key_name == "parameters"
+            yield from _visit(
+                value,
+                path + [key],
+                source_file=source_file,
+                schema=schema,
+                event_code=command_code if is_parameters else event_code,
+                inside_event_parameters=is_parameters or inside_event_parameters,
+            )
+
+
+def _visit_note_field(
+    text: str, path: list[Any], source_file: str
+) -> Iterator[TranslationEntry]:
+    for part in parse_note_field(text):
+        if part.classification is not StringClassification.TRANSLATABLE:
+            continue
+        note_path = (*path, "__note_line__", part.line_index)
+        yield TranslationEntry(
+            original_text=part.text,
+            source_file=source_file,
+            path=_overlay_key(source_file, note_path),
+            category=category_for(source_file, path),
+            classification=StringClassification.TRANSLATABLE,
+            raw_path=note_path,
+        )
+
+
 class RPGMakerTranslator:
     """Xử lý dịch thuật Offline cho RPG Maker MV/MZ."""
-    
-    def __init__(self):
-        self.settings = SettingsRepository().load()
-        
-    def _extract_texts_from_json(self, data: Any) -> List[str]:
-        """Đệ quy lấy tất cả text từ file JSON của RPG Maker."""
-        texts = []
-        if isinstance(data, dict):
-            # Các code phổ biến trong RPG Maker: 
-            # 401: Show Text, 102: Show Choices
-            if "code" in data and data["code"] in [401, 102] and "parameters" in data:
-                for param in data["parameters"]:
-                    if isinstance(param, str) and param.strip():
-                        texts.append(param)
-                    elif isinstance(param, list):
-                        for p in param:
-                            if isinstance(p, str) and p.strip():
-                                texts.append(p)
-            for key, value in data.items():
-                texts.extend(self._extract_texts_from_json(value))
-        elif isinstance(data, list):
-            for item in data:
-                texts.extend(self._extract_texts_from_json(item))
-        return texts
 
-    def _replace_texts_in_json(self, data: Any, translated_map: Dict[str, str]) -> Any:
-        """Đệ quy thay thế text đã dịch vào file JSON."""
-        if isinstance(data, dict):
-            if "code" in data and data["code"] in [401, 102] and "parameters" in data:
-                new_params = []
-                for param in data["parameters"]:
-                    if isinstance(param, str) and param.strip() in translated_map:
-                        new_params.append(translated_map[param.strip()])
-                    elif isinstance(param, list):
-                        new_list = []
-                        for p in param:
-                            if isinstance(p, str) and p.strip() in translated_map:
-                                new_list.append(translated_map[p.strip()])
-                            else:
-                                new_list.append(p)
-                        new_params.append(new_list)
-                    else:
-                        new_params.append(param)
-                data["parameters"] = new_params
-                
-            for key, value in data.items():
-                data[key] = self._replace_texts_in_json(value, translated_map)
-        elif isinstance(data, list):
-            for i in range(len(data)):
-                data[i] = self._replace_texts_in_json(data[i], translated_map)
+    OVERLAY_FILENAME = "translation_overlay.json"
+    OVERLAY_PLUGIN_FILENAME = "ATM_Overlay.js"
+
+    def __init__(
+        self,
+        settings=None,
+        translator_factory: Callable[[GameProfile, object], object] | None = None,
+        translation_memory: object | bool | None = None,
+        cache: object | bool | None = None,
+    ):
+        self.settings = settings if settings is not None else SettingsRepository().load()
+        self._translator_factory = translator_factory
+        self._translation_memory = translation_memory
+        self._cache = cache
+
+    def visit(
+        self,
+        node: Any,
+        path: list[Any] | None = None,
+        *,
+        source_file: str = "",
+        schema: object | None = None,
+    ) -> Iterator[TranslationEntry]:
+        yield from visit(node, path, source_file=source_file, schema=schema)
+
+    def _extract_texts_from_json(self, data: Any, source_file: str = "") -> list[str]:
+        return [entry.text for entry in self.visit(data, source_file=source_file)]
+
+    def _replace_texts_in_json(self, data: Any, translated_map: dict[str, str]) -> Any:
+        """Compatibility helper for older tests; production writes an overlay."""
+
+        for entry in self.visit(data, source_file="Map001.json"):
+            translated = translated_map.get(entry.text)
+            if translated is not None and "__note_line__" not in entry.raw_path:
+                self._set_value_at_path(data, list(entry.raw_path), translated)
         return data
 
-    def translate_game(self, profile: GameProfile, progress_callback: Callable[[int, int, str], None] = None, is_cancelled: Callable[[], bool] = None) -> bool:
-        """
-        Dịch toàn bộ file JSON trong thư mục data của RPG Maker.
-        """
-        game_dir = os.path.dirname(profile.exe_path)
-        
-        # MV thường có `www/data`, MZ thường có `data` ở ngay thư mục gốc
-        if os.path.exists(os.path.join(game_dir, "www", "data")):
-            data_dir = os.path.join(game_dir, "www", "data")
-            backup_dir = os.path.join(game_dir, "www", "data_backup")
-        elif os.path.exists(os.path.join(game_dir, "data")):
-            data_dir = os.path.join(game_dir, "data")
-            backup_dir = os.path.join(game_dir, "data_backup")
-        else:
-            logger.error(f"Cannot find data folder in {game_dir} or {game_dir}/www")
+    @staticmethod
+    def _set_value_at_path(data: Any, path: list[Any], value: Any) -> None:
+        parent = data
+        for segment in path[:-1]:
+            parent = parent[segment]
+        parent[path[-1]] = value
+
+    def _get_translator(self, profile: GameProfile):
+        if self._translator_factory is not None:
+            return self._translator_factory(profile, self.settings)
+
+        translator_id = getattr(profile, "translator", "google")
+        if translator_id == "deepl" and self.settings and getattr(self.settings, "deepl_api_key", ""):
+            return DeepLTranslator(self.settings.deepl_api_key)
+        return GoogleTranslator()
+
+    def _find_data_dirs(self, game_dir: Path) -> tuple[Path, Path] | None:
+        candidates = (
+            (game_dir / "www" / "data", game_dir / "www" / "data_backup"),
+            (game_dir / "data", game_dir / "data_backup"),
+        )
+        for data_dir, backup_dir in candidates:
+            if data_dir.exists():
+                return data_dir, backup_dir
+        return None
+
+    def _iter_json_files(self, backup_dir: Path) -> Iterator[Path]:
+        yield from sorted(
+            (path for path in backup_dir.rglob("*.json") if path.name != self.OVERLAY_FILENAME),
+            key=lambda path: str(path).casefold(),
+        )
+
+    def translate_game(
+        self,
+        profile: GameProfile,
+        progress_callback: Callable[[int, int, str], None] | None = None,
+        is_cancelled: Callable[[], bool] | None = None,
+    ) -> bool:
+        game_dir = Path(profile.exe_path).expanduser().parent
+        dirs = self._find_data_dirs(game_dir)
+        if dirs is None:
+            logger.error("Cannot find RPG Maker data folder in %s", game_dir)
             return False
-            
-        # Tạo backup nếu chưa có
-        if not os.path.exists(backup_dir):
+
+        data_dir, backup_dir = dirs
+        if not backup_dir.exists():
             logger.info("Creating backup for RPG Maker data...")
             shutil.copytree(data_dir, backup_dir)
-            
-        json_files = [f for f in os.listdir(backup_dir) if f.endswith(".json")]
-        
-        translator_id = getattr(profile, "translator", "google")
-        if translator_id == "deepl" and self.settings and self.settings.deepl_api_key:
-            translator = DeepLTranslator(self.settings.deepl_api_key)
-        else:
-            translator = GoogleTranslator()
-            
-        # Pass 1: Quét toàn bộ để lấy tổng số câu
-        file_datas = []
-        total_batches = 0
-        batch_size = 50
-        
-        if progress_callback:
-            progress_callback(0, 100, "Đang quét dữ liệu game...")
-            
-        for filename in json_files:
-            source_file_path = os.path.join(backup_dir, filename)
-            try:
-                with open(source_file_path, "r", encoding="utf-8-sig") as f:
-                    content = f.read()
-                    if not content:
-                        continue
-                    data = json.loads(content)
-                texts = self._extract_texts_from_json(data)
-                unique_texts = list(set(texts))
-                if unique_texts:
-                    file_datas.append({
-                        "filename": filename,
-                        "data": data,
-                        "unique_texts": unique_texts
-                    })
-                    total_batches += (len(unique_texts) + batch_size - 1) // batch_size
-            except Exception as e:
-                logger.error(f"Error scanning {filename}: {e}")
-                
-        # Pass 2: Dịch thực tế và update progress theo batch
-        current_batch = 0
-        
-        for file_info in file_datas:
-            if is_cancelled and is_cancelled():
-                logger.info("Translation cancelled by user.")
-                return False
 
-            filename = file_info["filename"]
-            data = file_info["data"]
-            unique_texts = file_info["unique_texts"]
-            dest_file_path = os.path.join(data_dir, filename)
-            
-            translated_texts = []
-            
-            for i in range(0, len(unique_texts), batch_size):
-                if is_cancelled and is_cancelled():
-                    logger.info("Translation cancelled by user midway during batch.")
-                    return False
-                    
-                if progress_callback:
-                    percent = int((current_batch / max(1, total_batches)) * 100)
-                    progress_callback(percent, 100, f"Đang dịch {filename} ({percent}%)")
-                    
-                batch = unique_texts[i:i+batch_size]
-                
-                # Apply Custom Glossary (Từ điển cá nhân)
-                processed_batch = []
-                glossary = getattr(profile, "glossary", {})
-                for text in batch:
-                    processed_text = text
-                    if glossary:
-                        for k, v in glossary.items():
-                            processed_text = processed_text.replace(k, v)
-                    processed_batch.append(processed_text)
-                    
-                res = translator.translate_batch(processed_batch, target_lang=profile.output_lang, source_lang=profile.input_lang)
-                translated_texts.extend(res)
-                
-                current_batch += 1
-                
-            translated_map = dict(zip(unique_texts, translated_texts))
-            
-            # Thay thế text
-            new_data = self._replace_texts_in_json(data, translated_map)
-            
-            # Ghi đè lại file
-            try:
-                with open(dest_file_path, "w", encoding="utf-8") as f:
-                    json.dump(new_data, f, ensure_ascii=False)
-            except Exception as e:
-                logger.error(f"Failed to write translated {filename}: {e}")
-                
         if progress_callback:
-            progress_callback(100, 100, "Hoàn tất dịch!")
-            
+            progress_callback(0, 100, "Đang phân loại dữ liệu RPG Maker...")
+
+        extracted_entries: list[TranslationEntry] = []
+        overlay_entries: dict[str, dict[str, str]] = {}
+        parsed_files: dict[Path, Any] = {}
+        
+        for source_file in self._iter_json_files(backup_dir):
+            if is_cancelled and is_cancelled():
+                return False
+            try:
+                with source_file.open("r", encoding="utf-8-sig") as file:
+                    data = json.load(file)
+                    parsed_files[source_file] = data
+            except Exception as error:
+                logger.error("Error scanning %s: %s", source_file, error)
+                continue
+            relative_file = str(source_file.relative_to(backup_dir)).replace(os.sep, "/")
+            extracted_entries.extend(self.visit(data, source_file=relative_file))
+
+        logger.info("RPG Maker classification report: %s", count_by_classification(extracted_entries))
+        if not extracted_entries:
+            if progress_callback:
+                progress_callback(100, 100, "Không có text RPG Maker an toàn để dịch.")
+            return True
+
+        translator = self._get_translator(profile)
+        pipeline_entries = [
+            PipelineEntry(
+                text=entry.original_text,
+                path=(entry.path,),
+                category=entry.category,
+                metadata={"classification": entry.classification.value},
+            )
+            for entry in extracted_entries
+        ]
+
+        translated_by_path: dict[str, str] = {}
+        pipeline = TranslationPipeline(
+            translator,
+            cache=(
+                None
+                if self._cache is False
+                else self._cache or getattr(translator, "cache", None) or TranslationCache()
+            ),
+            glossary=getattr(profile, "glossary", {}) or {},
+            translation_memory=(
+                None
+                if self._translation_memory is False
+                else self._translation_memory or TranslationMemory()
+            ),
+        )
+        result = pipeline.run(
+            pipeline_entries,
+            source_lang=getattr(profile, "input_lang", "auto") or "auto",
+            target_lang=getattr(profile, "output_lang", "vi") or "vi",
+            writer=lambda entry, text: translated_by_path.__setitem__(str(entry.path[0]), text),
+        )
+
+        if is_cancelled and is_cancelled():
+            return False
+
+        write_back_files: set[Path] = set()
+
+        for entry in extracted_entries:
+            translated = translated_by_path.get(entry.path)
+            if not translated:
+                continue
+
+            if getattr(entry, "write_policy", None) == "write_back" or getattr(getattr(entry, "write_policy", None), "name", None) == "WRITE_BACK":
+                source_file = backup_dir / entry.source_file
+                if source_file in parsed_files:
+                    self._set_value_at_path(parsed_files[source_file], list(entry.raw_path), translated)
+                    write_back_files.add(source_file)
+            else:
+                overlay_entries[entry.path] = {
+                    "source_file": entry.source_file,
+                    "path": entry.path,
+                    "category": entry.category,
+                    "classification": entry.classification.value if hasattr(entry.classification, "value") else str(entry.classification),
+                    "original": entry.original_text,
+                    "translation": translated,
+                }
+
+        for source_file in write_back_files:
+            relative = source_file.relative_to(backup_dir)
+            dest_file = data_dir / relative
+            tmp_path = dest_file.with_suffix(dest_file.suffix + ".tmp")
+            tmp_path.write_text(
+                json.dumps(parsed_files[source_file], ensure_ascii=False),
+                encoding="utf-8",
+            )
+            os.replace(tmp_path, dest_file)
+
+        self._atomic_write_overlay(data_dir / self.OVERLAY_FILENAME, overlay_entries)
+        self._install_overlay_plugin(game_dir, data_dir)
+
+        message = (
+            f"Hoàn tất RPG Maker: {len(write_back_files)} files written back, {len(overlay_entries)} entries in overlay / "
+            f"{len(extracted_entries)} total entries, unique={result.stats.unique}, "
+            f"rejected={result.stats.validation_rejected}."
+        )
+        logger.info(message)
+        if progress_callback:
+            progress_callback(100, 100, message)
         return True
+
+    def _atomic_write_overlay(
+        self, overlay_path: Path, entries: dict[str, dict[str, str]]
+    ) -> None:
+        payload = {
+            "schema_version": 1,
+            "entries": entries,
+        }
+        tmp_path = overlay_path.with_suffix(overlay_path.suffix + ".tmp")
+        tmp_path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        json.loads(tmp_path.read_text(encoding="utf-8"))
+        os.replace(tmp_path, overlay_path)
+
+    def _install_overlay_plugin(self, game_dir: Path, data_dir: Path) -> None:
+        js_dir = data_dir.parent / "js" / "plugins"
+        js_dir.mkdir(parents=True, exist_ok=True)
+        plugin_path = js_dir / self.OVERLAY_PLUGIN_FILENAME
+        tmp_path = plugin_path.with_suffix(plugin_path.suffix + ".tmp")
+        tmp_path.write_text(self._overlay_plugin_source(data_dir), encoding="utf-8")
+        os.replace(tmp_path, plugin_path)
+
+    def _overlay_plugin_source(self, data_dir: Path) -> str:
+        return f"""/*:
+ * @plugindesc AutoTranslatorManager display overlay. Keeps RPG Maker data values unchanged.
+ * @author ATM
+ *
+ * @help
+ * Loads {self.OVERLAY_FILENAME} and swaps only text being drawn by common UI
+ * windows. Original database strings remain intact for script logic.
+ */
+(function() {{
+  "use strict";
+
+  // Register overlay database file
+  DataManager._databaseFiles.push({{ name: '$dataATMOverlay', src: '{self.OVERLAY_FILENAME}' }});
+
+  var ATMOverlay = window.ATMOverlay = window.ATMOverlay || {{}};
+  ATMOverlay.byOriginal = {{}};
+  ATMOverlay.patched = false;
+
+  var _Scene_Boot_isReady = Scene_Boot.prototype.isReady;
+  Scene_Boot.prototype.isReady = function() {{
+      var ready = _Scene_Boot_isReady.call(this);
+      if (ready && !ATMOverlay.patched && window.$dataATMOverlay) {{
+          ATMOverlay.buildIndexes(window.$dataATMOverlay.entries);
+          ATMOverlay.patched = true;
+      }}
+      return ready;
+  }};
+
+  ATMOverlay.buildIndexes = function(entries) {{
+      if (!entries) return;
+      Object.keys(entries).forEach(function(key) {{
+          var item = entries[key];
+          if (item && item.original && item.translation) {{
+              ATMOverlay.byOriginal[String(item.original)] = String(item.translation);
+          }}
+      }});
+  }};
+
+  function translateText(text) {{
+      var key = String(text);
+      return Object.prototype.hasOwnProperty.call(ATMOverlay.byOriginal, key)
+          ? ATMOverlay.byOriginal[key]
+          : text;
+  }}
+
+  var drawText = Window_Base.prototype.drawText;
+  Window_Base.prototype.drawText = function(text, x, y, maxWidth, align) {{
+      return drawText.call(this, translateText(text), x, y, maxWidth, align);
+  }};
+
+  var drawTextEx = Window_Base.prototype.drawTextEx;
+  Window_Base.prototype.drawTextEx = function(text, x, y) {{
+      return drawTextEx.call(this, translateText(text), x, y);
+  }};
+
+  var drawItemName = Window_Base.prototype.drawItemName;
+  Window_Base.prototype.drawItemName = function(item, x, y, width) {{
+      if (item && item.name) {{
+          var clone = Object.create(item);
+          clone.name = translateText(item.name);
+          return drawItemName.call(this, clone, x, y, width);
+      }}
+      return drawItemName.call(this, item, x, y, width);
+  }};
+}})();
+"""

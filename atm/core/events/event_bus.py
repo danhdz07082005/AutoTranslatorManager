@@ -8,22 +8,21 @@ class EventBus:
     Event Bus trung tâm để giao tiếp giữa các thành phần hệ thống.
     Giúp giảm coupling giữa UI và Core Logic.
     """
-    _subscribers: Dict[str, List[Callable[[Any], None]]] = {}
+    def __init__(self):
+        self._subscribers: Dict[str, List[Callable[[Any], None]]] = {}
 
-    @classmethod
-    def subscribe(cls, event_type: str, callback: Callable[[Any], None]) -> None:
+    def subscribe(self, event_type: str, callback: Callable[[Any], None]) -> None:
         """Đăng ký lắng nghe một event."""
-        if event_type not in cls._subscribers:
-            cls._subscribers[event_type] = []
-        cls._subscribers[event_type].append(callback)
+        if event_type not in self._subscribers:
+            self._subscribers[event_type] = []
+        self._subscribers[event_type].append(callback)
         logger.debug(f"Subscribed to event: {event_type}")
 
-    @classmethod
-    def publish(cls, event_type: str, data: Any = None) -> None:
+    def publish(self, event_type: str, data: Any = None) -> None:
         """Phát một event kèm dữ liệu."""
-        if event_type in cls._subscribers:
+        if event_type in self._subscribers:
             logger.info(f"Publishing event: {event_type}")
-            for callback in cls._subscribers[event_type]:
+            for callback in self._subscribers[event_type]:
                 try:
                     callback(data)
                 except Exception as e:

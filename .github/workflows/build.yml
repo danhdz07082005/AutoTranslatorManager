@@ -27,7 +27,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --name "AutoTranslatorManager" --noconsole --add-data "atm/ui/web;atm/ui/web" --add-data "data/payloads;data/payloads" run_app.py
+        pyinstaller --name AutoTranslator --onefile --windowed --add-data "atm/ui/web;atm/ui/web" --add-data "data/payloads;data/payloads" run_app.py
 
     - name: Prepare Release Folder
       run: |

@@ -30,7 +30,7 @@ jobs:
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --name AutoTranslator --onefile --windowed --add-data "atm/ui/web;atm/ui/web" run_app.py
+        pyinstaller --name AutoTranslator --onefile --windowed --add-data "atm/ui/web;atm/ui/web" --add-data "data/payloads;data/payloads" run_app.py
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
