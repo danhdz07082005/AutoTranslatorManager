@@ -16,9 +16,9 @@ from atm.core.translation.renpy_tl_generator import (
     RenPyTLGenerator,
     TranslationTemplateEntry,
 )
-from atm.core.translation.pipeline import TranslatableString, TranslationPipeline
+from atm.core.translation.pipeline import TranslatableString, TranslationPipeline, TranslationOrigin
 from atm.core.translation.translation_memory import TranslationMemory
-from atm.core.translation.translators import BaseTranslator, DeepLTranslator, GoogleTranslator
+from atm.core.translation.translators import BaseTranslator
 from atm.storage.repositories.settings_repository import SettingsRepository
 from atm.utils.logger import get_logger
 
@@ -214,7 +214,20 @@ class RenPyTranslator:
                 source_lang=getattr(profile, "input_lang", "auto") or "auto",
                 target_lang=language,
                 writer=lambda entry, text: translations.__setitem__(entry.text, text),
+                is_cancelled=is_cancelled,
+                progress_callback=progress_callback,
             )
+            if getattr(result, "rate_limited", False):
+                from atm.core.translation.translators import RateLimitError
+                rate_limited_error = RateLimitError("Pipeline rate limited during Ren'Py translation")
+                logger.warning("Rate limit hit during Ren'Py translation. Writing partial results...")
+                raise rate_limited_error
+        except RateLimitError as rate_limit_err:
+            logger.warning("Rate limit hit. Writing partial translations...")
+            generator.write_translations(translations)
+            if progress_callback:
+                progress_callback(total, total, "translation.rate_limited", {"error": str(rate_limit_err)})
+            raise
         except Exception as error:
             logger.exception("Ren'Py template translation failed: %s", error)
             if progress_callback:

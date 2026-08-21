@@ -1,0 +1,450 @@
+// --- atm/ui/web/js/features/games.js ---
+// Architecture Rule 6: UI and DOM Manipulation ONLY. No Business Logic.
+// Security Rule 8: Zero innerHTML, Zero inline handlers.
+
+window.ATM = window.ATM || {};
+
+window.ATM.Games = (function() {
+    const containerId = 'games-container';
+    let languages = {};
+    
+    // Poller Registry: 1 Game = 1 Poller
+    const pollers = new Map(); // gameId -> timeoutId
+
+    const getContainer = () => document.getElementById(containerId);
+
+    // Initializer
+    async function init() {
+        languages = await window.ATM.api.get('languages') || {};
+        setupEventDelegation();
+        await loadGames();
+    }
+
+    // TASK 4: Event Delegation - One listener to rule them all
+    function setupEventDelegation() {
+        const btnAdd = document.getElementById('add-game-btn');
+        if (btnAdd) {
+            btnAdd.addEventListener('click', async () => {
+                btnAdd.disabled = true;
+                try {
+                    const res = await window.ATM.api.post('games/add');
+                    if (res && res.status === 'success' && res.game) {
+                        appendGameCard(res.game);
+                        
+                        const container = getContainer();
+                        const empty = container.querySelector('.empty-state');
+                        if (empty) empty.remove();
+                    }
+                } catch(e) {
+                    console.error("Failed to add game:", e);
+                } finally {
+                    btnAdd.disabled = false;
+                }
+            });
+        }
+
+        const container = getContainer();
+        if (!container) return;
+
+        container.addEventListener('click', async (e) => {
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            
+            const card = btn.closest('.game-card');
+            if (!card) return;
+            
+            const gameId = card.dataset.gameId;
+            const action = btn.dataset.action;
+
+            if (action === 'start') {
+                handleStart(gameId, card);
+            } else if (action === 'play') {
+                handlePlay(gameId);
+            } else if (action === 'delete') {
+                handleDelete(gameId, card);
+            } else if (action === 'glossary') {
+                if (window.ATM.Modals) {
+                    window.ATM.Modals.open('glossary-modal');
+                }
+            } else if (action === 'tm') {
+                if (window.ATM.Modals) {
+                    window.ATM.Modals.open('translation-memory-modal');
+                }
+            } else if (action === 'editor') {
+                if (window.ATM.Modals) {
+                    window.ATM.Modals.open('editor-modal');
+                }
+            }
+        });
+
+        // Event delegation for select boxes (Config changes)
+        container.addEventListener('change', (e) => {
+            if (e.target.matches('.engine-select, .source-select, .target-select')) {
+                const card = e.target.closest('.game-card');
+                if (!card) return;
+                
+                const gameId = card.dataset.gameId;
+                const engine = card.querySelector('.engine-select').value;
+                const source = card.querySelector('.source-select').value;
+                const target = card.querySelector('.target-select').value;
+                
+                window.ATM.api.post('games/update-settings', {
+                    game_id: gameId,
+                    translator: engine,
+                    input_lang: source,
+                    output_lang: target
+                }).catch(err => console.error("Error saving settings:", err));
+            }
+        });
+    }
+
+    function createGameCard(game) {
+        const template = document.getElementById('game-card-template');
+        if (!template) return null;
+
+        const langArr = Object.keys(languages).map(k => ({value: k, text: languages[k]}));
+        const clone = template.content.cloneNode(true);
+        const card = clone.querySelector('.game-card');
+        
+        // Set dataset ID
+        card.id = `card-${game.id}`;
+        card.dataset.gameId = game.id;
+        card.dataset.state = game.runtime_state || 'READY';
+        
+        // Anti-XSS: textContent ONLY
+        card.querySelector('.game-name').textContent = game.game_name || 'Unknown';
+        card.querySelector('.game-path').textContent = game.exe_path || '';
+        card.querySelector('.engine-badge').textContent = game.engine || 'Unknown';
+
+        // Build Selectors
+        const engineSel = card.querySelector('.engine-select');
+        buildOptions(engineSel, [{value: 'google', text: 'Google Translate'}, {value: 'deepl', text: 'DeepL API'}], game.translator);
+
+        const srcSel = card.querySelector('.source-select');
+        buildOptions(srcSel, langArr, game.input_lang, false);
+
+        const tgtSel = card.querySelector('.target-select');
+        buildOptions(tgtSel, langArr, game.output_lang, true);
+
+        return clone;
+    }
+
+    function appendGameCard(game) {
+        const container = getContainer();
+        if (!container) return;
+        
+        const clone = createGameCard(game);
+        if (clone) {
+            container.appendChild(clone);
+            const card = document.getElementById(`card-${game.id}`);
+            if (card) {
+                updateCardPartial(card, card.dataset.state, 0);
+            }
+        }
+    }
+
+    // TASK 3: Render Transaction using DocumentFragment and replaceChildren
+    async function loadGames() {
+        const container = getContainer();
+        if (!container) return;
+
+        try {
+            const data = await window.ATM.api.get('games');
+            const games = data.games || [];
+            
+            if (games.length === 0) {
+                renderEmptyState(container);
+                return;
+            }
+
+            const template = document.getElementById('game-card-template');
+            if (!template) {
+                console.error("Missing game-card-template in HTML");
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            const langArr = Object.keys(languages).map(k => ({value: k, text: languages[k]}));
+
+            games.forEach(game => {
+                const clone = createGameCard(game);
+                if (clone) fragment.appendChild(clone);
+            });
+
+            // Commit Transaction - single DOM manipulation
+            container.replaceChildren(fragment);
+
+            // Re-apply states and start pollers if needed
+            games.forEach(game => {
+                const card = document.getElementById(`card-${game.id}`);
+                if (card) {
+                    const pct = game.runtime_total ? Math.round((game.runtime_progress / game.runtime_total) * 100) : 0;
+                    updateCardPartial(card, card.dataset.state, pct);
+                    
+                    if (card.dataset.state === 'TRANSLATING') {
+                        startPoller(game.id, card);
+                    }
+                }
+            });
+
+            // Update i18n
+            if (window.ATM.i18n && window.ATM.i18n.updateDOM) window.ATM.i18n.updateDOM();
+
+        } catch (e) {
+            console.error("Failed to load games:", e);
+            renderErrorState(container, e.message || 'Network Timeout');
+        }
+    }
+
+    function buildOptions(select, opts, selected, excludeAuto = false) {
+        select.innerHTML = ''; // Select options are safe as they are hardcoded
+        opts.forEach(opt => {
+            if (excludeAuto && opt.value === 'auto') return;
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.text;
+            if (opt.value === selected) option.selected = true;
+            select.appendChild(option);
+        });
+    }
+
+    function renderEmptyState(container) {
+        const div = document.createElement('div');
+        div.className = 'empty-state';
+        div.style.textAlign = 'center';
+        div.style.padding = '40px';
+        const h3 = document.createElement('h3');
+        h3.dataset.i18n = 'dashboard.empty_title';
+        h3.textContent = window.ATM.i18n ? (window.ATM.i18n.t('dashboard.empty_title') || 'Chưa có game nào') : 'Chưa có game nào';
+        const p = document.createElement('p');
+        p.dataset.i18n = 'dashboard.empty_desc';
+        p.textContent = window.ATM.i18n ? (window.ATM.i18n.t('dashboard.empty_desc') || 'Bấm "+ Thêm Game" để bắt đầu.') : 'Bấm "+ Thêm Game" để bắt đầu.';
+        div.appendChild(h3);
+        div.appendChild(p);
+        container.replaceChildren(div);
+    }
+
+    function renderErrorState(container, errorMsg = '') {
+        const div = document.createElement('div');
+        div.className = 'empty-state';
+        div.style.textAlign = 'center';
+        div.style.padding = '40px';
+        const h3 = document.createElement('h3');
+        h3.textContent = 'Lỗi kết nối API';
+        const p = document.createElement('p');
+        p.textContent = errorMsg;
+        p.style.color = 'var(--text-muted)';
+        div.appendChild(h3);
+        div.appendChild(p);
+        container.replaceChildren(div);
+    }
+
+    // TASK 5: Partial UI update - Never recreate the card
+    function updateCardPartial(card, state, percent = 0) {
+        card.dataset.state = state;
+        
+        const btnStart = card.querySelector('.btn-action-start');
+        const progContainer = card.querySelector('.progress-container');
+        const progBarFill = card.querySelector('.progress-bar-fill');
+        const progPercent = card.querySelector('.progress-percent');
+        const progStatus = card.querySelector('.progress-status');
+        const statusBadge = card.querySelector('.status-badge');
+
+        if (!btnStart) return;
+        
+        // Helper rút gọn
+        const t = (key, fallback) => window.ATM.i18n ? (window.ATM.i18n.t(key) || fallback) : fallback;
+
+        if (state === 'READY') {
+            btnStart.textContent = t('card.start', "Bắt đầu dịch");
+            btnStart.className = "btn-start flex-1 btn-action-start";
+            btnStart.style.color = "";
+            btnStart.dataset.action = "start";
+            progContainer.style.display = 'none';
+            if (statusBadge) {
+                statusBadge.textContent = "New";
+                statusBadge.style.backgroundColor = "var(--bg-hover)";
+                statusBadge.style.color = "var(--text-muted)";
+            }
+        } 
+        else if (state === 'TRANSLATING') {
+            btnStart.textContent = "Dừng";
+            btnStart.className = "btn-danger-ghost flex-1 btn-action-start";
+            btnStart.style.color = "var(--danger)";
+            btnStart.dataset.action = "start";
+            progContainer.style.display = 'block';
+            
+            if (progBarFill) progBarFill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+            if (progPercent) progPercent.textContent = `${Math.round(percent)}%`;
+            if (progStatus) progStatus.textContent = t('card.translating', "Đang dịch...");
+            
+            if (statusBadge) {
+                statusBadge.textContent = "Translating";
+                statusBadge.style.backgroundColor = "rgba(59, 130, 246, 0.1)"; // accent tinted
+                statusBadge.style.color = "var(--accent)";
+            }
+        }
+        else if (state === 'COMPLETE') {
+            btnStart.textContent = "🎮 Chơi Game";
+            btnStart.className = "btn-start flex-1 btn-action-start"; // We can add btn-success if it exists, otherwise just btn-start with inline style
+            btnStart.style.backgroundColor = "var(--success)";
+            btnStart.style.color = "white";
+            btnStart.style.border = "none";
+            btnStart.dataset.action = "play";
+            progContainer.style.display = 'none';
+            
+            if (statusBadge) {
+                statusBadge.textContent = "Complete";
+                statusBadge.style.backgroundColor = "rgba(16, 185, 129, 0.1)"; // success tinted
+                statusBadge.style.color = "var(--success)";
+            }
+        }
+        else if (state === 'INTERRUPTED') {
+            btnStart.textContent = "Tiếp tục (Lỗi mạng/Khởi động lại)";
+            btnStart.className = "btn-secondary flex-1 btn-action-start";
+            btnStart.style.color = "var(--warning)";
+            btnStart.style.backgroundColor = ""; // Reset if came from complete
+            btnStart.dataset.action = "start";
+            progContainer.style.display = 'block';
+            if (progStatus) progStatus.textContent = "Đã tạm dừng";
+            
+            if (statusBadge) {
+                statusBadge.textContent = "Paused";
+                statusBadge.style.backgroundColor = "rgba(245, 158, 11, 0.1)"; // warning tinted
+                statusBadge.style.color = "var(--warning)";
+            }
+        }
+    }
+
+    // Start / Stop Logic
+    async function handleStartStop(gameId, card) {
+        const currentState = card.dataset.state;
+        const btnStart = card.querySelector('[data-action="start"]');
+
+        if (currentState === 'TRANSLATING') {
+            // Stop
+            btnStart.disabled = true;
+            updateCardPartial(card, 'READY');
+            cleanupPoller(gameId); // Cleanup poller immediately
+            await window.ATM.api.post('games/stop', { game_id: gameId }).catch(()=>{});
+            btnStart.disabled = false;
+        } else {
+            // Start
+            btnStart.disabled = true;
+            updateCardPartial(card, 'TRANSLATING', 0);
+            try {
+                await window.ATM.api.post('games/start', { game_id: gameId });
+                startPoller(gameId, card);
+            } catch(e) {
+                updateCardPartial(card, 'READY');
+                if (window.ATM.Toast) window.ATM.Toast.show("Lỗi khởi chạy", true);
+            } finally {
+                btnStart.disabled = false;
+            }
+        }
+    }
+
+    // TASK 5: Polling Lifecycle (Stale-Response Protection, Cleanup)
+    function startPoller(gameId, card) {
+        // Cleanup existing poller first to guarantee 1 poller per game
+        cleanupPoller(gameId);
+        
+        let isPolling = true;
+
+        const poll = async () => {
+            if (!isPolling) return;
+            if (card.dataset.state !== 'TRANSLATING') return;
+
+            try {
+                const status = await window.ATM.api.get(`games/translation-status?game_id=${gameId}`);
+                
+                // If it was cancelled while fetching
+                if (!isPolling || card.dataset.state !== 'TRANSLATING') return;
+                
+                if (status.done) {
+                    updateCardPartial(card, status.error ? 'READY' : 'COMPLETE');
+                    if (status.error && window.ATM.Toast) window.ATM.Toast.show(status.message, true);
+                    cleanupPoller(gameId);
+                    return;
+                }
+                
+                const pct = (status.total > 0) ? (status.progress / status.total) * 100 : 0;
+                updateCardPartial(card, 'TRANSLATING', pct);
+                
+                const tid = setTimeout(poll, 1000);
+                pollers.set(gameId, tid);
+                
+            } catch(e) {
+                console.warn(`Polling network error for game ${gameId}:`, e);
+                // Backoff on error
+                if (isPolling) {
+                    const tid = setTimeout(poll, 3000);
+                    pollers.set(gameId, tid);
+                }
+            }
+        };
+
+        pollers.set(gameId, setTimeout(poll, 0));
+    }
+
+    function cleanupPoller(gameId) {
+        if (pollers.has(gameId)) {
+            clearTimeout(pollers.get(gameId));
+            pollers.delete(gameId);
+        }
+    }
+
+    async function handlePlay(gameId) {
+        try {
+            if (window.ATM.Toast) window.ATM.Toast.show("Đang khởi chạy game...", false);
+            await window.ATM.api.post('games/play', { game_id: gameId }); 
+        } catch(e) {
+            if (window.ATM.Toast) window.ATM.Toast.show("Không thể khởi chạy game. Vui lòng thử lại!", true);
+        }
+    }
+
+    // TASK 4: Local Mutation
+    async function handleDelete(gameId, card) {
+        const t = (key, fallback) => window.ATM.i18n ? (window.ATM.i18n.t(key) || fallback) : fallback;
+        const msg = t('card.delete_confirm', "Bạn chắc chắn muốn xóa game này?");
+        if (!(await window.ATM.Modals.confirm(msg))) {
+            return;
+        }
+
+        const btnDel = card.querySelector('[data-action="delete"]');
+        if (btnDel) btnDel.disabled = true;
+
+        try {
+            await window.ATM.api.post('games/delete', { game_id: gameId });
+            
+            // Clean up poller to avoid zombie requests
+            cleanupPoller(gameId);
+            
+            // Local mutation: Remove from DOM
+            card.remove();
+            
+            if (window.ATM.Toast) window.ATM.Toast.show("Đã xóa game");
+            
+            // Check if empty
+            const container = getContainer();
+            if (container && container.children.length === 0) {
+                renderEmptyState(container);
+            }
+        } catch(e) {
+            if (btnDel) btnDel.disabled = false;
+            if (window.ATM.Toast) window.ATM.Toast.show("Lỗi khi xóa", true);
+        }
+    }
+    
+    // Refresh function for Add Game
+    async function refreshLibrary() {
+        await loadGames();
+    }
+
+    return {
+        init,
+        loadGames,
+        load: loadGames, // Alias for app.js
+        refreshLibrary
+    };
+})();

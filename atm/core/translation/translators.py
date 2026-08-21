@@ -4,18 +4,17 @@ import json
 import concurrent.futures
 import time
 import random
-from collections import defaultdict
-import urllib.request
-import urllib.parse
-import json
-import concurrent.futures
-import time
-import random
+import re
+import threading
 from collections import defaultdict
 from typing import Iterable, List, Optional, Tuple
 from atm.utils.logger import get_logger
 
 logger = get_logger(__name__, "launcher.log")
+
+class RateLimitError(Exception):
+    """Exception raised when an API rate limit is hit and retries are exhausted."""
+    pass
 
 class BaseTranslator:
     def __init__(self):
@@ -27,20 +26,23 @@ class BaseTranslator:
         target_lang: str = "vi",
         source_lang: str = "auto",
         category: str = "unknown",
+        is_cancelled = None,
+        progress_callback = None,
     ) -> List[str]:
-        """Translate a batch of texts directly via network."""
         if not texts:
             return []
 
         try:
-            results = self._do_translate_batch(texts, target_lang, source_lang)
+            results = self._do_translate_batch(texts, target_lang, source_lang, is_cancelled=is_cancelled, progress_callback=progress_callback)
             if results and len(results) == len(texts):
                 return results
             else:
                 logger.warning(f"Batch translate returned mismatch results count. Expected {len(texts)}, got {len(results) if results else 0}.")
                 return [None] * len(texts)
+        except RateLimitError:
+            raise
         except Exception as e:
-            logger.error(f"Error in _do_translate_batch: {e}")
+            logger.error(f"Error in _do_translate_batch (type: {type(e)}): {e}")
             return [None] * len(texts)
 
     def translate_categorized(
@@ -49,11 +51,6 @@ class BaseTranslator:
         target_lang: str = "vi",
         source_lang: str = "auto",
     ) -> List[str]:
-        """Translate ``(text, category)`` entries without mixing categories.
-
-        Results preserve the supplied order.  The pipeline uses this boundary to
-        keep short UI labels out of dialogue batches while retaining cache hits.
-        """
         ordered_entries = list(entries)
         grouped: dict[str, list[tuple[int, str]]] = defaultdict(list)
         for index, (text, category) in enumerate(ordered_entries):
@@ -66,28 +63,30 @@ class BaseTranslator:
                 target_lang=target_lang,
                 source_lang=source_lang,
                 category=category,
+                is_cancelled=None
             )
             for (index, original), translated_text in zip(group, translated):
                 results[index] = translated_text if translated_text is not None else original
         return results
 
-    def _do_translate_batch(self, texts: List[str], target_lang: str, source_lang: str) -> List[str]:
+    def _do_translate_batch(self, texts: List[str], target_lang: str, source_lang: str, is_cancelled=None, progress_callback=None) -> List[str]:
         raise NotImplementedError
 
 class GoogleTranslator(BaseTranslator):
-    # Giới hạn an toàn của Google Translate API (POST body)
     MAX_CHARS_PER_CHUNK = 4500
     MAX_TEXTS_PER_CHUNK = 25
     MAX_WORKERS = 1
     SLEEP_BETWEEN_CHUNKS = 2.0
     MAX_RETRIES = 4
 
-    def _do_translate_batch(self, texts: List[str], target_lang: str = "vi", source_lang: str = "auto") -> List[Optional[str]]:
-        """Dịch bằng cách gộp (join) nhiều câu thành chuỗi lớn, gửi 1 lần lên API."""
+    def _do_translate_batch(self, texts: List[str], target_lang: str = "vi", source_lang: str = "auto", is_cancelled=None, progress_callback=None) -> List[Optional[str]]:
         translated_texts = list(texts)
+        error_event = threading.Event()
 
         def translate_chunk_with_retry(chunk_texts):
-            """Dịch 1 chunk với cơ chế retry khi bị 429 (exponential backoff)."""
+            if (is_cancelled and is_cancelled()) or error_event.is_set():
+                return [None] * len(chunk_texts)
+
             separator = "\n<br>\n"
             combined_text = separator.join(chunk_texts)
 
@@ -99,7 +98,7 @@ class GoogleTranslator(BaseTranslator):
                     with urllib.request.urlopen(req) as response:
                         res_data = json.loads(response.read().decode('utf-8'))
                         translated = "".join([sentence[0] for sentence in res_data[0] if sentence[0]])
-                        parts = [p.strip() for p in translated.split("<br>")]
+                        parts = [p.strip() for p in re.split(r'(?i)<\s*br\s*>', translated)]
 
                         if len(parts) == len(chunk_texts):
                             return parts
@@ -110,7 +109,13 @@ class GoogleTranslator(BaseTranslator):
                     if e.code == 429:
                         wait = (10 * (2 ** attempt)) + random.uniform(0, 3)
                         logger.warning(f"HTTP 429 (Too Many Requests). Retry {attempt+1}/{self.MAX_RETRIES} in {wait:.1f}s...")
-                        time.sleep(wait)
+                        elapsed = 0
+                        while elapsed < wait:
+                            if (is_cancelled and is_cancelled()) or error_event.is_set():
+                                logger.info("Translation cancelled or errored during wait.")
+                                return [None] * len(chunk_texts)
+                            time.sleep(min(1.0, wait - elapsed))
+                            elapsed += 1.0
                     else:
                         logger.error(f"Google translate HTTP error {e.code}: {e}")
                         return [None] * len(chunk_texts)
@@ -118,11 +123,10 @@ class GoogleTranslator(BaseTranslator):
                     logger.error(f"Google translate batch error: {e}")
                     return [None] * len(chunk_texts)
 
-            # Hết retry → trả nguyên gốc
             logger.error(f"Google translate: exhausted {self.MAX_RETRIES} retries for chunk of {len(chunk_texts)} texts.")
-            return [None] * len(chunk_texts)
+            error_event.set()
+            raise RateLimitError("Google Translation API rate limit exceeded (HTTP 429).")
 
-        # Tách mảng texts thành các chunk, mỗi chunk tối đa 4500 ký tự (bao gồm separator)
         chunks: list[list[tuple[int, str]]] = []
         current_chunk: list[tuple[int, str]] = []
         current_len = 0
@@ -132,7 +136,7 @@ class GoogleTranslator(BaseTranslator):
                 continue
 
             text_len = len(text)
-            separator_len = 6 if current_chunk else 0  # "\n<br>\n" = 6 chars
+            separator_len = 6 if current_chunk else 0
 
             exceeds_char_limit = (
                 current_len + text_len + separator_len > self.MAX_CHARS_PER_CHUNK
@@ -157,16 +161,27 @@ class GoogleTranslator(BaseTranslator):
             self.MAX_TEXTS_PER_CHUNK,
         )
 
-        # Dịch từng chunk với ThreadPool
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
             futures = []
             for chunk in chunks:
+                if (is_cancelled and is_cancelled()) or error_event.is_set():
+                    break
+                
                 chunk_texts = [text for _, text in chunk]
                 futures.append((chunk, executor.submit(translate_chunk_with_retry, chunk_texts)))
-                time.sleep(self.SLEEP_BETWEEN_CHUNKS)
+                
+                elapsed = 0
+                while elapsed < self.SLEEP_BETWEEN_CHUNKS:
+                    if (is_cancelled and is_cancelled()) or error_event.is_set():
+                        break
+                    time.sleep(min(0.5, self.SLEEP_BETWEEN_CHUNKS - elapsed))
+                    elapsed += 0.5
 
             for chunk, future in futures:
                 res_parts = future.result()
+                if res_parts and None not in res_parts:
+                    if progress_callback:
+                        progress_callback(len(chunk))
                 for (target_idx, _source_text), res_text in zip(chunk, res_parts):
                     translated_texts[target_idx] = res_text
 
@@ -181,10 +196,9 @@ class DeepLTranslator(BaseTranslator):
             self.api_url = "https://api-free.deepl.com/v2/translate"
 
     def _do_translate_batch(self, texts: List[str], target_lang: str = "VI", source_lang: Optional[str] = None) -> List[str]:
-        """Sử dụng DeepL API hỗ trợ mảng văn bản để tối ưu."""
         if not self.api_key:
-            logger.warning("DeepL API Key is empty. Falling back to original texts.")
-            return texts
+            logger.warning("DeepL API Key is empty. Falling back to None.")
+            return [None] * len(texts)
 
         target_lang = target_lang.upper()
 
@@ -203,6 +217,12 @@ class DeepLTranslator(BaseTranslator):
             with urllib.request.urlopen(req) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
                 return [item["text"] for item in res_data.get("translations", [])]
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                logger.error("DeepL HTTP 429 Rate Limit Exceeded.")
+                raise RateLimitError("DeepL API rate limit exceeded (HTTP 429).")
+            logger.error(f"DeepL translate HTTP error {e.code}: {e}")
+            return [None] * len(texts)
         except Exception as e:
             logger.error(f"DeepL translate batch error: {e}")
-            return texts
+            return [None] * len(texts)

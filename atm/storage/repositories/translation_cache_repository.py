@@ -22,8 +22,8 @@ class TranslationCacheRepository:
 
     def __init__(self, cache_file: str | os.PathLike[str] | None = None) -> None:
         if cache_file is None:
-            project_root = Path(__file__).resolve().parents[3]
-            cache_file = project_root / "data" / "translation_cache.json"
+            from atm.utils.paths import get_cache_dir
+            cache_file = Path(get_cache_dir()) / "translation_cache.json"
         self.cache_file = Path(cache_file)
 
     def load(self) -> dict[str, Any]:

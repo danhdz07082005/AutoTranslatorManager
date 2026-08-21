@@ -1,0 +1,12 @@
+{
+    "game_id": "0c45aaad-a550-4d9b-b9e6-56528a1c07cc",
+    "status": "completed",
+    "progress": 100,
+    "total": 100,
+    "message_code": "translation.success",
+    "params": {
+        "updated": 86,
+        "total": 21101
+    },
+    "error_details": ""
+}

@@ -5,7 +5,9 @@ from atm.utils.logger import get_logger
 
 logger = get_logger(__name__, "launcher.log")
 
-TRANSLATIONS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "data", "translations")
+from atm.utils.paths import get_translations_dir
+
+TRANSLATIONS_DIR = get_translations_dir()
 
 class TranslationRepository:
     """Quản lý Lịch sử Dịch (TXT files) và Metadata."""

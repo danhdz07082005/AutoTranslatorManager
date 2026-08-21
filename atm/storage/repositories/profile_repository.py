@@ -4,10 +4,13 @@ from typing import List, Optional
 from pydantic import ValidationError
 from atm.config.schema import GameProfile
 from atm.utils.logger import get_logger
+from atm.storage.repositories.json_storage import atomic_write
 
 logger = get_logger(__name__, "launcher.log")
 
-PROFILES_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "data", "profiles")
+from atm.utils.paths import get_profiles_dir
+
+PROFILES_DIR = get_profiles_dir()
 
 class ProfileRepository:
     """Quản lý Game Profiles (.json)."""
@@ -42,12 +45,10 @@ class ProfileRepository:
         filename = f"{profile.id}.json"
         filepath = os.path.join(PROFILES_DIR, filename)
         
-        try:
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(profile.model_dump_json(indent=4))
+        if atomic_write(filepath, profile.model_dump_json(indent=4)):
             logger.info(f"Saved profile to {filename}")
-        except Exception as e:
-            logger.error(f"Failed to save profile {filename}: {e}")
+        else:
+            logger.error(f"Failed to save profile {filename}")
             
     def delete(self, game_id: str) -> bool:
         filename = f"{game_id}.json"

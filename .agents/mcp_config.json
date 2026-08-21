@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "D:\\game\\l\\gvnvh\\gvngv2\\4\\serena-main\\venv\\Scripts\\serena.exe",
+      "args": ["mcp-stdio"]
+    }
+  }
+}

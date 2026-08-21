@@ -1,8 +1,6 @@
 """Manages automatic download, verification, and caching of Ren'Py SDKs."""
 
 import hashlib
-import os
-import shutil
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -23,7 +21,10 @@ class RenPySDKManager:
         }
     }
 
-    def __init__(self, cache_dir: Path | str = "data/sdk_cache", default_version: str = "8.2.1"):
+    def __init__(self, cache_dir: Path | str | None = None, default_version: str = "8.2.1"):
+        if cache_dir is None:
+            from atm.utils.paths import get_app_data_dir
+            cache_dir = Path(get_app_data_dir()) / "sdk_cache"
         self.cache_dir = Path(cache_dir)
         self.default_version = default_version
         self._ensure_cache_dir()

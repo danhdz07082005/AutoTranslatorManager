@@ -1,6 +1,6 @@
 import os
 import shutil
-import subprocess
+
 from typing import List
 from atm.core.events.event_bus import EventBus, SystemEvents
 from atm.core.deployment.process_monitor import ProcessMonitor

@@ -76,4 +76,4 @@ def test_app_settings_defaults():
     assert settings.version == 1
     assert settings.auto_update is True
     assert settings.dark_mode is True
-    assert settings.language == "vi"
+    assert settings.ui_language == "vi"

@@ -21,8 +21,8 @@ class TranslationMemoryRepository:
 
     def __init__(self, memory_file: str | os.PathLike[str] | None = None) -> None:
         if memory_file is None:
-            project_root = Path(__file__).resolve().parents[3]
-            memory_file = project_root / "data" / "translation_memory.json"
+            from atm.utils.paths import get_memory_dir
+            memory_file = Path(get_memory_dir()) / "translation_memory.json"
         self.memory_file = Path(memory_file)
 
     def load(self) -> dict[str, Any]:

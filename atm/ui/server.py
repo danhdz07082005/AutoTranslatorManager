@@ -9,6 +9,7 @@ import threading
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from atm.utils.logger import get_logger
+from atm.core.lifecycle import ApplicationLifecycle
 
 logger = get_logger(__name__, "launcher.log")
 
@@ -36,6 +37,11 @@ class ATMHandler(BaseHTTPRequestHandler):
             self._json_response(self.api.get_languages())
         elif self.path == '/api/settings':
             self._json_response(self.api.get_settings())
+        elif self.path.startswith('/api/ping'):
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            client_id = query.get('client_id', ['unknown'])[0]
+            ApplicationLifecycle().update_heartbeat(client_id)
+            self._json_response({"status": "alive"})
         elif self.path.startswith('/api/games/translation-status'):
             query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             game_id = query.get('game_id', [''])[0]
@@ -49,14 +55,40 @@ class ATMHandler(BaseHTTPRequestHandler):
                 query.get('text', [''])[0],
                 query.get('category', ['unknown'])[0],
             ))
+        elif self.path == '/api/data/stats':
+            self._json_response(self.api.get_data_stats())
+        elif self.path == '/api/games/play':
+            self._parse_post_data()
+            game_id = self.post_data.get("game_id", "")
+            self._json_response(self.api.play_game(game_id))
         else:
             self._json_response({"error": "Not found"}, 404)
 
     # ============ API POST ============
     def _handle_api_post(self):
+        if ApplicationLifecycle().is_shutting_down():
+            self._json_response({"error": "System is shutting down"}, 503)
+            return
+
         body = self._read_body()
 
-        if self.path == '/api/games/add':
+        if self.path == '/api/shutdown':
+            # Send the response directly here to ensure it's flushed before shutdown
+            data = {"status": "shutting_down", "message": "System is shutting down."}
+            body = json.dumps(data, ensure_ascii=False).encode('utf-8')
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.send_header('Content-Length', len(body))
+            self.end_headers()
+            self.wfile.write(body)
+            self.wfile.flush()
+            
+            # Start a background timer to shut down the server
+            import threading
+            threading.Timer(0.1, ApplicationLifecycle().request_shutdown).start()
+            return
+
+        elif self.path == '/api/games/add':
             result = self.api.add_game()
             self._json_response(result or {"status": "cancelled"})
 
@@ -90,11 +122,7 @@ class ATMHandler(BaseHTTPRequestHandler):
             self._json_response(result)
 
         elif self.path == '/api/settings':
-            result = self.api.update_settings(
-                body.get('dark_mode', True),
-                body.get('deepl_api_key', ''),
-                body.get('translation_memory_threshold', None),
-            )
+            result = self.api.update_settings(**body)
             self._json_response(result)
 
         elif self.path == '/api/games/update-settings':
@@ -110,6 +138,21 @@ class ATMHandler(BaseHTTPRequestHandler):
         elif self.path == '/api/shutdown':
             self._json_response({"status": "shutting_down"})
             threading.Thread(target=self.server.shutdown, daemon=True).start()
+
+        elif self.path == '/api/data/clear':
+            clear_type = body.get('type')
+            if clear_type == 'cache':
+                keep_count = body.get('keep', 5000)
+                result = self.api.clear_global_cache(keep_count)
+            elif clear_type == 'tm':
+                result = self.api.clear_global_memory()
+            else:
+                result = {"status": "error", "message": "Invalid type"}
+            self._json_response(result)
+
+        elif self.path == '/api/data/open_folder':
+            result = self.api.open_data_folder()
+            self._json_response(result)
 
         else:
             self._json_response({"error": "Not found"}, 404)

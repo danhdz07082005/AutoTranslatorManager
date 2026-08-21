@@ -75,3 +75,6 @@ temp.*
 .idea/
 .vscode/
 *.swp
+
+# AI Rules
+.ai_docs/

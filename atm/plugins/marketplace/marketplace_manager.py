@@ -1,8 +1,6 @@
-import json
 import hashlib
-import requests
 import os
-from typing import List, Dict, Any
+from typing import List
 from pydantic import BaseModel
 from atm.utils.logger import get_logger
 

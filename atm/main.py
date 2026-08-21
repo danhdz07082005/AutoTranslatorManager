@@ -10,6 +10,7 @@ from atm.utils.logger import get_logger
 from atm.container.bootstrap import bootstrap_app
 from atm.ui.api import BackendApi
 from atm.ui.server import create_server
+from atm.core.lifecycle import ApplicationLifecycle
 
 def main() -> None:
     logger = get_logger(__name__, "launcher.log")
@@ -51,14 +52,33 @@ def main() -> None:
     print("[ATM] Vui long KHONG dong cua so dong lenh nay trong luc su dung!")
     print("[ATM] (Dong cua so nay se tat hoan toan ung dung)\n")
     
+    lifecycle = ApplicationLifecycle()
+    
     # Giữ main thread sống
     try:
-        while True:
+        while not lifecycle.should_shutdown():
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("Tat server...")
-        server.shutdown()
-        sys.exit(0)
+        logger.info("👋 Nhận tín hiệu Ctrl+C")
+
+    logger.info("🧹 Bắt đầu quy trình tắt (Graceful Shutdown)...")
+    lifecycle.begin_shutdown()
+    
+    # Dọn dẹp an toàn
+    try:
+        # Lấy tất cả game_id đang hoạt động
+        active_games = set(list(api.active_deployers.keys()) + list(api.cancel_flags.keys()))
+        for game_id in active_games:
+            logger.info(f"Dừng game/translation: {game_id}")
+            api.stop_game(game_id)
+            
+    except Exception as e:
+        logger.error(f"Lỗi trong quá trình dọn dẹp game process: {e}")
+        
+    logger.info("Tat HTTP server...")
+    server.shutdown()
+    logger.info("✅ ATM đã tắt hoàn toàn.")
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()

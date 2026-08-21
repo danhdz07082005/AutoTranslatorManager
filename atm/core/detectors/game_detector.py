@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Dict
 from atm.utils.logger import get_logger
 
 logger = get_logger(__name__, "launcher.log")
@@ -36,7 +36,9 @@ class GameDetector:
             return "RenPy"
             
         # Kiểm tra RPG Maker MV/MZ
-        if os.path.exists(os.path.join(game_dir, "www", "data")) or os.path.exists(os.path.join(game_dir, "package.json")):
+        if (os.path.exists(os.path.join(game_dir, "www", "data")) or 
+            os.path.exists(os.path.join(game_dir, "package.json")) or
+            os.path.exists(os.path.join(game_dir, "data", "System.json"))):
             logger.info(f"Detected RPG Maker game: {exe_name}")
             return "RPG Maker"
             

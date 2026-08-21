@@ -17,12 +17,13 @@ from collections import Counter, OrderedDict
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import Enum
-import inspect
+
 import logging
 import re
 from typing import Any, Protocol, TypeAlias, runtime_checkable
 import unicodedata
 
+from atm.core.translation.translators import RateLimitError
 from atm.utils.logger import get_logger
 
 
@@ -196,6 +197,7 @@ class PipelineStats:
     cache_write_failures: int = 0
     translation_memory_remembered: int = 0
     translation_memory_failures: int = 0
+    rate_limited: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,6 +205,7 @@ class PipelineResult:
     results: tuple[TranslationResult, ...]
     stats: PipelineStats
     groups: tuple[DeduplicatedText, ...]
+    rate_limited: bool = False
 
     @property
     def items(self) -> tuple[TranslationResult, ...]:
@@ -489,10 +492,12 @@ class TranslationPipeline:
         | Callable[[], Iterable[object]]
         | TranslatableString,
         *,
-        source_lang: str = "auto",
-        target_lang: str = "vi",
+        source_lang: str | None = None,
+        target_lang: str | None = None,
         glossary: Mapping[object, object] | None = None,
         writer: PipelineWriter | object | None = None,
+        is_cancelled: Callable[[], bool] | None = None,
+        progress_callback: Callable[[int, int, str, dict], None] | None = None,
     ) -> PipelineResult:
         """Run all stages and write only translations that pass validation."""
 
@@ -516,6 +521,8 @@ class TranslationPipeline:
             target_lang=target_lang,
             glossary=active_glossary,
             stats=stats,
+            is_cancelled=is_cancelled,
+            progress_callback=progress_callback,
         )
 
         results: list[TranslationResult] = []
@@ -584,7 +591,10 @@ class TranslationPipeline:
             stats=stats,
         )
         self._log_stats(stats)
-        return PipelineResult(tuple(results), stats, groups)
+        
+        # Check if rate limited
+        is_rate_limited = stats.api_errors > 0 or getattr(stats, "rate_limited", False)
+        return PipelineResult(tuple(results), stats, groups, rate_limited=is_rate_limited)
 
     def process(self, *args: Any, **kwargs: Any) -> PipelineResult:
         """Alias for callers that prefer ``process`` over ``run``."""
@@ -632,9 +642,14 @@ class TranslationPipeline:
         target_lang: str,
         glossary: tuple[dict[str, object], dict[tuple[str, str], object]],
         stats: PipelineStats,
+        is_cancelled = None,
+        progress_callback = None,
     ) -> dict[tuple[str, str], tuple[object, TranslationOrigin | None]]:
         candidates: dict[tuple[str, str], tuple[object, TranslationOrigin | None]] = {}
         unresolved: list[DeduplicatedText] = []
+        
+        total_groups = len(groups)
+        processed_groups = 0
         generic_glossary, contextual_glossary = glossary
 
         for group in groups:
@@ -665,6 +680,10 @@ class TranslationPipeline:
                 continue
             unresolved.append(group)
 
+        processed_groups = total_groups - len(unresolved)
+        if progress_callback:
+            progress_callback(processed_groups, total_groups, "translation.translating", {"engine": "API"})
+
         if not unresolved:
             return candidates
 
@@ -676,16 +695,30 @@ class TranslationPipeline:
             source_texts = [group.text for group in category_groups]
             stats.api_calls += 1
             stats.api_strings += len(source_texts)
-            translated = self._translate_batch(
-                source_texts,
-                source_lang=source_lang,
-                target_lang=target_lang,
-                category=category,
-                stats=stats,
-                glossary_terms=generic_glossary,
-            )
-            for group, translation in zip(category_groups, translated):
-                candidates[group.key] = (translation, TranslationOrigin.API)
+            
+            def batch_progress(strings_done: int):
+                nonlocal processed_groups
+                processed_groups += strings_done
+                if progress_callback:
+                    progress_callback(processed_groups, total_groups, "translation.translating", {"engine": "API"})
+            
+            try:
+                translated = self._translate_batch(
+                    source_texts,
+                    source_lang=source_lang,
+                    target_lang=target_lang,
+                    category=category,
+                    stats=stats,
+                    glossary_terms=generic_glossary,
+                    is_cancelled=is_cancelled,
+                    progress_callback=batch_progress,
+                )
+                for group, translation in zip(category_groups, translated):
+                    candidates[group.key] = (translation, TranslationOrigin.API)
+            except RateLimitError as e:
+                self.log.warning("Pipeline caught RateLimitError. Halting API calls for remaining groups.")
+                stats.rate_limited = True
+                break
 
         return candidates
 
@@ -698,6 +731,8 @@ class TranslationPipeline:
         category: str,
         stats: PipelineStats,
         glossary_terms: Mapping[str, object] | None = None,
+        is_cancelled = None,
+        progress_callback = None,
     ) -> list[object]:
         if self.translator is None:
             self.log.warning(
@@ -731,7 +766,11 @@ class TranslationPipeline:
                 target_lang=target_lang,
                 source_lang=source_lang,
                 category=category,
+                is_cancelled=is_cancelled,
+                progress_callback=progress_callback,
             )
+        except RateLimitError:
+            raise
         except Exception as exc:  # API failures must not cause unsafe write-back.
             stats.api_errors += 1
             self.log.error(

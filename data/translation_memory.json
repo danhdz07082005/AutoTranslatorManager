@@ -5,16 +5,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "actor_name",
-      "source_text": "Uluru",
-      "translated_text": "Uluru",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:38.595560+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "actor_name",
       "source_text": "A goddess who rules over flowers. A gentle, gentle\npersonality.",
       "translated_text": "Một nữ thần cai trị các loài hoa. Một sự nhẹ nhàng, dịu dàng\ncá tính.",
       "source": "api",
@@ -125,16 +115,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "item",
-      "source_text": "Brigandine",
-      "translated_text": "Brigandine",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:38.724435+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "item",
       "source_text": "[Light Equipment] Armor made from sturdy cloth.",
       "translated_text": "[Light Equipment] Áo giáp làm từ vải chắc chắn.",
       "source": "api",
@@ -220,16 +200,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:38.868373+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "item",
-      "source_text": "Mithril Brest",
-      "translated_text": "Mithril Brest",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:38.869993+00:00"
     },
     {
       "source_lang": "auto",
@@ -935,16 +905,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "item",
-      "source_text": "Chainkoyef",
-      "translated_text": "Chainkoyef",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:39.242950+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "item",
       "source_text": "[Heavy Equipment] A helmet made of thick bronze\nplates.",
       "translated_text": "[Heavy Equipment] Mũ bảo hiểm bằng đồng dày\ntấm.",
       "source": "api",
@@ -990,16 +950,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:39.264268+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "item",
-      "source_text": "Mithrilhelm",
-      "translated_text": "Mithrilhelm",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:39.270030+00:00"
     },
     {
       "source_lang": "auto",
@@ -1285,16 +1235,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "item",
-      "source_text": "Masterling",
-      "translated_text": "Masterling",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:39.426877+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "item",
       "source_text": "Poison guard",
       "translated_text": "Người bảo vệ chất độc",
       "source": "api",
@@ -1370,16 +1310,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:39.488350+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "item",
-      "source_text": "Gutsling",
-      "translated_text": "Gutsling",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:39.493890+00:00"
     },
     {
       "source_lang": "auto",
@@ -2175,16 +2105,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Kyaah!」",
-      "translated_text": "「Kyaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:40.075715+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "Combat Start Voice",
       "translated_text": "Giọng nói bắt đầu chiến đấu",
       "source": "api",
@@ -2735,16 +2655,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "!」",
-      "translated_text": "!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:40.629500+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "☆Actually, I'm not a virgin",
       "translated_text": "☆Thật ra tôi không còn trinh",
       "source": "api",
@@ -2940,16 +2850,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:40.874838+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "」",
-      "translated_text": "」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:40.889395+00:00"
     },
     {
       "source_lang": "auto",
@@ -3605,16 +3505,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nnuaah!」",
-      "translated_text": "nnuaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:41.724344+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Aaaaahn. My pussy's going crazy, nnh. Even though",
       "translated_text": "「Aaaahn. Mèo của tôi sắp phát điên rồi, nnh. Mặc dù",
       "source": "api",
@@ -3850,16 +3740,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:42.087532+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "..」",
-      "translated_text": "..」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:42.100801+00:00"
     },
     {
       "source_lang": "auto",
@@ -5025,16 +4905,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nnuahh.」",
-      "translated_text": "nnuahh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:44.210850+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Ah, aah, nnuuu, Ass, nooo, it's creepy. Don't,",
       "translated_text": "「Ah, aah, nnuuu, Ass, không, thật rùng rợn. Đừng,",
       "source": "api",
@@ -5410,16 +5280,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:44.818945+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "!?」",
-      "translated_text": "!?」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:44.836083+00:00"
     },
     {
       "source_lang": "auto",
@@ -6255,16 +6115,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "kuuu...」",
-      "translated_text": "kuuu...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:46.409423+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Aaaaahhh... I-I'm cumming, uukuahh, from being",
       "translated_text": "「Aaaaahhh... T-tôi đang xuất tinh, uukuahh, vì bị",
       "source": "api",
@@ -6905,16 +6755,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Gyagyahhhh!」",
-      "translated_text": "「Gyagyahhhh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:47.781535+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Aaaaah?! It hurts, it hurts! Please pull out your",
       "translated_text": "「Aaaah?! Đau quá, đau quá! Xin vui lòng rút ra",
       "source": "api",
@@ -7000,16 +6840,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:48.000267+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Gigigigii!」",
-      "translated_text": "「Gigigigii!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:48.022681+00:00"
     },
     {
       "source_lang": "auto",
@@ -7115,16 +6945,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Gyah, gyah! Gyahh!」",
-      "translated_text": "「Gyah, gyah! Gyahh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:48.242530+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uwaaaaah...! It's your first time, so why? Does",
       "translated_text": "「Uwaaah...! Đây là lần đầu tiên của bạn, vậy tại sao? Có",
       "source": "api",
@@ -7220,16 +7040,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:48.501269+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Gigigi......! Gigigigi!」",
-      "translated_text": "「Gigigi......! Gigigigi!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:48.542513+00:00"
     },
     {
       "source_lang": "auto",
@@ -7335,16 +7145,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Gigigigii......!」",
-      "translated_text": "「Gigigigii......!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:48.817140+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uwaaaaah... Even though it's my first time...",
       "translated_text": "「Uwaaaaah... Mặc dù đây là lần đầu tiên của tôi...",
       "source": "api",
@@ -7370,16 +7170,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:48.873933+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": ".」",
-      "translated_text": ".」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:48.899010+00:00"
     },
     {
       "source_lang": "auto",
@@ -7480,16 +7270,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:49.208480+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": ", nnuah, kuuuun!」",
-      "translated_text": ", nnuah, kuuuun!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:49.233530+00:00"
     },
     {
       "source_lang": "auto",
@@ -8025,16 +7805,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "Ahaa...」",
-      "translated_text": "Ahaa...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:50.620168+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Gigih, gyaaah!」",
       "translated_text": "「Gigih, gyaah!」",
       "source": "api",
@@ -8055,31 +7825,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "uuuaahh!」",
-      "translated_text": "uuuaahh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:50.706785+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Ass?! Nnuaaah. Ass, your dick. Your hot thing,",
       "translated_text": "「Mông?! Nnuaaah. Ass, con cặc của bạn. Điều hấp dẫn của bạn,",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:50.737485+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nnuaahhh.」",
-      "translated_text": "nnuaahhh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:50.762967+00:00"
     },
     {
       "source_lang": "auto",
@@ -8140,16 +7890,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:50.949970+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Gyah, gyahah!」",
-      "translated_text": "「Gyah, gyahah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:50.979521+00:00"
     },
     {
       "source_lang": "auto",
@@ -8255,16 +7995,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Gyagyyagyahhhh!」",
-      "translated_text": "「Gyagyyagyahhhh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:51.283469+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uwaaaaah... Goblin's making me feel it with Ass..",
       "translated_text": "「Uwaaaaah... Goblin đang khiến tôi cảm thấy điều đó với Ass..",
       "source": "api",
@@ -8365,16 +8095,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Gigigi, gyahii!」",
-      "translated_text": "「Gigigi, gyahii!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:51.561865+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nnuuuaaah... Your penis is swelling up... No, it",
       "translated_text": "「Nnuuuaaah... Dương vật của cậu đang sưng lên... Không, nó",
       "source": "api",
@@ -8425,16 +8145,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": ", ahhh!」",
-      "translated_text": ", ahhh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:51.738595+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Ohhh, nnuohh, Ass, cum inside Ass! Semen from",
       "translated_text": "「Ohhh, nnuohh, Mông, xuất tinh vào trong Mông! Tinh dịch từ",
       "source": "api",
@@ -8470,16 +8180,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:52.005434+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Gigigii...gihii.」",
-      "translated_text": "「Gigigii...gihii.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:52.041400+00:00"
     },
     {
       "source_lang": "auto",
@@ -8570,26 +8270,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:52.311193+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": ". Fufufu.」",
-      "translated_text": ". Fufufu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:52.336975+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Kikikikiki!」",
-      "translated_text": "「Kikikikiki!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:52.373600+00:00"
     },
     {
       "source_lang": "auto",
@@ -8695,16 +8375,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Ukyaaaaah!」",
-      "translated_text": "「Ukyaaaaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:52.934199+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Aaaah. It hurts, it hurts. Don't move your penis!",
       "translated_text": "「Aaaah. Đau quá, đau quá. Đừng di chuyển dương vật của bạn!",
       "source": "api",
@@ -8790,16 +8460,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:53.372422+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Kikii, ukkii.」",
-      "translated_text": "「Kikii, ukkii.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:53.420899+00:00"
     },
     {
       "source_lang": "auto",
@@ -8905,16 +8565,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Ukyaaa......!」",
-      "translated_text": "「Ukyaaa......!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:53.999172+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uwaaah...!? Your penis is swelling up...! No,",
       "translated_text": "「Uwaaah...!? Dương vật của bạn đang sưng lên...! KHÔNG,",
       "source": "api",
@@ -9010,16 +8660,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:54.612364+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Ukkyakkyaaa...!」",
-      "translated_text": "「Ukkyakkyaaa...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:54.673091+00:00"
     },
     {
       "source_lang": "auto",
@@ -9300,16 +8940,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:55.807225+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "..!」",
-      "translated_text": "..!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:55.848262+00:00"
     },
     {
       "source_lang": "auto",
@@ -9785,16 +9415,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Gauu, gaugau.」",
-      "translated_text": "「Gauu, gaugau.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:58.021192+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uwaah aaaah. Stop, please stop. Your dick, it",
       "translated_text": "「Uwaah aaah. Dừng lại, làm ơn dừng lại. Tinh ranh của bạn, nó",
       "source": "api",
@@ -9880,16 +9500,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:58.377454+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Grrrrrrr!」",
-      "translated_text": "「Grrrrrrr!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:58.419756+00:00"
     },
     {
       "source_lang": "auto",
@@ -9995,16 +9605,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Grrrrrrr... Gaaah!」",
-      "translated_text": "「Grrrrrrr... Gaaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:58.846054+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uuuaaah... Your penis is swelling up... It's",
       "translated_text": "「Uuuaaah... Dương vật của anh đang sưng tấy lên... Đó là",
       "source": "api",
@@ -10100,16 +9700,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:56:59.286549+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Grrrrrrr...!」",
-      "translated_text": "「Grrrrrrr...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:59.327667+00:00"
     },
     {
       "source_lang": "auto",
@@ -10215,16 +9805,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Gauuuu!」",
-      "translated_text": "「Gauuuu!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:56:59.828325+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nguuah aaaaah?! Ass, your dick's, in Ass. It's in",
       "translated_text": "「Nguuah aaaaah?! Ass, tinh ranh của bạn, trong Ass. Nó ở trong",
       "source": "api",
@@ -10320,16 +9900,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:00.261616+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Gawgawgaw.」",
-      "translated_text": "「Gawgawgaw.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:00.303588+00:00"
     },
     {
       "source_lang": "auto",
@@ -10435,16 +10005,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Grrrrrr...」",
-      "translated_text": "「Grrrrrr...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:00.750640+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uuuuah aaaaah... Ass, I'm going crazy, nnuaah.",
       "translated_text": "「Uuuuah aaaaah... Ass, tôi điên mất rồi, nnuaah.",
       "source": "api",
@@ -10545,16 +10105,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Grrrrrr... Gaaah...」",
-      "translated_text": "「Grrrrrr... Gaaah...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:01.248489+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nhiii...... Your penis is swelling up. This is,",
       "translated_text": "「Nhiii...... Dương vật của bạn đang sưng lên. Đây là,",
       "source": "api",
@@ -10650,16 +10200,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:01.700419+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Gaaah, grrrrrrr...!」",
-      "translated_text": "「Gaaah, grrrrrrr...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:01.751995+00:00"
     },
     {
       "source_lang": "auto",
@@ -10775,16 +10315,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nbuuuuh?! Njyupu, njyUlururu, ngupu, nbupu, nuuu.",
-      "translated_text": "「Nbuuuuh?! Njyupu, njyUlururu, ngupu, nbupu, nuuu.",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:02.311962+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nnuuuuh?! Nnhbuh, nbuuh, nnhbuuu, nh, guu, nuu,",
       "translated_text": "「Nuuuuh?! Nnhbuh, nbuuh, nnhbuuu, nh, guu, nuu,",
       "source": "api",
@@ -10810,16 +10340,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:02.459934+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnpuuuuh. Nnpuh, ngupuh, njuu, nbuuuhuuu.」",
-      "translated_text": "「Nnpuuuuh. Nnpuh, ngupuh, njuu, nbuuuhuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:02.498452+00:00"
     },
     {
       "source_lang": "auto",
@@ -10945,16 +10465,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": ")",
-      "translated_text": ")",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:03.482989+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "(Your penis is delicious. Give me more. Please let",
       "translated_text": "(Dương vật của anh ngon quá. Cho tôi thêm đi. Xin hãy để",
       "source": "api",
@@ -11000,16 +10510,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:03.793393+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": ".!)",
-      "translated_text": ".!)",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:03.860047+00:00"
     },
     {
       "source_lang": "auto",
@@ -11065,16 +10565,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "...!)",
-      "translated_text": "...!)",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:04.159378+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "(Your penis, your smell, is so thick. I can't stop",
       "translated_text": "(Dương vật của em, mùi của em, dày quá. Tôi không thể dừng lại được",
       "source": "api",
@@ -11125,41 +10615,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnhbuuuuh?! Nnnnnh, nhpuuunh, nnhpu, nppu, nuuu.」",
-      "translated_text": "「Nnhbuuuuh?! Nnnnnh, nhpuuunh, nnhpu, nppu, nuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:04.492667+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Hnnnuuuu?! Nnuu, nbu, npuuu, nn, n, nh, ngh, nnuu",
       "translated_text": "「Hnnuuuu?! Nnuu, nbu, npuuu, nn, n, nh, ngh, nnuu",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:04.544034+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnuuuu......! NnjUlururu, jUluruu, nchuu, nnchu,",
-      "translated_text": "「Nnuuuu......! NnjUlururu, jUluruu, nchuu, nnchu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:04.597939+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nmuuu.」",
-      "translated_text": "nmuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:04.669038+00:00"
     },
     {
       "source_lang": "auto",
@@ -11180,16 +10640,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:04.800832+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nfufufuuu. NjyUlurururuu, njyuruuu, buchuuuu!」",
-      "translated_text": "「Nfufufuuu. NjyUlurururuu, njyuruuu, buchuuuu!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:04.862704+00:00"
     },
     {
       "source_lang": "auto",
@@ -11955,31 +11405,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "hoooooohhh!」",
-      "translated_text": "hoooooohhh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:08.889232+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Hahaha, that's a nice hole, isn't it? Your ass is",
       "translated_text": "「Hahaha, đó là một cái lỗ đẹp phải không? Mông của bạn là",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:08.948596+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "...」",
-      "translated_text": "...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:09.002057+00:00"
     },
     {
       "source_lang": "auto",
@@ -12365,16 +11795,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "Asus, uuuuhh...」",
-      "translated_text": "Asus, uuuuhh...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:11.512075+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nnnghhh, Ass, it's gushing out, nnuahh. There's",
       "translated_text": "「Nnnghhh, Ass, nó đang phun ra kìa, nnuahh. có",
       "source": "api",
@@ -12430,16 +11850,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:11.833252+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Guhgaaaaah!」",
-      "translated_text": "「Guhgaaaaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:11.883817+00:00"
     },
     {
       "source_lang": "auto",
@@ -12530,16 +11940,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:12.367079+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Guaaaaah!」",
-      "translated_text": "「Guaaaaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:12.409864+00:00"
     },
     {
       "source_lang": "auto",
@@ -12640,16 +12040,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:12.911407+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Guwaaah, gugaaah!」",
-      "translated_text": "「Guwaaah, gugaaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:12.962516+00:00"
     },
     {
       "source_lang": "auto",
@@ -12855,16 +12245,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Bufuuuu......!」",
-      "translated_text": "「Bufuuuu......!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:13.933319+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uuuh uuoooohhh......! So much, hot stuff......",
       "translated_text": "「Uuuh uuoooohhh......! Nhiều quá, hàng hot......",
       "source": "api",
@@ -12985,16 +12365,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": ".?!」",
-      "translated_text": ".?!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:14.601047+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Assss, nnuaaaah......! Monkey's penis, is going",
       "translated_text": "「Chết tiệt, nnuaaaah......! Dương vật của khỉ, đang đi",
       "source": "api",
@@ -13045,16 +12415,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "haaaaah......」",
-      "translated_text": "haaaaah......」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:14.901729+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Yaaaahn. Ass, being raped by a monkey. Nn, ooh,",
       "translated_text": "「Yaaahn. Mông, bị khỉ cưỡng hiếp. Ừm, ồ,",
       "source": "api",
@@ -13070,16 +12430,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:15.001298+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Ugh, gyah, kyaaah!」",
-      "translated_text": "「Ugh, gyah, kyaaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:15.048428+00:00"
     },
     {
       "source_lang": "auto",
@@ -13185,31 +12535,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Ugh, gyagyagh!」",
-      "translated_text": "「Ugh, gyagyagh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:15.620963+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Aaaaahhhh. Ass, it's so hot. Why is it, so hot,",
       "translated_text": "「Aaaahhhh. Trời nóng quá. Sao nóng thế nhỉ",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:15.677218+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nnuahn!」",
-      "translated_text": "nnuahn!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:15.732943+00:00"
     },
     {
       "source_lang": "auto",
@@ -13240,16 +12570,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:15.913748+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nnuuaaah!」",
-      "translated_text": "nnuuaaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:15.972713+00:00"
     },
     {
       "source_lang": "auto",
@@ -13380,16 +12700,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:16.737175+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "Asus, nnhh!」",
-      "translated_text": "Asus, nnhh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:16.839094+00:00"
     },
     {
       "source_lang": "auto",
@@ -13630,16 +12940,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:18.511473+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Gufuuuu, guuatsu.」",
-      "translated_text": "「Gufuuuu, guuatsu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:18.589499+00:00"
     },
     {
       "source_lang": "auto",
@@ -13965,16 +13265,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Gufuuuu......!」",
-      "translated_text": "「Gufuuuu......!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:20.955868+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uuah aaaaah... Ass, it's throbbing, coming out,",
       "translated_text": "「Uuah aaaaah... Mông, nó nhói lên, thoát ra,",
       "source": "api",
@@ -14030,16 +13320,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:21.519637+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Bumooooohhh!」",
-      "translated_text": "「Bumooooohhh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:21.578760+00:00"
     },
     {
       "source_lang": "auto",
@@ -14145,16 +13425,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Hmph, moooooooh!」",
-      "translated_text": "「Hmph, moooooooh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:22.280121+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Aguah, uguahhhh. It hurts, it hurts. Please, stop",
       "translated_text": "「Aguah, uguahhhh. Đau quá, đau quá. Làm ơn dừng lại đi",
       "source": "api",
@@ -14240,16 +13510,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:22.783564+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Bumooh, fummooh.」",
-      "translated_text": "「Bumooh, fummooh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:22.872483+00:00"
     },
     {
       "source_lang": "auto",
@@ -14350,16 +13610,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:23.622839+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Bufuuuu, bumooo!」",
-      "translated_text": "「Bufuuuu, bumooo!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:23.704506+00:00"
     },
     {
       "source_lang": "auto",
@@ -14765,16 +14015,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Bumoh, bumoh, bumoooh.」",
-      "translated_text": "「Bumoh, bumoh, bumoooh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:26.529323+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nhhiiiiiii, Ass, it's getting hot, nnuah. This is",
       "translated_text": "「Nhhiiiiiii, Ass, trời nóng quá, nnuah. Đây là",
       "source": "api",
@@ -15170,16 +14410,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:29.310794+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": ", nfuuh...」",
-      "translated_text": ", nfuuh...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:29.390643+00:00"
     },
     {
       "source_lang": "auto",
@@ -16025,16 +15255,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "Papain-san?」",
-      "translated_text": "Papain-san?」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:36.284513+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Huh...?」",
       "translated_text": "「Hả...?」",
       "source": "api",
@@ -16145,16 +15365,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "Papain-san.」",
-      "translated_text": "Papain-san.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:36.988656+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Then let's eat together when we get back.」",
       "translated_text": "「Vậy hãy ăn cùng nhau khi chúng ta quay lại nhé.」",
       "source": "api",
@@ -16205,16 +15415,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Iho! Ihoho!」",
-      "translated_text": "「Iho! Ihoho!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:37.402479+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "(M-Master Ihounde... right? Why did he make such a",
       "translated_text": "(M-Master Ihounde... phải không? Tại sao ông ấy lại làm như vậy?",
       "source": "api",
@@ -16255,31 +15455,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Ihone...!」",
-      "translated_text": "「Ihone...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:37.770336+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Ahh, geez, what the hell? You little...」",
       "translated_text": "「À, trời ạ, cái quái gì vậy? Con nhỏ...」",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:37.835486+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Kyun!」",
-      "translated_text": "「Kyun!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:37.908891+00:00"
     },
     {
       "source_lang": "auto",
@@ -16310,16 +15490,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:38.146651+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Kyuun, kyuuu......!」",
-      "translated_text": "「Kyuun, kyuuu......!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:38.229754+00:00"
     },
     {
       "source_lang": "auto",
@@ -16575,16 +15745,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Iho... Ihohoho...」",
-      "translated_text": "「Iho... Ihohoho...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:40.401657+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uluru. Send Master Ihounde home. I...」",
       "translated_text": "「Uluru. Đưa cậu chủ Ihounde về nhà. Tôi...」",
       "source": "api",
@@ -16630,16 +15790,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:40.792209+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Ihone...」",
-      "translated_text": "「Ihone...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:40.854497+00:00"
     },
     {
       "source_lang": "auto",
@@ -16740,16 +15890,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:41.625735+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "uuhhh.」",
-      "translated_text": "uuhhh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:41.693627+00:00"
     },
     {
       "source_lang": "auto",
@@ -16935,16 +16075,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "kuh, fuguuuuh.」",
-      "translated_text": "kuh, fuguuuuh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:43.004488+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Oooooooohhhh. Aaah, kuunh, niiih. Uuuuaaaaauuuuh.",
       "translated_text": "「Oooooohhhh. Aaah, kuunh, không. Uuuuuuuuu.",
       "source": "api",
@@ -17025,16 +16155,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "...!」",
-      "translated_text": "...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:43.547032+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「I'm so sorry for causing you so much trouble, for",
       "translated_text": "「Tôi rất xin lỗi vì đã gây ra nhiều rắc rối cho bạn, vì",
       "source": "api",
@@ -17065,31 +16185,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": ".!」",
-      "translated_text": ".!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:43.856050+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uuh, guh, kuuuunh, nnhiiih, fuguuuuh. Uuah, ah",
       "translated_text": "「Uuh, guh, kuuuunh, nnhiiih, fuguuuuh. Ưa, à",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:43.930285+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "guuu.」",
-      "translated_text": "guuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:43.991020+00:00"
     },
     {
       "source_lang": "auto",
@@ -17130,16 +16230,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:44.265803+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Uwaaaaah!」",
-      "translated_text": "「Uwaaaaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:44.360507+00:00"
     },
     {
       "source_lang": "auto",
@@ -17655,16 +16745,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Ha...!」",
-      "translated_text": "「Ha...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:48.478281+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「S-Sir Ihounde's fur... Now that I've touched it",
       "translated_text": "「L-Lông của ngài Ihounde... Giờ tôi đã chạm vào nó rồi",
       "source": "api",
@@ -17785,16 +16865,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Shuuun...」",
-      "translated_text": "「Shuuun...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:49.430049+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Huh? This book...」",
       "translated_text": "「Hả? Cuốn sách này...」",
       "source": "api",
@@ -17835,31 +16905,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "... Sh-Shub-Niglas...!」",
-      "translated_text": "... Sh-Shub-Niglas...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:49.781592+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「There's a book with a mother written on it here..",
       "translated_text": "「Có một cuốn sách có viết về người mẹ ở đây..",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:49.842556+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": ".!?」",
-      "translated_text": ".!?」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:49.895315+00:00"
     },
     {
       "source_lang": "auto",
@@ -17925,16 +16975,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nnuu...!」",
-      "translated_text": "nnuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:50.367505+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uh, uh, nnuah, haa...! Ah, guh, ugh...!」",
       "translated_text": "「Ừm, ừ, nnuah, haa...! À, guh, ugh...!」",
       "source": "api",
@@ -17990,16 +17030,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:50.838498+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "ahn, nnah, akku, nkuu.」",
-      "translated_text": "ahn, nnah, akku, nkuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:50.929007+00:00"
     },
     {
       "source_lang": "auto",
@@ -18175,56 +17205,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nguuuunh?! Nfuu, njUlururu, npu, ngupuu」",
-      "translated_text": "「Nguuuunh?! Nfuu, njUlururu, npu, ngupuu」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:52.216394+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Muguuuu. Uguu, fuguuu, guuuunnnnnnn.」",
-      "translated_text": "「Muguuuu. Uguu, fuguuu, guuuunnnnnnn.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:52.294011+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Njyupuu, njyUlurupu, nnpu, nbupuuu, ngbubuu,",
-      "translated_text": "「Njyupuu, njyUlurupu, nnpu, nbupuuu, ngbubuu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:52.370239+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "gupuu」",
-      "translated_text": "gupuu」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:52.446423+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Guhhh...! Guh, fuh, fguuh, nnguuuu...!」",
-      "translated_text": "「Guhhh...! Guh, fuh, fguuh, nnguuuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:52.527488+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Buhaah. Ahh, the taste of your penis. It's",
       "translated_text": "「Buhaah. Ahh, mùi vị của dương vật của bạn. Đó là",
       "source": "api",
@@ -18260,36 +17240,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:52.839982+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Fuguuuuhhh, nguh, uguuuhuuu, fuguu, uguu, guuu.」",
-      "translated_text": "「Fuguuuuhhh, nguh, uguuuhuuu, fuguu, uguu, guuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:52.925721+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「NjyUluru, chuuuu, njyuuu. Nhpu, nngu, nhpuu.」",
-      "translated_text": "「NjyUluru, chuuuu, njyuuu. Nhpu, nngu, nhpuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:52.992976+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Ngufuu, nmuuuu, nnbuh, npuh, nuuh, bupuuu...!」",
-      "translated_text": "「Ngufuu, nmuuuu, nnbuh, npuh, nuuh, bupuuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:53.057964+00:00"
     },
     {
       "source_lang": "auto",
@@ -18405,36 +17355,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Guuuunnnnnnn. Nguh, fuguu, uguu, nguuuh.」",
-      "translated_text": "「Guuuunnnnnnn. Nguh, fuguu, uguu, nguuuh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:54.027048+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Muguh, nnguh, nguguuh, fuguuuuh.」",
-      "translated_text": "「Muguh, nnguh, nguguuh, fuguuuuh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:54.127054+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Npu, npu, nuu, fuguuuu.」",
-      "translated_text": "「Npu, npu, nuu, fuguuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:54.229337+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nnnmuuuuh. Nnuuh, fuguuuunnnh.」",
       "translated_text": "「Nnnmuuuh. Nnuuh, fuguuuunnnh.」",
       "source": "api",
@@ -18465,16 +17385,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nniinh, nnuah, ah haah.」",
-      "translated_text": "nniinh, nnuah, ah haah.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:54.571762+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uguuuuuaa...! Aaah, guuuh, nyaah, I'm cumming...!",
       "translated_text": "「Uguuuuuaa...! Aaah, guuuh, nyaah, tôi sắp xuất tinh rồi...!",
       "source": "api",
@@ -18490,16 +17400,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:54.716684+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Guuuoooohhh...! Nguuu, fuguu, nnii, uguaaah...!」",
-      "translated_text": "「Guuuoooohhh...! Nguuu, fuguu, nnii, uguaaah...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:54.779999+00:00"
     },
     {
       "source_lang": "auto",
@@ -18595,16 +17495,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Fuh, guh, uku, uguuh. Uuh, kuh, nhiiih, uaah,",
-      "translated_text": "「Fuh, guh, uku, uguuh. Uuh, kuh, nhiiih, uaah,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:55.502437+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "uuuaaah...!」",
       "translated_text": "uuaaah...!」",
       "source": "api",
@@ -18625,16 +17515,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Fugu, ugu, nguuuu. Gu, fu, fuguu, uguuu...!」",
-      "translated_text": "「Fugu, ugu, nguuuu. Gu, fu, fuguu, uguuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:55.741558+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Th-This book... I can hear someone's voice from",
       "translated_text": "「C-Cuốn sách này... Tôi có thể nghe thấy giọng nói của ai đó từ",
       "source": "api",
@@ -18650,16 +17530,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:55.907466+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Ihounde-sama!」",
-      "translated_text": "「Ihounde-sama!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:55.973606+00:00"
     },
     {
       "source_lang": "auto",
@@ -18925,16 +17795,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "Charles-sama.」",
-      "translated_text": "Charles-sama.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:58.014848+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「She seems to have realized that you're all in",
       "translated_text": "「Có vẻ như cô ấy đã nhận ra rằng bạn đang ở trong",
       "source": "api",
@@ -18970,16 +17830,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:57:58.313065+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Haa, haa...uuu...」",
-      "translated_text": "「Haa, haa...uuu...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:57:58.375899+00:00"
     },
     {
       "source_lang": "auto",
@@ -19405,16 +18255,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnngh!」",
-      "translated_text": "「Nnngh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:01.693238+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Aaahn. Aaah. Dick, you're so big. It's so hot, it",
       "translated_text": "「Aaahn. Aaa. Dick, cậu lớn quá. Trời nóng quá, nó",
       "source": "api",
@@ -19465,16 +18305,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "Ihounde!」",
-      "translated_text": "Ihounde!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:02.190936+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Yes, yes. I love you, your dick. I really love",
       "translated_text": "「Vâng, vâng. Anh yêu em, con cặc của em. tôi thực sự yêu",
       "source": "api",
@@ -19510,16 +18340,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:02.472468+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Uuh, kuuah, nnuunh, ah aaah, nnhiiih, ooohhhh...!",
-      "translated_text": "「Uuh, kuuah, nnuunh, ah aaah, nnhiiih, ooohhhh...!",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:02.539787+00:00"
     },
     {
       "source_lang": "auto",
@@ -19570,16 +18390,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:02.970162+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": ".! Nnunuuuoiohh.」",
-      "translated_text": ".! Nnunuuuoiohh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:03.038940+00:00"
     },
     {
       "source_lang": "auto",
@@ -19660,16 +18470,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:03.701556+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "hooooooohh.」",
-      "translated_text": "hooooooohh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:03.782537+00:00"
     },
     {
       "source_lang": "auto",
@@ -20135,16 +18935,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nn...... haa...... nfufu...... fuu, huu, fuu.....",
-      "translated_text": "「Nn...... haa...... nfufu...... fuu, huu, fuu.....",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:07.259413+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「...Hm? Huh? I thought... I heard something just",
       "translated_text": "「...Hửm? Hả? Tôi nghĩ... tôi vừa nghe thấy gì đó",
       "source": "api",
@@ -20465,16 +19255,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "?)",
-      "translated_text": "?)",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:10.042136+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Ah...!!? Th-This is, umm... Th-The person over",
       "translated_text": "「A...!!? Đ-Đây là, umm... Đ-Người ở đằng kia",
       "source": "api",
@@ -20500,16 +19280,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:10.330964+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "Hehehe...」",
-      "translated_text": "Hehehe...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:10.446395+00:00"
     },
     {
       "source_lang": "auto",
@@ -20560,46 +19330,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:10.955443+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nfuuu...... nnuunh, nchuuuuh......! Nchu, buchu,",
-      "translated_text": "「Nfuuu...... nnuunh, nchuuuuh......! Nchu, buchu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:11.048770+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "juuu.」",
-      "translated_text": "juuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:11.152974+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nn, nn, n, nnn. Nnpu, gupu, ngupu, nchuuuu.」",
-      "translated_text": "「Nn, nn, n, nnn. Nnpu, gupu, ngupu, nchuuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:11.249880+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nfuu, nnuunh, nmu, nfuuu, nnfuuunn, nh, nh, nuunh",
-      "translated_text": "「Nfuu, nnuunh, nmu, nfuuu, nnfuuunn, nh, nh, nuunh",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:11.365893+00:00"
     },
     {
       "source_lang": "auto",
@@ -20685,41 +19415,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nju, nchu, nbu, nnchu. Nju, ngh, nku, chubu,",
-      "translated_text": "「Nju, nchu, nbu, nnchu. Nju, ngh, nku, chubu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:12.420946+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "chupu, jUlururuu.」",
-      "translated_text": "chupu, jUlururuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:12.508697+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Chupu, pubo, bupu. Juuuu, chuuuunn. Nchu, chu,",
       "translated_text": "「Chupu, pubo, bupu. Juuuu, chuuuunn. Nch, chu,",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:12.599945+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "chuuu.」",
-      "translated_text": "chuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:12.691783+00:00"
     },
     {
       "source_lang": "auto",
@@ -20785,46 +19485,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nbu, gupu, gupogupu, Gupo, nguun, juruchu, npu,",
-      "translated_text": "「Nbu, gupu, gupogupu, Gupo, nguun, juruchu, npu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:13.482199+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nbu, nnu...!」",
-      "translated_text": "nbu, nnu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:13.595746+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Gupuu, chupu, jupu, jupupupu, jUluru, gupu, gupo,",
-      "translated_text": "「Gupuu, chupu, jupu, jupupupu, jUluru, gupu, gupo,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:13.695622+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "njupu, nnju, chuuuu.」",
-      "translated_text": "njupu, nnju, chuuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:13.794399+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "(Ngh...! Your penis is twitching so hard... It",
       "translated_text": "(Ngh...! Dương vật của cậu đang co giật dữ dội quá... Nó",
       "source": "api",
@@ -20865,16 +19525,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnju, nchu, jUlururu. Nnjuu, chuu, nnchuu, nchyuu",
-      "translated_text": "「Nnju, nchu, jUlururu. Nnjuu, chuu, nnchuu, nchyuu",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:14.238557+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": ", *kiss*, *slurp*」",
       "translated_text": ", *hôn*, *sụt sịt*」",
       "source": "api",
@@ -20890,16 +19540,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:14.399862+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "*, mmmh, mmchu, mwh, chuuun!」",
-      "translated_text": "*, mmmh, mmchu, mwh, chuuun!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:14.485328+00:00"
     },
     {
       "source_lang": "auto",
@@ -20925,61 +19565,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Chuuuu, gupu, jupu. Npu, ngupu, chupuuu.",
-      "translated_text": "「Chuuuu, gupu, jupu. Npu, ngupu, chupuuu.",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:14.740461+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "JupUlurururuu.」",
-      "translated_text": "JupUlurururuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:14.824010+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnh, nnh, nnuunh, nuunn, nfu, nbupu, npuun,",
-      "translated_text": "「Nnh, nnh, nnuunh, nuunn, nfu, nbupu, npuun,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:14.909512+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "nchuuuu.」",
       "translated_text": "chuuuu.」",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:15.013257+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Njyuuuuhhh, nchuuuunnnnn, buchuuunnnnnnnn.」",
-      "translated_text": "「Njyuuuuhhh, nchuuuunnnnn, buchuuunnnnnnnn.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:15.161931+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnnnnnnnngh...! Nnnngh, nnnhh, nnkh, nnuuuuh...」",
-      "translated_text": "「Nnnnnnnnngh...! Nnnngh, nnnhh, nnkh, nnuuuuh...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:15.255113+00:00"
     },
     {
       "source_lang": "auto",
@@ -21045,41 +19635,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nn, fuu, nfuuun, nchuuuu...!」",
-      "translated_text": "「Nn, fuu, nfuuun, nchuuuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:15.812035+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nfuu......! Nnuun, nnuunau, haa, fuu,fuuu...」",
-      "translated_text": "「Nfuu......! Nnuun, nnuunau, haa, fuu,fuuu...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:15.897834+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「*glug, glug, ngh, ggh, *gulp, gulp...*gulp!..*",
       "translated_text": "「*ngụt, tắc, ngh, ggh, *ngực, ngụm...*ngực!..*",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:15.975999+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "Ngh...!」",
-      "translated_text": "Ngh...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:16.052910+00:00"
     },
     {
       "source_lang": "auto",
@@ -21420,16 +19980,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:20.111342+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnngh...!」",
-      "translated_text": "「Nnngh...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:20.218547+00:00"
     },
     {
       "source_lang": "auto",
@@ -21945,16 +20495,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "?」",
-      "translated_text": "?」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:25.820502+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「If I do that, they'll find out right away. I",
       "translated_text": "「Nếu tôi làm vậy, họ sẽ phát hiện ra ngay. tôi",
       "source": "api",
@@ -22045,26 +20585,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "Heheheheh...!」",
-      "translated_text": "Heheheheh...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:26.898604+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnuaanh, uuunnh, ha, hah, fuuuuh, nkuah, haaaaah.",
-      "translated_text": "「Nnuaanh, uuunnh, ha, hah, fuuuuh, nkuah, haaaaah.",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:27.035962+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Haahn, aahn...! Nn, nnaah, ah, nnhaahn. Nnuuun,",
       "translated_text": "「Haahn, aahn...! Nn, nnah, à, nhahn. Nnuuun,",
       "source": "api",
@@ -22075,31 +20595,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "kuuuu.」",
-      "translated_text": "kuuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:27.315819+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Aah, I can't stop moving my pussy...! My pussy",
       "translated_text": "「Aah, tôi không thể ngừng di chuyển âm hộ của mình ...! Lồn của tôi",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:27.433329+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnh, uaanh, aaunh, ahhn, auunn, nnhiiinnh, haah",
-      "translated_text": "「Nnh, uaanh, aaunh, ahhn, auunn, nnhiiinnh, haah",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:27.576399+00:00"
     },
     {
       "source_lang": "auto",
@@ -22145,31 +20645,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nuuunnuah.」",
-      "translated_text": "nuuunnuah.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:28.060347+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nnuuaaaaah...! Your penis is moving inside me.",
       "translated_text": "「Nnuuaaaaah...! Dương vật của bạn đang di chuyển bên trong tôi.",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:28.149163+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "Nkuh, nnuaanh.」",
-      "translated_text": "Nkuh, nnuaanh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:28.237200+00:00"
     },
     {
       "source_lang": "auto",
@@ -22260,16 +20740,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:29.156328+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": ", haaah!」",
-      "translated_text": ", haaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:29.240745+00:00"
     },
     {
       "source_lang": "auto",
@@ -22375,16 +20845,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "Haaaaahhhh...!」",
-      "translated_text": "Haaaaahhhh...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:30.363042+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nnhaah, I'm cumming, cum, cumming. Nnhah,",
       "translated_text": "「Nnhaah, tôi đang ra, ra, ra. nha,",
       "source": "api",
@@ -22420,16 +20880,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:30.924250+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnhaaaaah. Nnuah, uukuuuu, hah, kuuunh, nnuuh.」",
-      "translated_text": "「Nnhaaaaah. Nnuah, uukuuuu, hah, kuuunh, nnuuh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:31.075115+00:00"
     },
     {
       "source_lang": "auto",
@@ -22995,31 +21445,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Aaah aaaah?! Nnuuuah, aaah, hah, uuh, nnh uuaah.」",
-      "translated_text": "「Aaah aaaah?! Nnuuuah, aaah, hah, uuh, nnh uuaah.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:37.321291+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Congratulations on graduating from being a virgin",
       "translated_text": "「Chúc mừng bạn đã tốt nghiệp từ trinh nữ",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:37.426807+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": ". Hehehe.」",
-      "translated_text": ". Hehehe.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:37.525734+00:00"
     },
     {
       "source_lang": "auto",
@@ -23110,16 +21540,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:38.340715+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nn, nn, n, nnn. Hehe, heheheheh...」",
-      "translated_text": "「Nn, nn, n, nnn. Hehe, heheheheh...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:38.431996+00:00"
     },
     {
       "source_lang": "auto",
@@ -23405,16 +21825,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nnuuuh.」",
-      "translated_text": "nnuuuh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:41.997332+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Hehehe, thank you very much. Mm...! I knew it.」",
       "translated_text": "「Hehehe, cảm ơn bạn rất nhiều. Ừm...! Tôi biết mà.」",
       "source": "api",
@@ -23560,16 +21970,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:43.581202+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nnh.」",
-      "translated_text": "nnh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:43.684433+00:00"
     },
     {
       "source_lang": "auto",
@@ -23775,16 +22175,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Haa, haa, ngh, nnnh, fuu, fu,fuu, Fuuuu...!」",
-      "translated_text": "「Haa, haa, ngh, nnnh, fuu, fu,fuu, Fuuuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:46.175702+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uuuu...! Uluru...san...! Haa, haa, Haa...!」",
       "translated_text": "「Ưuuu...! Uluru...san...! Ha, ha, ha…!」",
       "source": "api",
@@ -23910,16 +22300,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:58:47.746651+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "uuuu...!」",
-      "translated_text": "uuuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:58:47.850138+00:00"
     },
     {
       "source_lang": "auto",
@@ -25255,16 +23635,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "Nnuuuaaah.」",
-      "translated_text": "Nnuuuaaah.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:01.519560+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nnuah, nuuah. Ah, nnuh, nuunh. Noo, nuuaaah.」",
       "translated_text": "「Nnuah, không. À, không, không. Không, nuuaaah.」",
       "source": "api",
@@ -25370,16 +23740,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:02.665878+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Uuuuah, nnuuaah. Nnh, kuuuh, uwaaaaahhhh.」",
-      "translated_text": "「Uuuuah, nnuuaah. Nnh, kuuuh, uwaaaaahhhh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:02.765108+00:00"
     },
     {
       "source_lang": "auto",
@@ -25585,16 +23945,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nuuuu.」",
-      "translated_text": "nuuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:04.812736+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「We'll have fun too. I was the first one to find",
       "translated_text": "「Chúng ta cũng sẽ vui vẻ. Tôi là người đầu tiên tìm thấy",
       "source": "api",
@@ -25790,16 +24140,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:06.667139+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "Nnhiiiiii!」",
-      "translated_text": "Nnhiiiiii!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:06.761027+00:00"
     },
     {
       "source_lang": "auto",
@@ -26140,16 +24480,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:10.151504+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Uwah...!!?」",
-      "translated_text": "「Uwah...!!?」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:10.229990+00:00"
     },
     {
       "source_lang": "auto",
@@ -26585,16 +24915,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnuuu, nnuuaaah. Uah ah, yaah aaah, nn, iih,",
-      "translated_text": "「Nnuuu, nnuuaaah. Uah ah, yaah aaah, nn, iih,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:15.400040+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "nhiiiiiih.」",
       "translated_text": "nhiiiiih.」",
       "source": "api",
@@ -26695,16 +25015,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnuua, nku, haaah, nn, ii, nnuun, nhaaaaah...!」",
-      "translated_text": "「Nnuua, nku, haaah, nn, ii, nnuun, nhaaaaah...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:16.469776+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uuuu, nnuuah, ah, kuh, nuuuaah. Hah, ah aaaaah.」",
       "translated_text": "「Uuuu, nnuuah, à, kuh, nuuuaah. Ha, à aaaaah.」",
       "source": "api",
@@ -26795,16 +25105,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Bufuuuu.」",
-      "translated_text": "「Bufuuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:17.450048+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Eeek!?」",
       "translated_text": "「Ếch!?」",
       "source": "api",
@@ -26820,16 +25120,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:17.654548+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nniih.」",
-      "translated_text": "nniih.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:17.822933+00:00"
     },
     {
       "source_lang": "auto",
@@ -26925,36 +25215,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Hah, hah, haaah...!」",
-      "translated_text": "「Hah, hah, haaah...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:18.893523+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Hmmmuuuu.」",
-      "translated_text": "「Hmmmuuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:19.009565+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnuuah, nuuuu, uu, iih, nnuuaah, hah aaaaah.」",
-      "translated_text": "「Nnuuah, nuuuu, uu, iih, nnuuaah, hah aaaaah.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:19.122646+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uuuu, stop. I don't want it anymore, nnkuah. Your",
       "translated_text": "「Uuuu, dừng lại. Tôi không muốn nó nữa, nnkuah. của bạn",
       "source": "api",
@@ -27020,16 +25280,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:19.802248+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnh, nnuaah, haaah. Uuhaaaaah...!」",
-      "translated_text": "「Nnh, nnuaah, haaah. Uuhaaaaah...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:19.907179+00:00"
     },
     {
       "source_lang": "auto",
@@ -27440,16 +25690,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:24.918261+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nn...!」",
-      "translated_text": "「Nn...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:25.007563+00:00"
     },
     {
       "source_lang": "auto",
@@ -28505,31 +26745,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nnuuuun!」",
-      "translated_text": "nnuuuun!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:37.892447+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「There's so much. It's coming out...! Nnn, haaaah.",
       "translated_text": "「Có rất nhiều. Nó sắp ra rồi...! Nnn, haaah.",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:38.050066+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Haa, haa, nhaa. Fuu, fuu, ufuuu...!」",
-      "translated_text": "「Haa, haa, nhaa. Fuu, fuu, ufuuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:38.278397+00:00"
     },
     {
       "source_lang": "auto",
@@ -29325,16 +27545,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "!)",
-      "translated_text": "!)",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:46.961518+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Y-Yes. Let's hear it.」",
       "translated_text": "「V-Vâng. Hãy cùng nghe nhé.」",
       "source": "api",
@@ -29575,16 +27785,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnn, nchu, chuuuu, nn, chu, njuuu.」",
-      "translated_text": "「Nnn, nchu, chuuuu, nn, chu, njuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:49.887947+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "(Ugh...! I've been holding back this whole time,",
       "translated_text": "(Ugh...! Mình đã kiềm chế suốt thời gian qua rồi,",
       "source": "api",
@@ -29625,26 +27825,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nfuu, nfuunh. Nnh, chu, nchuuu, juuuu.」",
-      "translated_text": "「Nfuu, nfuunh. Nnh, chu, nchuuu, juuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:50.642888+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Mmchu, mmchuuu, chu, chuu, nchuu, chyuuuu.」",
-      "translated_text": "「Mmchu, mmchuuu, chu, chuu, nchuu, chyuuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:50.769694+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Aah... It feels good, it feels good. Kuuuuh...」",
       "translated_text": "「Aah... Cảm giác thật tuyệt, thật tuyệt. Kuuuuh...」",
       "source": "api",
@@ -29670,46 +27850,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:51.172265+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Mmchu, mmchu, nchuchuchu, chuu, nnchuu, juuu, chu",
-      "translated_text": "「Mmchu, mmchu, nchuchuchu, chuu, nnchuu, juuu, chu",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:51.310297+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": ", chyu, chu.. chuuu.」",
-      "translated_text": ", chyu, chu.. chuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:51.439334+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nfuuuu......! Nreru, nrerurero, njuchu,",
-      "translated_text": "「Nfuuuu......! Nreru, nrerurero, njuchu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:51.567511+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "chuchuchuchuuu.」",
-      "translated_text": "chuchuchuchuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:51.677107+00:00"
     },
     {
       "source_lang": "auto",
@@ -29845,16 +27985,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「NjyUlurururu......! Nchu, nbuchu, buchuu, ngupu,",
-      "translated_text": "「NjyUlurururu......! Nchu, nbuchu, buchuu, ngupu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:53.657237+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nchuu, njuchuu. Nchu, nchu, nnchuuu, jyUlurururuu",
       "translated_text": "「Nchuu, njuchuu. Nchu, nchu, nnchuuu, jyUlururuu",
       "source": "api",
@@ -29880,36 +28010,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:54.030551+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnhah...! Nnhamh, njyuru, nrerureru, nnreruu,",
-      "translated_text": "「Nnhah...! Nnhamh, njyuru, nrerureru, nnreruu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:54.150671+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nchu, chu, chuuuu...!」",
-      "translated_text": "nchu, chu, chuuuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:54.273903+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nreru, reru, nreroh, rerorerorerorero, npuea,",
-      "translated_text": "「Nreru, reru, nreroh, rerorerorerorero, npuea,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:54.391358+00:00"
     },
     {
       "source_lang": "auto",
@@ -29950,26 +28050,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:54.879252+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnjuuuu, njuu, nnchuu, chuchuchuuu.」",
-      "translated_text": "「Nnjuuuu, njuu, nnchuu, chuchuchuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:54.994874+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nbuchu, nchu, nnchu, chuchuchuuuu, njUlururuuu」",
-      "translated_text": "「Nbuchu, nchu, nnchu, chuchuchuuuu, njUlururuuu」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:55.109102+00:00"
     },
     {
       "source_lang": "auto",
@@ -30055,51 +28135,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnpu, gupu, ngupu, nnchuuuu, juujuu juuu」",
-      "translated_text": "「Nnpu, gupu, ngupu, nnchuuuu, juujuu juuu」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:56.330741+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Chuuuu, njUlururuu, gupu, gopu, ngupu, ngupu,",
-      "translated_text": "「Chuuuu, njUlururuu, gupu, gopu, ngupu, ngupu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:56.451997+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nnchuuu.」",
-      "translated_text": "nnchuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:56.558747+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Ahh, Goddess...!」",
       "translated_text": "「A, Nữ thần...!」",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:56.672690+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnnnnnnnngh!? Nnnnh, nnnhh, nnnnhn, nnchyuuuu!」",
-      "translated_text": "「Nnnnnnnnngh!? Nnnnh, nnnhh, nnnnhn, nnchyuuuu!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:56.769415+00:00"
     },
     {
       "source_lang": "auto",
@@ -30160,36 +28200,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T07:59:57.422948+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnh, nnh, nhpu, nunh, hfuu, fuuh, fuun, nchuuuu..",
-      "translated_text": "「Nnh, nnh, nhpu, nunh, hfuu, fuuh, fuun, nchuuuu..",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:57.550832+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnuuuu......! Nnh, kuh, nkuu, nuuuh...!」",
-      "translated_text": "「Nnuuuu......! Nnh, kuh, nkuu, nuuuh...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:57.672452+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnngh, nnnghh, ngokyu, gokyu, ngokukyu, nguguguu.",
-      "translated_text": "「Nnngh, nnnghh, ngokyu, gokyu, ngokukyu, nguguguu.",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T07:59:57.809248+00:00"
     },
     {
       "source_lang": "auto",
@@ -30540,16 +28550,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:03.633843+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "..)",
-      "translated_text": "..)",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:03.792757+00:00"
     },
     {
       "source_lang": "auto",
@@ -31045,16 +29045,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Uuuaaaaah...!?」",
-      "translated_text": "「Uuuaaaaah...!?」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:09.867450+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Hah, kuh, uuuh. It hurts...! Your penis is going",
       "translated_text": "「Ha, kuh, uuuh. Đau quá...! Dương vật của bạn đang hoạt động",
       "source": "api",
@@ -31230,16 +29220,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:11.926193+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "kuuuh.」",
-      "translated_text": "kuuuh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:12.039214+00:00"
     },
     {
       "source_lang": "auto",
@@ -31445,16 +29425,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnuuah, nkuah, ah, nunh, kuunnah, ah aaaaah.」",
-      "translated_text": "「Nnuuah, nkuah, ah, nunh, kuunnah, ah aaaaah.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:14.744557+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Your penis, is going wild, nnuah. It's going wild",
       "translated_text": "「Dương vật của bạn, đang trở nên hoang dã, nnuah. Nó đang trở nên hoang dã",
       "source": "api",
@@ -31540,16 +29510,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:15.884395+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Hah, hah, ufuunh, nnuuuaaaaah, nuuuuh.」",
-      "translated_text": "「Hah, hah, ufuunh, nnuuuaaaaah, nuuuuh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:16.010686+00:00"
     },
     {
       "source_lang": "auto",
@@ -31815,16 +29775,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Ukuuuuuaaaaahhhh!」",
-      "translated_text": "「Ukuuuuuaaaaahhhh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:19.134928+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nnhaaaaah. Nnhiii, nnhhhnnn. Haaahhh...!」",
       "translated_text": "「Nnhaaaaah. Nnhiii, nhhhnnnn. Haahhh...!」",
       "source": "api",
@@ -31880,16 +29830,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:19.807627+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "fuuu...」",
-      "translated_text": "fuuu...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:19.909506+00:00"
     },
     {
       "source_lang": "auto",
@@ -32295,16 +30235,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Hah, hah, haah, nnuuuu...!」",
-      "translated_text": "「Hah, hah, haah, nnuuuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:25.200882+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Oh, sorry, sorry. It looks like there was a trap",
       "translated_text": "「Ồ, xin lỗi, xin lỗi. Hình như có bẫy",
       "source": "api",
@@ -32405,16 +30335,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Haah, haah, nnah. Haaah, nnuuuuh. Nnhaaaah...!」",
-      "translated_text": "「Haah, haah, nnah. Haaah, nnuuuuh. Nnhaaaah...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:26.545539+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「...Well, I guess it's a perk?」",
       "translated_text": "「...Chà, tôi đoán đó là một đặc quyền?」",
       "source": "api",
@@ -32510,16 +30430,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:28.097345+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnuuaah aaaaah. Hahaaah, nnhh. Nnuuaaahhh...!」",
-      "translated_text": "「Nnuuaah aaaaah. Hahaaah, nnhh. Nnuuaaahhh...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:28.249595+00:00"
     },
     {
       "source_lang": "auto",
@@ -32695,31 +30605,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "akkuuuuh.」",
-      "translated_text": "akkuuuuh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:30.703860+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Your penis, feels gooood. Nnuuoh, hooooh, nnuh",
       "translated_text": "「Dương vật của bạn, cảm giác thật tuyệt. Không, không, không",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:30.818208+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "heaaah aah.」",
-      "translated_text": "heaaah aah.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:30.928378+00:00"
     },
     {
       "source_lang": "auto",
@@ -32885,16 +30775,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Oih, oih, nnoohh, hoooooohhh, mmhiiih, kuuuuh,",
-      "translated_text": "「Oih, oih, nnoohh, hoooooohhh, mmhiiih, kuuuuh,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:33.051914+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "Hooooooohhh.」",
       "translated_text": "Hoooooooohhh.」",
       "source": "api",
@@ -32930,26 +30810,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:33.527749+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "saaan!」",
-      "translated_text": "saaan!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:33.645407+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnh ooh, hooooh, oih, oih, nnuohh, ohoooooohhh.」",
-      "translated_text": "「Nnh ooh, hooooh, oih, oih, nnuohh, ohoooooohhh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:33.762912+00:00"
     },
     {
       "source_lang": "auto",
@@ -33000,16 +30860,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:34.395737+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nnuuoioooohhh!」",
-      "translated_text": "nnuuoioooohhh!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:34.524086+00:00"
     },
     {
       "source_lang": "auto",
@@ -33105,41 +30955,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "hoohoooh.」",
-      "translated_text": "hoohoooh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:35.752511+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Cumming, cumming, gumming, nngh, higuuh,",
-      "translated_text": "「Cumming, cumming, gumming, nngh, higuuh,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:35.879858+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "nnuuuuohh, hoooioioooohhh.」",
       "translated_text": "nnuuuuohh, hoooioooooooohhh.」",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:36.001042+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Cumming, cumming, gumming, higuuuuhhh,",
-      "translated_text": "「Cumming, cumming, gumming, higuuuuhhh,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:36.146862+00:00"
     },
     {
       "source_lang": "auto",
@@ -33255,31 +31075,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Heh, hah, huff, haaah, fu, fuh, fuuuuh, kuh uuu..",
-      "translated_text": "「Heh, hah, huff, haaah, fu, fuh, fuuuuh, kuh uuu..",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:37.589314+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Haaaaah...! I love your dick. I love it...!」",
       "translated_text": "「Haaaaah...! Tôi yêu tinh ranh của bạn. Tôi yêu nó...!」",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:37.777426+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Fuuu, fuu,fuuuuh, nnuuhh, haaaaah...!」",
-      "translated_text": "「Fuuu, fuu,fuuuuh, nnuuhh, haaaaah...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:37.925035+00:00"
     },
     {
       "source_lang": "auto",
@@ -33585,26 +31385,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnuuuuaaah aaah!」",
-      "translated_text": "「Nnuuuuaaah aaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:42.203047+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nkuu, nnuuu. Haah, kuuah, uuu, fuuuu...!」",
-      "translated_text": "「Nkuu, nnuuu. Haah, kuuah, uuu, fuuuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:42.324114+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uluru... This is... your first time? In that",
       "translated_text": "「Uluru... Đây là... lần đầu tiên của bạn? Trong đó",
       "source": "api",
@@ -33810,16 +31590,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:44.945476+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "Nnuaah, Haaaaah!」",
-      "translated_text": "Nnuaah, Haaaaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:45.070093+00:00"
     },
     {
       "source_lang": "auto",
@@ -34165,16 +31935,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "aaaanh.」",
-      "translated_text": "aaaanh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:50.244416+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nnh, nnauahn. Ah, ah, aah, haahnh. Ahh, ahh,",
       "translated_text": "「Nnh, nnauahn. À, à, à, haahnh. À, à,",
       "source": "api",
@@ -34185,31 +31945,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nnkuah, nnuuh.」",
-      "translated_text": "nnkuah, nnuuh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:50.522817+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Your penis feels good. It feels good, nnnahn. Hah",
       "translated_text": "「Dương vật của bạn cảm thấy tốt. Cảm giác thật tuyệt, nnnahn. haha",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:00:50.648343+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": ", hah, hanh, nnuunh.」",
-      "translated_text": ", hah, hanh, nnuunh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:50.780939+00:00"
     },
     {
       "source_lang": "auto",
@@ -34655,16 +32395,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": ".! Aah, nnn, haah, haaah...!」",
-      "translated_text": ".! Aah, nnn, haah, haaah...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:00:57.423829+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Yeah. Me too. Thank you. For becoming my lover.」",
       "translated_text": "「Ừ. Tôi cũng vậy. Cảm ơn. Vì đã trở thành người yêu của tôi.」",
       "source": "api",
@@ -34935,16 +32665,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": ", Uluru?」",
-      "translated_text": ", Uluru?」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:01.554017+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Huh? Patience...? N-No way... Yahn!」",
       "translated_text": "「Hả? Tính kiên nhẫn...? K-Không thể nào... Yahn!」",
       "source": "api",
@@ -35170,26 +32890,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:01:04.856488+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "Nnuuaaah!」",
-      "translated_text": "Nnuuaaah!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:04.997224+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Haah, fuuh, nhaah, nkuuunh, haah, haa, fuh,",
-      "translated_text": "「Haah, fuuh, nhaah, nkuuunh, haah, haa, fuh,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:05.132982+00:00"
     },
     {
       "source_lang": "auto",
@@ -35475,16 +33175,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nnuuuuh.」",
-      "translated_text": "nnuuuuh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:09.226612+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「No, you can't. Your dick's so deep. You're",
       "translated_text": "「Không, bạn không thể. Tinh ranh của bạn rất sâu. bạn là",
       "source": "api",
@@ -35545,16 +33235,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nnuuah, nunh, haaaah.」",
-      "translated_text": "nnuuah, nunh, haaaah.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:10.193060+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Ahn, ahn, aahn, nnuan, nuuu. Haaaah, aaah!」",
       "translated_text": "「Ahn, ahn, aahn, nnuan, nuuu. Haaah, aaa!」",
       "source": "api",
@@ -35570,16 +33250,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:01:10.455800+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nnuun!」",
-      "translated_text": "nnuun!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:10.597970+00:00"
     },
     {
       "source_lang": "auto",
@@ -36225,16 +33895,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Fuuuu...! Fuu, haa, nkuuun!」",
-      "translated_text": "「Fuuuu...! Fuu, haa, nkuuun!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:19.601564+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「I feel like I'm getting used to it... But, nnnh.",
       "translated_text": "「Tôi cảm thấy như mình đã quen với nó rồi... Nhưng, nnnh.",
       "source": "api",
@@ -36375,16 +34035,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "Nnuuuaaah...!」",
-      "translated_text": "Nnuuuaaah...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:21.579779+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Ah, ah, don't. If you're going to move forward,",
       "translated_text": "「À, à, đừng. Nếu bạn định tiến về phía trước,",
       "source": "api",
@@ -36480,16 +34130,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:01:22.806063+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nnuunnaaah.」",
-      "translated_text": "nnuunnaaah.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:22.937369+00:00"
     },
     {
       "source_lang": "auto",
@@ -36610,16 +34250,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:01:24.374376+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "kuuuunh. Haaaaah.」",
-      "translated_text": "kuuuunh. Haaaaah.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:24.506322+00:00"
     },
     {
       "source_lang": "auto",
@@ -36890,16 +34520,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:01:28.162151+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "Heheheheh...」",
-      "translated_text": "Heheheheh...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:28.285849+00:00"
     },
     {
       "source_lang": "auto",
@@ -38075,26 +35695,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "nuuaaah.」",
-      "translated_text": "nuuaaah.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:46.826991+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Guuuhhh, hnnnnnn, nnuah, akkuuaah, nniiiiiihh.」",
-      "translated_text": "「Guuuhhh, hnnnnnn, nnuah, akkuuaah, nniiiiiihh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:47.061447+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Thanks to this, I can violate your clitoris and G",
       "translated_text": "「Nhờ điều này mà tôi có thể xâm nhập vào âm vật và âm đạo của bạn.",
       "source": "api",
@@ -38165,16 +35765,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Cumming, cumming, nngh, higuuuuh, gumming gumming",
-      "translated_text": "「Cumming, cumming, nngh, higuuuuh, gumming gumming",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:48.500335+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": ", I'm cummin, cumminnng, nnuaah!」",
       "translated_text": ", Tôi là cummin, cumminnng, nnuaah!」",
       "source": "api",
@@ -38190,46 +35780,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:01:48.894870+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nnuuiiiiii!」",
-      "translated_text": "nnuuiiiiii!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:49.055117+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Cumming, cumming, gumming, higuu,",
-      "translated_text": "「Cumming, cumming, gumming, higuu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:49.215781+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "cummiiiiiiiiiiinnnng, uuuuunnnngh.」",
-      "translated_text": "cummiiiiiiiiiiinnnng, uuuuunnnngh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:49.462774+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Uuuuaaaaah, nnuiii, nniiiiii, nuuuguiiiiii!」",
-      "translated_text": "「Uuuuaaaaah, nnuiii, nniiiiii, nuuuguiiiiii!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:49.614223+00:00"
     },
     {
       "source_lang": "auto",
@@ -38295,16 +35845,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Fuguuuuhh, nguuh, ngiiiiiih, uuuuoooohhhh...!」",
-      "translated_text": "「Fuguuuuhh, nguuh, ngiiiiiih, uuuuoooohhhh...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:50.669348+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nnuohh, nnuooohhh, fuguuoiooooh, uuooooooohhh...!",
       "translated_text": "「Nnuohh, nnuooohhh, fuguuoiooooh, uuoooooooohhh...!",
       "source": "api",
@@ -38320,16 +35860,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:01:50.949863+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nniiiiiiiii...!」",
-      "translated_text": "nniiiiiiiii...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:51.083596+00:00"
     },
     {
       "source_lang": "auto",
@@ -38370,16 +35900,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:01:51.623488+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "ngui, oioioooohhh.」",
-      "translated_text": "ngui, oioioooohhh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:51.779605+00:00"
     },
     {
       "source_lang": "auto",
@@ -38460,36 +35980,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:01:53.032106+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnuuh oioioooohh, hooooohhh, nnuoooooh,",
-      "translated_text": "「Nnuuh oioioooohh, hooooohhh, nnuoooooh,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:53.158696+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "uuoooohohhh.」",
-      "translated_text": "uuoooohohhh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:53.294052+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnuohh, nnuoioioh, nuuoioooohhh, fuguuuuhhh.」",
-      "translated_text": "「Nnuohh, nnuoioioh, nuuoioooohhh, fuguuuuhhh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:53.444419+00:00"
     },
     {
       "source_lang": "auto",
@@ -38590,16 +36080,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:01:54.939768+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nhhiiiiiiiiiih, nniiihh, nnuuoioih, oioioiooohhh.",
-      "translated_text": "「Nhhiiiiiiiiiih, nniiihh, nnuuoioih, oioioiooohhh.",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:55.105985+00:00"
     },
     {
       "source_lang": "auto",
@@ -38710,16 +36190,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:01:56.887333+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Hah, hah, haaah, nnuuu, ku, fu, fuguu, uuuu...!」",
-      "translated_text": "「Hah, hah, haaah, nnuuu, ku, fu, fuguu, uuuu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:01:57.177623+00:00"
     },
     {
       "source_lang": "auto",
@@ -39455,36 +36925,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnpu, gupu, npuu. Npu, gpu, ngupu, nchuuuu.」",
-      "translated_text": "「Nnpu, gupu, npuu. Npu, gpu, ngupu, nchuuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:11.340824+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nheah, nnamh. Mmchu, mmchu, nchUluru,",
-      "translated_text": "「Nheah, nnamh. Mmchu, mmchu, nchUluru,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:11.600271+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "njuzuzuzuuzuzu.」",
-      "translated_text": "njuzuzuzuuzuzu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:11.830727+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nheah. Heheheh. If you feel that good, I'll get",
       "translated_text": "「Nah. Heheheh. Nếu bạn cảm thấy tốt, tôi sẽ nhận được",
       "source": "api",
@@ -39595,31 +37035,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "n, chuuuu.」",
-      "translated_text": "n, chuuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:14.100641+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Ngupu, gupu, gopu, ngupu, nguuun. Nn, nn, n, nn,",
       "translated_text": "「Ngupu, gupu, gopu, ngupu, nguuun. Không, không, không, không,",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:02:14.273465+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nnn.」",
-      "translated_text": "nnn.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:14.435505+00:00"
     },
     {
       "source_lang": "auto",
@@ -39670,26 +37090,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:02:15.284804+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nnpu, ngupu, nnchuuun. Nn, chuu, chuunn.",
-      "translated_text": "「Nnpu, ngupu, nnchuuun. Nn, chuu, chuunn.",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:15.629802+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "NnnjUlururuu.」",
-      "translated_text": "NnnjUlururuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:15.973137+00:00"
     },
     {
       "source_lang": "auto",
@@ -39805,16 +37205,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnpuh, nchuu, npuuh, nnchu, nnnchuuu, nchyu, ngu,",
-      "translated_text": "「Nnpuh, nchuu, npuuh, nnchu, nnnchuuu, nchyu, ngu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:18.563550+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "nchyu, nunnunh.」",
       "translated_text": "nchyu, ninunh.」",
       "source": "api",
@@ -39830,16 +37220,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:02:18.883450+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "mmchuuuu.」",
-      "translated_text": "mmchuuuu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:19.077162+00:00"
     },
     {
       "source_lang": "auto",
@@ -39925,36 +37305,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nnju, nbu, nku, chubu. Chupu, chu, nju, chu.",
-      "translated_text": "「Nnju, nbu, nku, chubu. Chupu, chu, nju, chu.",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:20.572265+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "chupu, pubo, bupu...!」",
-      "translated_text": "chupu, pubo, bupu...!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:20.853853+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Jyuuuchuu, njurun, nchuuu, chuuuun. Juru, ju, chu",
-      "translated_text": "「Jyuuuchuu, njurun, nchuuu, chuuuun. Juru, ju, chu",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:21.087137+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Nn, *slurp*, *kiss*, nbu, nnu...! Gupu, gopu,",
       "translated_text": "「Nn, *húp*, *hôn*, nbu, nnu...! Gupu, gopu,",
       "source": "api",
@@ -39970,26 +37320,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:02:21.428239+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「JUluru, gupu, gupo, njupu, nnjuu, njyu, nnu,",
-      "translated_text": "「JUluru, gupu, gupo, njupu, nnjuu, njyu, nnu,",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:21.598232+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nchuu, jyUlurururu.」",
-      "translated_text": "nchuu, jyUlurururu.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:21.772343+00:00"
     },
     {
       "source_lang": "auto",
@@ -40035,31 +37365,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "gokun.」",
-      "translated_text": "gokun.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:22.998560+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「*smooch* *smoooch* Ngh, ngh, *gulp*, *glug*,",
       "translated_text": "「*smooch* *smoooch* Ngh, ngh, *nuốt nước miếng*, *cúi*,",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:02:23.208090+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "nnchuu...」",
-      "translated_text": "nnchuu...」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:23.420368+00:00"
     },
     {
       "source_lang": "auto",
@@ -40705,16 +38015,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Kuh...! U-Uluru-san!」",
-      "translated_text": "「Kuh...! U-Uluru-san!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:35.704610+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Oioioooohhh...! Your pistoning is so rough...!",
       "translated_text": "「Oioooohhh...! Piston của bạn thô quá...!",
       "source": "api",
@@ -40730,16 +38030,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:02:36.120382+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Oih, oiuh, nnoioiooh, nnnnoiohnn, nnuh oioooohhh.",
-      "translated_text": "「Oih, oiuh, nnoioiooh, nnnnoiohnn, nnuh oioooohhh.",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:36.330817+00:00"
     },
     {
       "source_lang": "auto",
@@ -40790,16 +38080,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:02:37.184886+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Oinh, nnuonh, kuuuunh, nuooohhh, ogu, kuuoiooohhh",
-      "translated_text": "「Oinh, nnuonh, kuuuunh, nuooohhh, ogu, kuuoiooohhh",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:37.445524+00:00"
     },
     {
       "source_lang": "auto",
@@ -40925,16 +38205,6 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Nh oioioioohh. Nnuohh, fuunnuuooh, nh uuoooohhh.」",
-      "translated_text": "「Nh oioioioohh. Nnuohh, fuunnuuooh, nh uuoooohhh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:39.912558+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Your big dick's turning my Asshole inside out,",
       "translated_text": "「Con cặc to lớn của anh đang lật ngược lỗ đít của tôi ra ngoài,",
       "source": "api",
@@ -40985,31 +38255,11 @@
       "source_lang": "auto",
       "target_lang": "vi",
       "category": "dialogue",
-      "source_text": "「Hoh oioioooohhh......!」",
-      "translated_text": "「Hoh oioioooohhh......!」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:41.023468+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
       "source_text": "「Uwah...! Uluru-san...! I'm cumming, cumming...!」",
       "translated_text": "「Uwah...! Uluru-san...! Tôi đang xuất tinh, xuất tinh...!」",
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:02:41.302058+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "「Nhhiiiih, nnuoih, hoooioioiohhh.」",
-      "translated_text": "「Nhhiiiih, nnuoih, hoooioioiohhh.」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:41.491516+00:00"
     },
     {
       "source_lang": "auto",
@@ -41060,16 +38310,6 @@
       "source": "api",
       "confidence": "auto",
       "last_used": "2026-08-15T08:02:42.462399+00:00"
-    },
-    {
-      "source_lang": "auto",
-      "target_lang": "vi",
-      "category": "dialogue",
-      "source_text": "cumminggggggg」",
-      "translated_text": "cumminggggggg」",
-      "source": "api",
-      "confidence": "auto",
-      "last_used": "2026-08-15T08:02:42.657578+00:00"
     },
     {
       "source_lang": "auto",

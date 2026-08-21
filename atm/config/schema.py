@@ -1,4 +1,5 @@
 import uuid
+from typing import Literal
 from pydantic import BaseModel, Field
 
 class AppSettings(BaseModel):
@@ -6,7 +7,7 @@ class AppSettings(BaseModel):
     version: int = Field(default=1, description="Version của config")
     auto_update: bool = Field(default=True, description="Tự động cập nhật payload/plugins")
     dark_mode: bool = Field(default=True, description="Giao diện nền tối")
-    language: str = Field(default="vi", description="Ngôn ngữ của Launcher")
+    ui_language: Literal["vi", "en"] = Field(default="vi", description="Ngôn ngữ của Launcher")
     deepl_api_key: str = Field(default="", description="API Key cho DeepL (nếu có)")
 
     translation_memory_threshold: float = Field(

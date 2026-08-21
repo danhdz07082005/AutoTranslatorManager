@@ -10,7 +10,6 @@ from typing import Any
 from atm.config.schema import GameProfile
 from atm.core.translation.cache_manager import TranslationCache
 from atm.core.translation.classification import (
-    EVENT_TEXT_CODES,
     StringClassification,
     TranslationEntry,
     category_for,
@@ -70,7 +69,7 @@ def _visit(
     inside_event_parameters: bool = False,
 ) -> Iterator[TranslationEntry]:
     if isinstance(node, str):
-        classification = classify(
+        classification, write_policy = classify(
             node,
             path,
             source_file,
@@ -79,7 +78,7 @@ def _visit(
             inside_event_parameters=inside_event_parameters,
         )
         if classification is StringClassification.TRANSLATABLE:
-            yield make_entry(node, source_file, path, classification)
+            yield make_entry(node, source_file, path, classification, write_policy)
         elif classification is StringClassification.SPECIAL:
             yield from _visit_note_field(node, path, source_file)
         return
@@ -203,7 +202,7 @@ class RPGMakerTranslator:
     def translate_game(
         self,
         profile: GameProfile,
-        progress_callback: Callable[[int, int, str], None] | None = None,
+        progress_callback: Callable[[int, int, str, dict | None], None] | None = None,
         is_cancelled: Callable[[], bool] | None = None,
     ) -> bool:
         game_dir = Path(profile.exe_path).expanduser().parent
@@ -218,7 +217,7 @@ class RPGMakerTranslator:
             shutil.copytree(data_dir, backup_dir)
 
         if progress_callback:
-            progress_callback(0, 100, "Đang phân loại dữ liệu RPG Maker...")
+            progress_callback(0, 100, "translation.preparing", {"engine": "RPG Maker"})
 
         extracted_entries: list[TranslationEntry] = []
         overlay_entries: dict[str, dict[str, str]] = {}
@@ -240,7 +239,7 @@ class RPGMakerTranslator:
         logger.info("RPG Maker classification report: %s", count_by_classification(extracted_entries))
         if not extracted_entries:
             if progress_callback:
-                progress_callback(100, 100, "Không có text RPG Maker an toàn để dịch.")
+                progress_callback(100, 100, "translation.no_strings", {})
             return True
 
         translator = self._get_translator(profile)
@@ -274,7 +273,15 @@ class RPGMakerTranslator:
             source_lang=getattr(profile, "input_lang", "auto") or "auto",
             target_lang=getattr(profile, "output_lang", "vi") or "vi",
             writer=lambda entry, text: translated_by_path.__setitem__(str(entry.path[0]), text),
+            is_cancelled=is_cancelled,
+            progress_callback=progress_callback,
         )
+
+        rate_limited_error = None
+        if getattr(result, "rate_limited", False):
+            from atm.core.translation.translators import RateLimitError
+            rate_limited_error = RateLimitError("Pipeline rate limited during RPG Maker translation")
+            logger.warning("Rate limit hit during RPG Maker translation. Writing partial results...")
 
         if is_cancelled and is_cancelled():
             return False
@@ -315,13 +322,17 @@ class RPGMakerTranslator:
         self._install_overlay_plugin(game_dir, data_dir)
 
         message = (
-            f"Hoàn tất RPG Maker: {len(write_back_files)} files written back, {len(overlay_entries)} entries in overlay / "
+            f"Hoàn tất RPG Maker (hoặc tạm dừng): {len(write_back_files)} files written back, {len(overlay_entries)} entries in overlay / "
             f"{len(extracted_entries)} total entries, unique={result.stats.unique}, "
             f"rejected={result.stats.validation_rejected}."
         )
         logger.info(message)
         if progress_callback:
-            progress_callback(100, 100, message)
+            progress_callback(100, 100, "translation.success" if not rate_limited_error else "translation.rate_limited", {"updated": len(write_back_files), "total": len(extracted_entries)})
+            
+        if rate_limited_error:
+            raise rate_limited_error
+            
         return True
 
     def _atomic_write_overlay(
@@ -346,6 +357,24 @@ class RPGMakerTranslator:
         tmp_path = plugin_path.with_suffix(plugin_path.suffix + ".tmp")
         tmp_path.write_text(self._overlay_plugin_source(data_dir), encoding="utf-8")
         os.replace(tmp_path, plugin_path)
+
+        # Patch plugins.js
+        plugins_js_path = data_dir.parent / "js" / "plugins.js"
+        if plugins_js_path.exists():
+            try:
+                content = plugins_js_path.read_text(encoding="utf-8-sig")
+                if "ATM_Overlay" not in content:
+                    last_bracket = content.rfind("]")
+                    if last_bracket != -1:
+                        plugin_entry = '{"name":"ATM_Overlay","status":true,"description":"AutoTranslatorManager overlay","parameters":{}}'
+                        inner_content = content[:last_bracket].strip()
+                        needs_comma = not inner_content.endswith("[") and not inner_content.endswith(",")
+                        prefix = ",\n" if needs_comma else "\n"
+                        new_content = content[:last_bracket] + prefix + plugin_entry + "\n" + content[last_bracket:]
+                        plugins_js_path.write_text(new_content, encoding="utf-8-sig")
+                        logger.info("Patched plugins.js to include ATM_Overlay.")
+            except Exception as e:
+                logger.error(f"Failed to patch plugins.js: {e}")
 
     def _overlay_plugin_source(self, data_dir: Path) -> str:
         return f"""/*:
