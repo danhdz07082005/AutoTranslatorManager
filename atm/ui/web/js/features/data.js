@@ -24,6 +24,22 @@ window.ATM.Data = (function() {
                 });
             }
 
+            const btnClearAllCache = document.getElementById('data-clear-all-cache-btn');
+            if (btnClearAllCache) {
+                btnClearAllCache.addEventListener('click', () => {
+                    if (confirm(window.ATM.i18n.t('data.clear_all_confirm') || 'Bạn có chắc chắn muốn xoá toàn bộ Cache?')) {
+                        window.ATM.api.post('data/clear', { type: 'cache', keep: 0 })
+                            .then(() => {
+                                if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.cache_cleared') || 'Đã xoá toàn bộ Cache');
+                                window.ATM.Data.refresh(true);
+                            })
+                            .catch(() => {
+                                if (window.ATM.Toast) window.ATM.Toast.show('Lỗi xoá Cache', true);
+                            });
+                    }
+                });
+            }
+
             const btnClearTM = document.getElementById('data-clear-tm-btn');
             if (btnClearTM) {
                 btnClearTM.addEventListener('click', () => {
@@ -77,3 +93,7 @@ window.ATM.Data = (function() {
         }
     };
 })();
+",
+
+
+

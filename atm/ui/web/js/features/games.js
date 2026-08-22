@@ -57,22 +57,15 @@ window.ATM.Games = (function() {
             const action = btn.dataset.action;
 
             if (action === 'start') {
-                handleStart(gameId, card);
+                handleStartStop(gameId, card);
             } else if (action === 'play') {
                 handlePlay(gameId);
             } else if (action === 'delete') {
                 handleDelete(gameId, card);
-            } else if (action === 'glossary') {
-                if (window.ATM.Modals) {
-                    window.ATM.Modals.open('glossary-modal');
-                }
-            } else if (action === 'tm') {
-                if (window.ATM.Modals) {
-                    window.ATM.Modals.open('translation-memory-modal');
-                }
-            } else if (action === 'editor') {
-                if (window.ATM.Modals) {
-                    window.ATM.Modals.open('editor-modal');
+            } else if (action === 'glossary' || action === 'tm' || action === 'editor') {
+                // Tier 2 Architecture: Route all deep edits to the Workspace
+                if (window.ATM.Workspace) {
+                    window.ATM.Workspace.open(gameId);
                 }
             }
         });
@@ -112,9 +105,16 @@ window.ATM.Games = (function() {
         card.dataset.state = game.runtime_state || 'READY';
         
         // Anti-XSS: textContent ONLY
-        card.querySelector('.game-name').textContent = game.game_name || 'Unknown';
+        const gameName = game.game_name || 'Unknown';
+        card.querySelector('.game-name').textContent = gameName;
         card.querySelector('.game-path').textContent = game.exe_path || '';
         card.querySelector('.engine-badge').textContent = game.engine || 'Unknown';
+        
+        // Avatar
+        const avatar = card.querySelector('.game-avatar');
+        if (avatar) {
+            avatar.textContent = gameName.charAt(0).toUpperCase();
+        }
 
         // Build Selectors
         const engineSel = card.querySelector('.engine-select');
@@ -448,3 +448,7 @@ window.ATM.Games = (function() {
         refreshLibrary
     };
 })();
+",
+
+
+

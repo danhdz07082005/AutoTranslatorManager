@@ -9,34 +9,34 @@ window.ATM.ProgressManager = (function() {
         isAppVisible = !document.hidden;
     });
 
-    const stop = (gameId) => {
-        if (activePollers.has(gameId)) {
-            clearTimeout(activePollers.get(gameId));
-            activePollers.delete(gameId);
+    const stop = (jobId) => {
+        if (activePollers.has(jobId)) {
+            clearTimeout(activePollers.get(jobId));
+            activePollers.delete(jobId);
         }
     };
 
-    const start = (gameId, onUpdate) => {
-        stop(gameId); // Chống trùng lặp (Single-flight)
+    const start = (jobId, endpointUrl, onUpdate) => {
+        stop(jobId); // Chống trùng lặp (Single-flight)
 
         const poll = async () => {
             try {
-                const status = await window.ATM.api.get(`games/translation-status?game_id=${gameId}`);
+                const status = await window.ATM.api.get(endpointUrl);
                 onUpdate(status);
 
-                if (status.done) {
-                    stop(gameId);
+                if (status.done || status.status === 'completed' || status.status === 'failed' || status.status === 'cancelled') {
+                    stop(jobId);
                     return; // Backend báo xong, dọn dẹp timer
                 }
 
                 // Nếu app bị ẩn, poll chậm lại (5s). Nếu đang hiện, poll nhanh (1s).
                 const delay = isAppVisible ? 1000 : 5000;
-                activePollers.set(gameId, setTimeout(poll, delay));
+                activePollers.set(jobId, setTimeout(poll, delay));
 
             } catch (error) {
-                console.warn(`[Polling] Game ${gameId} gặp lỗi mạng, đang thử lại...`);
+                console.warn(`[Polling] Job ${jobId} error, retrying...`);
                 // Backoff logic: Thử lại sau 3 giây nếu gặp lỗi
-                activePollers.set(gameId, setTimeout(poll, 3000));
+                activePollers.set(jobId, setTimeout(poll, 3000));
             }
         };
 
@@ -45,3 +45,7 @@ window.ATM.ProgressManager = (function() {
 
     return { start, stop };
 })();
+",
+
+
+

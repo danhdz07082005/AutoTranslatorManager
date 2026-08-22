@@ -4,23 +4,8 @@ window.ATM.features = window.ATM.features || {};
 window.ATM.ui = window.ATM.ui || {};
 window.ATM.core = window.ATM.core || {};
 
-document.addEventListener('DOMContentLoaded', () => {
+function initWorkspace() {
     console.log('[ATM Workspace] System Initializing...');
-    
-    // --- Nơi khởi tạo các module ---
-    if (window.ATM.Theme) window.ATM.Theme.init();
-    if (window.ATM.Modals) window.ATM.Modals.init();
-    if (window.ATM.Games) window.ATM.Games.init();
-    if (window.ATM.Settings) window.ATM.Settings.init();
-    if (window.ATM.Data) window.ATM.Data.init();
-    if (window.ATM.Editor) window.ATM.Editor.init();
-    if (window.ATM.TM) window.ATM.TM.init();
-    
-    // Tải dữ liệu ban đầu
-    setTimeout(() => {
-        if (window.ATM.Settings) window.ATM.Settings.load();
-        if (window.ATM.Data) window.ATM.Data.refresh(true);
-    }, 100);
     
     // --- Hello Screen Logic (Loading 3 seconds) ---
     const helloScreen = document.getElementById('hello-screen');
@@ -39,6 +24,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     }
     
+    // --- Nơi khởi tạo các module ---
+    try {
+        if (window.ATM.Theme) window.ATM.Theme.init();
+        if (window.ATM.Modals) window.ATM.Modals.init();
+        if (window.ATM.Games) window.ATM.Games.init();
+        if (window.ATM.Settings) window.ATM.Settings.init();
+        if (window.ATM.Data) window.ATM.Data.init();
+        if (window.ATM.Glossary) window.ATM.Glossary.init();
+        if (window.ATM.Editor) window.ATM.Editor.init();
+        if (window.ATM.TM) window.ATM.TM.init();
+    } catch (e) {
+        console.error("Initialization Error: ", e);
+    }
+    
+    // Tải dữ liệu ban đầu
+    setTimeout(() => {
+        try {
+            if (window.ATM.Settings) window.ATM.Settings.load();
+            if (window.ATM.Data) window.ATM.Data.refresh(true);
+        } catch (e) {
+            console.error("Data Load Error: ", e);
+        }
+    }, 500);
+    
+    // Prevent accidental closing of the tab
+    window.addEventListener('beforeunload', (e) => {
+        // Warning message (most modern browsers ignore custom text, but require returnValue to be set)
+        const msg = "Bạn có chắc chắn muốn rời đi? Mọi tác vụ dịch chưa lưu có thể bị mất.";
+        e.preventDefault();
+        e.returnValue = msg;
+        return msg;
+    });
+
     // --- Shutdown Logic ---
     const exitBtn = document.getElementById('exit-btn');
     if (exitBtn) {
@@ -61,8 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Heartbeat System ---
     const clientId = 'c_' + Math.random().toString(36).substr(2, 9);
     setInterval(() => {
-        if (ATM.api && ATM.api.get) {
-            ATM.api.get(`ping?client_id=${clientId}`).catch(() => {
+        if (window.ATM && window.ATM.api && window.ATM.api.get) {
+            window.ATM.api.get(`ping?client_id=${clientId}`).catch(() => {
                 console.warn('[ATM Heartbeat] Connection lost or Backend sleeping.');
             });
         }
@@ -71,26 +89,69 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Navigation Logic ---
     const navLinks = document.querySelectorAll('.nav-links li');
     const viewSections = document.querySelectorAll('.view-section');
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+    
+    // Sidebar toggle (Pinned state)
+    if (sidebarToggleBtn && sidebar) {
+        // Load pinned state from settings
+        const settings = JSON.parse(localStorage.getItem('atm_settings') || '{}');
+        if (settings.sidebar_pinned === true) {
+            sidebar.classList.add('expanded');
+        }
+        
+        sidebarToggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('expanded');
+            
+            // Save state
+            const isPinned = sidebar.classList.contains('expanded');
+            const currentSettings = JSON.parse(localStorage.getItem('atm_settings') || '{}');
+            currentSettings.sidebar_pinned = isPinned;
+            localStorage.setItem('atm_settings', JSON.stringify(currentSettings));
+        });
+        
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', () => {
+                sidebar.classList.remove('expanded');
+            });
+        }
+    }
 
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
-            navLinks.forEach(l => l.classList.remove('active'));
-            link.classList.add('active');
-
             const targetId = link.getAttribute('data-target');
-            viewSections.forEach(view => {
-                if (view.id === targetId) {
-                    view.classList.remove('hidden');
-                    view.classList.add('active');
-                    if (targetId === 'data-view' && window.ATM.Data) {
-                        window.ATM.Data.refresh(true);
-                    }
-                } else {
-                    view.classList.remove('active');
-                    view.classList.add('hidden');
-                }
-            });
+            if (!targetId) return;
+            
+            if (targetId === 'library-view') window.ATM.navigation.showLibrary();
+            else if (targetId === 'settings-view') window.ATM.navigation.showSettings();
+            else if (targetId === 'data-view') {
+                window.ATM.navigation.showData();
+                if (window.ATM.Data) window.ATM.Data.refresh(true);
+            }
+            
+            // Close sidebar on mobile after clicking a link
+            if (window.innerWidth <= 768 && sidebar) {
+                sidebar.classList.remove('expanded');
+            }
         });
     });
-});
+
+    // Hydrate Workspace State (Task 2.5)
+    setTimeout(() => {
+        const savedGameId = sessionStorage.getItem('atm_current_workspace');
+        if (savedGameId && window.ATM.Workspace) {
+            window.ATM.Workspace.open(savedGameId);
+        }
+    }, 200);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initWorkspace);
+} else {
+    initWorkspace();
+}
+",
+
+
 
