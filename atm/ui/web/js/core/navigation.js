@@ -51,10 +51,11 @@ window.ATM.core = window.ATM.core || {};
         
         showData: function() {
             showSection('data-view');
+        },
+        
+        showMarketplace: function() {
+            showSection('marketplace-view');
         }
     };
 })();
-",
-
-
 

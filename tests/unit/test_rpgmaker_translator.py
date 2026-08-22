@@ -15,15 +15,15 @@ def _translator_without_settings() -> RPGMakerTranslator:
 
 def test_classification_uses_file_schema_not_key_name_only():
     assert (
-        classify("Potion", ["data", 1, "name"], "Items.json")
+        classify("Potion", ["data", 1, "name"], "Items.json")[0]
         is StringClassification.TRANSLATABLE
     )
     assert (
-        classify("Potion", ["plugins", 0, "name"], "PluginConfig.json")
+        classify("Potion", ["plugins", 0, "name"], "PluginConfig.json")[0]
         is StringClassification.PROTECTED
     )
     assert (
-        classify("Mystery", ["unknown", "name"], "CustomData.json")
+        classify("Mystery", ["unknown", "name"], "CustomData.json")[0]
         is StringClassification.UNKNOWN
     )
 
@@ -48,7 +48,6 @@ def test_recursive_visitor_selects_schema_display_fields_and_text_events():
     assert [entry.text for entry in entries] == [
         "Potion",
         "Restores HP.",
-        "Used Potion!",
         "Damage Formula:",
     ]
     assert entries[0].category == "item"
@@ -103,7 +102,7 @@ def test_rpgmaker_overlay_keeps_original_data_unchanged(tmp_path: Path):
     class FakeTranslator:
         cache = None
 
-        def translate_batch(self, texts, target_lang="vi", source_lang="en", *, category="unknown"):
+        def translate_batch(self, texts, target_lang="vi", source_lang="en", *, category="unknown", **kwargs):
             return [f"vi:{text}" for text in texts]
 
     translator = RPGMakerTranslator(

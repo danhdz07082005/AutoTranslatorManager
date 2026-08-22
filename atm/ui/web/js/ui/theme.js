@@ -1,24 +1,37 @@
 window.ATM = window.ATM || {};
 
 window.ATM.Theme = (function() {
-    const applyTheme = (isDark, accentColor = null) => {
+    const applyTheme = (isDark) => {
         document.documentElement.classList.toggle('theme-dark', isDark);
-        if (accentColor) {
-            document.documentElement.style.setProperty('--accent', accentColor);
-        } else {
-            document.documentElement.style.removeProperty('--accent');
-        }
         const toggleInput = document.getElementById('theme-toggle');
         if (toggleInput) toggleInput.checked = isDark;
-        
-        const picker = document.getElementById('accent-color-picker');
-        if (picker && accentColor) picker.value = accentColor;
     };
 
     return {
         applyTheme,
         init: () => {
-            const settings = JSON.parse(localS
-<truncated 92920 bytes>
+            // Đồng bộ UI với trạng thái đã load từ <head>
+            const settings = JSON.parse(localStorage.getItem('atm_settings') || '{}');
+            const isDark = settings.dark_mode !== false; // Default là true
+            applyTheme(isDark);
 
-NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.
+            // Gắn event listener cho toggle
+            const toggleInput = document.getElementById('theme-toggle');
+            if (toggleInput) {
+                toggleInput.addEventListener('change', (e) => {
+                    const darkEnabled = e.target.checked;
+                    applyTheme(darkEnabled);
+                    
+                    // Cập nhật localStorage
+                    settings.dark_mode = darkEnabled;
+                    localStorage.setItem('atm_settings', JSON.stringify(settings));
+                    
+                    // Sync với Backend (Non-blocking)
+                    if (window.ATM.api) {
+                        window.ATM.api.post('settings', { dark_mode: darkEnabled }).catch(() => {});
+                    }
+                });
+            }
+        }
+    };
+})();

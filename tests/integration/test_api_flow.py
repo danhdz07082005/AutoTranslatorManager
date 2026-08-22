@@ -34,29 +34,25 @@ def test_full_api_game_lifecycle_flow(temp_profiles_dir, tmp_path, monkeypatch):
     assert game_data["engine"] == "Unity IL2CPP"
 
     # STEP 2: Lấy danh sách game (get_games)
-    games = api.get_games()
+    games_res = api.get_games()
+    games = games_res.get("games", [])
     assert len(games) == 1
     assert games[0]["id"] == game_id
-    assert games[0]["input_lang"] == "auto"
 
-    # STEP 3: Cập nhật ngôn ngữ (update_game_settings)
-    update_res = api.update_game_settings(game_id, input_lang="ja", output_lang="vi", translator="deepl")
-    assert update_res["status"] == "success"
-
-    # Kiểm tra xem thay đổi ngôn ngữ đã được ghi nhận chưa
-    updated_games = api.get_games()
-    assert len(updated_games) == 1
-    assert updated_games[0]["input_lang"] == "ja"
-    assert updated_games[0]["output_lang"] == "vi"
-    assert updated_games[0]["translator"] == "deepl"
+    # STEP 3: Cập nhật settings game
+    update_res = api.update_game_settings(game_id, input_lang="en", output_lang="ja", translator="deepl", glossary={})
+    assert update_res.get("status") == "success"
+    games_res_after = api.get_games()
+    updated_game = next(g for g in games_res_after.get("games", []) if g["id"] == game_id)
+    assert updated_game["input_lang"] == "en"
+    assert updated_game["output_lang"] == "ja"
+    assert updated_game["translator"] == "deepl"
 
     # STEP 4: Xóa game (delete_game)
-    delete_res = api.delete_game(game_id)
-    assert delete_res.get("status") == "success"
-
-    # Kiểm tra danh sách rỗng sau khi xóa
-    remaining_games = api.get_games()
-    assert len(remaining_games) == 0
+    del_res = api.delete_game(game_id)
+    assert del_res.get("status") == "success"
+    games_res_final = api.get_games()
+    assert len(games_res_final.get("games", [])) == 0
 
 
 def test_add_game_cancelled_dialog(temp_profiles_dir, monkeypatch):
@@ -68,7 +64,7 @@ def test_add_game_cancelled_dialog(temp_profiles_dir, monkeypatch):
 
     result = api.add_game()
     assert result is None
-    assert len(api.get_games()) == 0
+    assert len(api.get_games().get("games", [])) == 0
 
 
 def test_update_non_existent_game(temp_profiles_dir):

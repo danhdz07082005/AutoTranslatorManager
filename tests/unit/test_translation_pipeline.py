@@ -37,7 +37,7 @@ class ContextTranslator:
         self.calls = []
 
     def translate_batch(
-        self, texts: Sequence[str], target_lang="vi", source_lang="auto", *, category="unknown"
+        self, texts: Sequence[str], target_lang="vi", source_lang="auto", *, category="unknown", **kwargs
     ):
         self.calls.append((list(texts), target_lang, source_lang, category))
         return [self.translations[text] for text in texts]
@@ -132,10 +132,10 @@ class LegacyCache:
     def __init__(self):
         self.set_calls = []
 
-    def get(self, source_lang, target_lang, text):
+    def get(self, source_lang, target_lang, text, **kwargs):
         return None
 
-    def set_batch(self, source_lang, target_lang, texts, translated_texts):
+    def set_batch(self, source_lang, target_lang, texts, translated_texts, **kwargs):
         self.set_calls.append((source_lang, target_lang, list(texts), list(translated_texts)))
 
 
@@ -145,7 +145,7 @@ class LegacyTranslator:
     def __init__(self):
         self.calls = []
 
-    def translate_batch(self, texts, target_lang="vi", source_lang="auto"):
+    def translate_batch(self, texts, target_lang="vi", source_lang="auto", **kwargs):
         self.calls.append((list(texts), target_lang, source_lang))
         return [f"vi:{text}" for text in texts]
 
@@ -196,14 +196,14 @@ def test_pipeline_keeps_categories_separate_with_legacy_dependencies_and_only_re
         ("en", "vi", ["Save"], ["vi:Save"]),
     ]
     assert memory.remembered == [
-        ("Save", "vi:Save", "en", "vi", "ui", {"source": "api", "confidence": "auto"}),
+        ("Save", "vi:Save", "en", "vi", "ui", {}),
         (
             "Save",
             "vi:Save",
             "en",
             "vi",
             "dialogue",
-            {"source": "api", "confidence": "auto"},
+            {},
         ),
     ]
     assert result.stats.translation_memory_remembered == 2
@@ -216,7 +216,7 @@ def test_pipeline_protects_tokens_before_api_and_restores_them_before_writeback(
         def __init__(self):
             self.calls = []
 
-        def translate_batch(self, texts, target_lang="vi", source_lang="auto", *, category="unknown"):
+        def translate_batch(self, texts, target_lang="vi", source_lang="auto", *, category="unknown", **kwargs):
             self.calls.append(list(texts))
             return ["Xin chào <<0>>, <<1>>welcome<<2>>"]
 
@@ -271,7 +271,7 @@ def test_pipeline_protects_glossary_terms_before_api_translation():
         def __init__(self):
             self.calls = []
 
-        def translate_batch(self, texts, target_lang="vi", source_lang="en", *, category="item"):
+        def translate_batch(self, texts, target_lang="vi", source_lang="en", *, category="item", **kwargs):
             self.calls.append(list(texts))
             return ["<<0>> toa sáng cho <<1>>"]
 

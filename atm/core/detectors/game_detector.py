@@ -42,4 +42,11 @@ class GameDetector:
             logger.info(f"Detected RPG Maker game: {exe_name}")
             return "RPG Maker"
             
+        # Kiểm tra RPG Developer Bakin
+        if (os.path.exists(os.path.join(game_dir, "data", "data.rbpack")) or
+            os.path.exists(os.path.join(game_dir, "bakinplayer.exe")) or
+            os.path.exists(os.path.join(game_dir, "bakinengine.dll"))):
+            logger.info(f"Detected RPG Developer Bakin game: {exe_name}")
+            return "Bakin"
+            
         return "Unknown"

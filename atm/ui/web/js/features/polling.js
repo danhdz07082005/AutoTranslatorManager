@@ -45,7 +45,4 @@ window.ATM.ProgressManager = (function() {
 
     return { start, stop };
 })();
-",
-
-
 

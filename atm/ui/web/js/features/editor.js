@@ -348,7 +348,4 @@ window.ATM.Editor = (function() {
 
     return { init, open };
 })();
-",
-
-
 

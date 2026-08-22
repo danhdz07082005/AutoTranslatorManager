@@ -51,7 +51,7 @@ def test_renpy_translator_uses_pipeline_token_protection(tmp_path: Path):
         def __init__(self):
             self.calls = []
 
-        def translate_batch(self, texts, target_lang="vi", source_lang="en", *, category="dialogue"):
+        def translate_batch(self, texts, target_lang="vi", source_lang="en", *, category="dialogue", **kwargs):
             self.calls.append(list(texts))
             return ["Xin chào <<0>>, <<1>>welcome<<2>>"]
 

@@ -7,6 +7,13 @@ window.ATM.Glossary = (function() {
         const importBtn = document.getElementById('glossary-import-btn');
         const exportBtn = document.getElementById('glossary-export-btn');
         const fileInput = document.getElementById('glossary-import-file');
+        const closeBtn = document.getElementById('glossary-modal-close-btn');
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                if (window.ATM.Modals) window.ATM.Modals.close('glossary-modal');
+            });
+        }
         
         if (exportBtn) {
             exportBtn.addEventListener('click', async () => {
@@ -90,7 +97,4 @@ window.ATM.Glossary = (function() {
 
     return { init, open };
 })();
-",
-
-
 

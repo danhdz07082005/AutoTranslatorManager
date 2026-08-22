@@ -26,6 +26,8 @@ class ApplicationLifecycle:
         self.state = AppState.RUNNING
         self.active_clients = {}
         self.grace_period_seconds = 15
+        self.startup_grace_period_seconds = 45
+        self.has_ever_connected = False
         self.start_time = time.time()
         self.last_active_time = time.time()
         self.lock = threading.Lock()
@@ -36,13 +38,14 @@ class ApplicationLifecycle:
             if self.state == AppState.RUNNING:
                 self.active_clients[client_id] = time.time()
                 self.last_active_time = time.time()
+                self.has_ever_connected = True
                 
     def request_shutdown(self) -> bool:
         """Yêu cầu tắt ứng dụng từ người dùng."""
         with self.lock:
             if self.state == AppState.RUNNING:
                 self.state = AppState.SHUTDOWN_REQUESTED
-                logger.info("🔌 Received explicit shutdown request.")
+                logger.info("Received explicit shutdown request.")
                 return True
             return False
 
@@ -72,9 +75,9 @@ class ApplicationLifecycle:
                 
                 # Check for orphaned state
                 if len(self.active_clients) == 0:
-                    # If we had clients before but they all died, check grace period against last active time
-                    if now - self.last_active_time > self.grace_period_seconds:
-                        logger.warning("💔 Heartbeat grace period expired! No active UI clients left.")
+                    effective_grace = self.grace_period_seconds if self.has_ever_connected else self.startup_grace_period_seconds
+                    if now - self.last_active_time > effective_grace:
+                        logger.warning("Heartbeat grace period expired! No active UI clients left.")
                         self.state = AppState.SHUTDOWN_REQUESTED
                         return True
         return False

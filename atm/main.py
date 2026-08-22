@@ -3,6 +3,10 @@ import os
 import threading
 import webbrowser
 import time
+import mimetypes
+
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/css', '.css')
 
 
 
@@ -43,7 +47,8 @@ def main() -> None:
     t.start()
     
     # Mở trình duyệt mặc định
-    url = f"http://127.0.0.1:{port}"
+    import time
+    url = f"http://127.0.0.1:{port}?t={int(time.time())}"
     logger.info(f"Mở trình duyệt: {url}")
     time.sleep(0.5) # Chờ server sẵn sàng
     webbrowser.open(url)
@@ -59,9 +64,9 @@ def main() -> None:
         while not lifecycle.should_shutdown():
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("👋 Nhận tín hiệu Ctrl+C")
+        logger.info("Nhan tin hieu Ctrl+C")
 
-    logger.info("🧹 Bắt đầu quy trình tắt (Graceful Shutdown)...")
+    logger.info("Bat dau quy trinh tat (Graceful Shutdown)...")
     lifecycle.begin_shutdown()
     
     # Dọn dẹp an toàn
@@ -72,12 +77,15 @@ def main() -> None:
             logger.info(f"Dừng game/translation: {game_id}")
             api.stop_game(game_id)
             
+        logger.info("Tat JobManager...")
+        api.job_manager.shutdown(wait=True)
+            
     except Exception as e:
         logger.error(f"Lỗi trong quá trình dọn dẹp game process: {e}")
         
     logger.info("Tat HTTP server...")
     server.shutdown()
-    logger.info("✅ ATM đã tắt hoàn toàn.")
+    logger.info("ATM da tat hoan toan.")
     sys.exit(0)
 
 if __name__ == "__main__":

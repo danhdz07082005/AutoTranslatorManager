@@ -1,3 +1,4 @@
+try { fetch('/api/ping?client_id=DEBUG_APP_JS_TOP'); } catch(e) {}
 window.ATM = window.ATM || {};
 window.ATM.state = window.ATM.state || {};
 window.ATM.features = window.ATM.features || {};
@@ -5,6 +6,7 @@ window.ATM.ui = window.ATM.ui || {};
 window.ATM.core = window.ATM.core || {};
 
 function initWorkspace() {
+    try { fetch('/api/ping?client_id=DEBUG_INIT_WORKSPACE'); } catch(e) {}
     console.log('[ATM Workspace] System Initializing...');
     
     // --- Hello Screen Logic (Loading 3 seconds) ---
@@ -48,21 +50,12 @@ function initWorkspace() {
         }
     }, 500);
     
-    // Prevent accidental closing of the tab
-    window.addEventListener('beforeunload', (e) => {
-        // Warning message (most modern browsers ignore custom text, but require returnValue to be set)
-        const msg = "Bạn có chắc chắn muốn rời đi? Mọi tác vụ dịch chưa lưu có thể bị mất.";
-        e.preventDefault();
-        e.returnValue = msg;
-        return msg;
-    });
-
     // --- Shutdown Logic ---
     const exitBtn = document.getElementById('exit-btn');
     if (exitBtn) {
         exitBtn.addEventListener('click', async () => {
             const msg = window.ATM.i18n ? (window.ATM.i18n.t('menu.exit_confirm') || 'Bạn có chắc chắn muốn thoát ứng dụng?') : 'Bạn có chắc chắn muốn thoát ứng dụng?';
-            const confirmed = window.ATM.Modals ? await window.ATM.Modals.confirm(msg) : confirm(msg);
+            const confirmed = await window.ATM.Modals.confirm(msg);
             if (confirmed) {
                 const goodbye = document.getElementById('goodbye-screen');
                 if (goodbye) goodbye.style.display = 'flex';
@@ -78,35 +71,37 @@ function initWorkspace() {
 
     // --- Heartbeat System ---
     const clientId = 'c_' + Math.random().toString(36).substr(2, 9);
-    setInterval(() => {
+    function sendHeartbeat() {
         if (window.ATM && window.ATM.api && window.ATM.api.get) {
             window.ATM.api.get(`ping?client_id=${clientId}`).catch(() => {
                 console.warn('[ATM Heartbeat] Connection lost or Backend sleeping.');
             });
         }
-    }, 5000);
+    }
+    sendHeartbeat();
+    setInterval(sendHeartbeat, 5000);
 
     // --- Navigation Logic ---
     const navLinks = document.querySelectorAll('.nav-links li');
     const viewSections = document.querySelectorAll('.view-section');
     const sidebar = document.getElementById('sidebar');
-    const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+    const sidebarPinSwitch = document.getElementById('sidebar-pin-switch');
     
     // Sidebar toggle (Pinned state)
-    if (sidebarToggleBtn && sidebar) {
+    if (sidebarPinSwitch && sidebar) {
         // Load pinned state from settings
         const settings = JSON.parse(localStorage.getItem('atm_settings') || '{}');
         if (settings.sidebar_pinned === true) {
             sidebar.classList.add('expanded');
+            sidebarPinSwitch.checked = true;
         }
         
-        sidebarToggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('expanded');
+        sidebarPinSwitch.addEventListener('change', (e) => {
+            sidebar.classList.toggle('expanded', e.target.checked);
             
             // Save state
-            const isPinned = sidebar.classList.contains('expanded');
             const currentSettings = JSON.parse(localStorage.getItem('atm_settings') || '{}');
-            currentSettings.sidebar_pinned = isPinned;
+            currentSettings.sidebar_pinned = e.target.checked;
             localStorage.setItem('atm_settings', JSON.stringify(currentSettings));
         });
         
@@ -125,6 +120,7 @@ function initWorkspace() {
             
             if (targetId === 'library-view') window.ATM.navigation.showLibrary();
             else if (targetId === 'settings-view') window.ATM.navigation.showSettings();
+            else if (targetId === 'marketplace-view') window.ATM.navigation.showMarketplace();
             else if (targetId === 'data-view') {
                 window.ATM.navigation.showData();
                 if (window.ATM.Data) window.ATM.Data.refresh(true);
@@ -151,7 +147,4 @@ if (document.readyState === 'loading') {
 } else {
     initWorkspace();
 }
-",
-
-
 

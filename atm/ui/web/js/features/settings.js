@@ -52,7 +52,7 @@ window.ATM.Settings = (function() {
             }
             if (resetBtn) {
                 resetBtn.addEventListener('click', () => {
-                    const DEFAULT_ACCENT = '#3b82f6';
+                    const DEFAULT_ACCENT = '#7000ff';
                     if (picker) picker.value = DEFAULT_ACCENT;
                     applyAccent(DEFAULT_ACCENT);
                 });
@@ -97,7 +97,4 @@ window.ATM.Settings = (function() {
         }
     };
 })();
-",
-
-
 

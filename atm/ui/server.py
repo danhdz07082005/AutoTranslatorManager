@@ -5,6 +5,12 @@ Thay thế hoàn toàn pywebview để tránh lỗi COM/WebView2.
 import json
 import os
 import mimetypes
+
+# Fix Windows registry MIME type issues
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/css', '.css')
+mimetypes.add_type('text/html', '.html')
+
 import threading
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -18,6 +24,7 @@ class ATMHandler(BaseHTTPRequestHandler):
     """HTTP Request Handler cho ATM."""
     
     api = None  # Được gán từ create_server()
+    # Thư mục gốc chứa UI
     web_dir = os.path.join(os.path.dirname(__file__), 'web')
 
     def do_GET(self):
@@ -28,6 +35,16 @@ class ATMHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         self._handle_api_post()
+
+    def do_DELETE(self):
+        if self.path.startswith('/api/jobs/'):
+            job_id = self.path.split('/')[-1]
+            if job_id and job_id != 'jobs':
+                self._json_response(self.api.cancel_job(job_id))
+            else:
+                self._json_response({"error": "Invalid job ID"}, 400)
+        else:
+            self._json_response({"error": "Method not allowed"}, 405)
 
     # ============ API GET ============
     def _handle_api_get(self):
@@ -46,6 +63,13 @@ class ATMHandler(BaseHTTPRequestHandler):
             query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             game_id = query.get('game_id', [''])[0]
             self._json_response(self.api.get_translation_status(game_id))
+            
+        elif self.path.startswith('/api/jobs/'):
+            job_id = self.path.split('?')[0].split('/')[-1]
+            if job_id and job_id != 'jobs':
+                self._json_response(self.api.get_job_status(job_id))
+            else:
+                self._json_response({"error": "Invalid job ID"}, 400)
         elif self.path == '/api/cache/get':
             self._json_response(self.api.get_cache_entries())
         elif self.path.startswith('/api/translation-memory/suggest'):
@@ -57,15 +81,34 @@ class ATMHandler(BaseHTTPRequestHandler):
             ))
         elif self.path == '/api/data/stats':
             self._json_response(self.api.get_data_stats())
-        elif self.path == '/api/games/play':
-            self._parse_post_data()
-            game_id = self.post_data.get("game_id", "")
-            self._json_response(self.api.play_game(game_id))
+        elif self.path.startswith('/api/cache/search'):
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            q = query.get('q', [''])[0]
+            page = int(query.get('page', ['1'])[0])
+            limit = int(query.get('limit', ['50'])[0])
+            self._json_response(self.api.search_cache(q, page, limit))
+        elif self.path.startswith('/api/engines/coverage'):
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            game_id = query.get('game_id', [''])[0]
+            self._json_response(self.api.get_coverage(game_id))
+        elif self.path.startswith('/api/glossary/export'):
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            game_id = query.get('game_id', [''])[0]
+            format_type = query.get('format', ['csv'])[0]
+            self._json_response(self.api.export_glossary(game_id, format_type))
         else:
             self._json_response({"error": "Not found"}, 404)
 
     # ============ API POST ============
     def _handle_api_post(self):
+        try:
+            self._handle_api_post_inner()
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self._json_response({"error": str(e)}, 500)
+
+    def _handle_api_post_inner(self):
         if ApplicationLifecycle().is_shutting_down():
             self._json_response({"error": "System is shutting down"}, 503)
             return
@@ -102,6 +145,30 @@ class ATMHandler(BaseHTTPRequestHandler):
 
         elif self.path == '/api/games/delete':
             result = self.api.delete_game(body.get('game_id', ''))
+            self._json_response(result)
+
+        elif self.path == '/api/games/play':
+            result = self.api.play_game(body.get('game_id', ''))
+            self._json_response(result)
+
+        elif self.path == '/api/cache/qa-review':
+            result = self.api.review_qa(body.get('entries', []))
+            self._json_response(result)
+
+        elif self.path == '/api/glossary/preview':
+            result = self.api.preview_glossary_import(
+                body.get('game_id', ''),
+                body.get('content', ''),
+                body.get('format', 'csv')
+            )
+            self._json_response(result)
+
+        elif self.path == '/api/glossary/apply':
+            result = self.api.apply_glossary_import(
+                body.get('game_id', ''),
+                body.get('parsed_data', []),
+                body.get('strategy', 'merge')
+            )
             self._json_response(result)
             
         elif self.path == '/api/cache/update':
@@ -154,6 +221,12 @@ class ATMHandler(BaseHTTPRequestHandler):
             result = self.api.open_data_folder()
             self._json_response(result)
 
+        elif self.path in ('/api/jobs/extract', '/api/engines/extract'):
+            self._json_response(self.api.extract_offline(body.get('game_id', '')))
+
+        elif self.path in ('/api/jobs/patch', '/api/engines/patch'):
+            self._json_response(self.api.patch_offline(body.get('game_id', '')))
+
         else:
             self._json_response({"error": "Not found"}, 404)
 
@@ -185,11 +258,12 @@ class ATMHandler(BaseHTTPRequestHandler):
                 content = f.read()
             self.send_response(200)
             self.send_header('Content-Type', mime_type)
+            self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             self.send_header('Content-Length', len(content))
-            self.send_header('Cache-Control', 'no-cache')
             self.end_headers()
             self.wfile.write(content)
         else:
+            logger.error(f"[HTTP] 404 Not Found: {filepath} (Original path: {self.path})")
             self.send_error(404)
 
     # ============ Helpers ============
@@ -211,8 +285,18 @@ class ATMHandler(BaseHTTPRequestHandler):
         return {}
 
     def log_message(self, format, *args):
-        """Tắt log HTTP mặc định, chỉ dùng logger riêng."""
-        pass
+        msg = format % args
+        if "/api/ping" in msg:
+            return
+        if "favicon.ico" in msg or ".well-known" in msg:
+            return
+        logger.info(f"[HTTP] {self.client_address[0]} - {msg}")
+
+    def log_error(self, format, *args):
+        msg = format % args
+        if "favicon.ico" in msg or ".well-known" in msg:
+            return
+        logger.error(f"[HTTP] {msg}")
 
 
 def create_server(port, api):

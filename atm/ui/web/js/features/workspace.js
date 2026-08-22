@@ -94,15 +94,11 @@ window.ATM.features = window.ATM.features || {};
         }
     }
 
-    // Init listeners
-    document.addEventListener('DOMContentLoaded', () => {
-        const backBtn = document.getElementById('workspace-back-btn');
-        if (backBtn) {
-            backBtn.addEventListener('click', () => {
-                leave();
-            });
-        }
-    });
+    // Init listeners (script is deferred, so DOM is ready)
+    const backBtn = document.getElementById('workspace-back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', leave);
+    }
 
     async function auditCoverage(gameId, engine) {
         try {
@@ -172,7 +168,4 @@ window.ATM.features = window.ATM.features || {};
         startEditor
     };
 })();
-",
-
-
 

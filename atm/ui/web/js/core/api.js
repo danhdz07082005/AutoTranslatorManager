@@ -78,7 +78,4 @@ window.ATM = window.ATM || {};
         }
     };
 })();
-",
-
-
 

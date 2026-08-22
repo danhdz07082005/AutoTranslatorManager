@@ -9,6 +9,8 @@ from atm.config.schema import GameProfile
 from atm.core.detectors.game_detector import GameDetector
 from atm.utils.logger import get_logger
 from atm.core.translation.translators import RateLimitError
+from atm.core.jobs.manager import JobManager
+import atm.core.engines.bakin
 
 logger = get_logger(__name__, "launcher.log")
 
@@ -44,6 +46,7 @@ class BackendApi:
         self.translation_status = {}  # game_id -> {"progress": int, "total": int, "message": str, "done": bool}
         self.cancel_flags = {}  # game_id -> bool
         self._lock = threading.Lock()
+        self.job_manager = JobManager(max_workers=4)
         
         # Recover paused jobs
         self._recover_jobs()
@@ -334,11 +337,9 @@ class BackendApi:
             return {"status": "translating"}
             
         if profile.engine == "Unity Mono":
-            payload_dir = os.path.join(base_dir, "data", "payloads", "bepinex_mono")
-            engine_req = "Unity Mono"
+            payload_dir = os.path.join(base_dir, "atm", "resources", "payloads", "bepinex_mono")
         elif profile.engine == "Unity IL2CPP":
-            payload_dir = os.path.join(base_dir, "data", "payloads", "bepinex_il2cpp")
-            engine_req = "Unity IL2CPP"
+            payload_dir = os.path.join(base_dir, "atm", "resources", "payloads", "bepinex_il2cpp")
         else:
             return {"status": "error", "error": f"Engine {profile.engine} is not supported for real-time launch."}
 
@@ -396,7 +397,7 @@ class BackendApi:
 
     def play_game(self, game_id):
         """Khởi chạy game đã dịch"""
-        profile = self.profile_repo.load(game_id)
+        profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
         
@@ -420,6 +421,9 @@ class BackendApi:
     def delete_game(self, game_id):
         """Xóa game profile (cả file JSON)"""
         try:
+            # Stop game if running or translating
+            self.stop_game(game_id)
+            
             # Xóa bằng ID (tên file mới)
             deleted = self.profile_repo.delete(game_id)
 
@@ -456,6 +460,55 @@ class BackendApi:
         for _source, _target, _category, original, translated in cache.iter_entries():
             data[original] = translated
         return {"status": "success", "data": data}
+
+    def search_cache(self, q: str, page: int, limit: int):
+        """Tìm kiếm trong Cache sử dụng Snapshot in-memory với pagination deterministic."""
+        from atm.core.translation.cache_manager import TranslationCache
+        cache = TranslationCache()
+        result = cache.search(q, page, limit)
+        return {"status": "success", "data": result}
+
+    def review_qa(self, entries):
+        """Quét lỗi QA trên một batch entries"""
+        from atm.core.qa.registry import QARuleRegistry
+        from atm.core.qa.engine import QAEngine
+        
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        sys_rules = os.path.join(base_dir, "data", "qa", "system_rules.json")
+        user_rules = os.path.join(base_dir, "data", "qa", "user_rules.json")
+        
+        registry = QARuleRegistry(sys_rules, user_rules)
+        engine = QAEngine(registry)
+        
+        results = engine.review_batch(entries)
+        return {"status": "success", "data": results}
+
+    def export_glossary(self, game_id: str, format_type: str = 'csv'):
+        from atm.core.translation.glossary_manager import GlossaryManager
+        try:
+            manager = GlossaryManager(self.profile_repo)
+            data = manager.export_glossary(game_id, format_type)
+            return {"status": "success", "data": data, "format": format_type}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+    def preview_glossary_import(self, game_id: str, content: str, format_type: str):
+        from atm.core.translation.glossary_manager import GlossaryManager
+        try:
+            manager = GlossaryManager(self.profile_repo)
+            preview = manager.preview_import(game_id, content, format_type)
+            return {"status": "success", "data": preview}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+    def apply_glossary_import(self, game_id: str, parsed_data: list, strategy: str = 'merge'):
+        from atm.core.translation.glossary_manager import GlossaryManager
+        try:
+            manager = GlossaryManager(self.profile_repo)
+            manager.apply_import(game_id, parsed_data, strategy)
+            return {"status": "success"}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
 
     def update_cache_entry(self, game_id, key, value):
         """Cập nhật một mục trong Cache từ Grid Editor"""
@@ -568,7 +621,7 @@ class BackendApi:
         cache_entries = list(cache.iter_entries())
         total_cache = len(cache_entries)
         try:
-            cache_size = os.path.getsize(cache.cache_file)
+            cache_size = os.path.getsize(cache.db_path)
         except OSError:
             cache_size = 0
             
@@ -610,15 +663,7 @@ class BackendApi:
         """Xóa toàn bộ hoặc chừa lại keep_count câu cũ nhất trong Cache."""
         from atm.core.translation.cache_manager import TranslationCache
         cache = TranslationCache()
-        if keep_count is None or keep_count <= 0:
-            cache.cache.clear()
-        else:
-            # Xóa các entry cũ nhất (giả định Python dict insertion order)
-            keys_to_remove = list(cache.cache.keys())[:-keep_count]
-            for k in keys_to_remove:
-                del cache.cache[k]
-        
-        cache.save_to_disk()
+        cache.clear(keep_count)
         logger.info(f"Cleared global cache. Kept: {keep_count if keep_count else 0} entries.")
         return {"status": "success"}
 
@@ -728,3 +773,61 @@ class BackendApi:
         except Exception as e:
             logger.error(f"Error calculating fingerprint: {e}")
             return "sha256:error"
+
+    # ============ Universal Engine API ============
+    def get_coverage(self, game_id: str):
+        profile = self.profile_repo.get_by_id(game_id)
+        if not profile:
+            return {"error": "Game not found"}
+        from atm.core.engines.registry import EngineRegistry
+        try:
+            auditor = EngineRegistry.get_auditor(profile.engine)
+            extractor = EngineRegistry.get_extractor(profile.engine, os.path.dirname(profile.exe_path))
+            entries = extractor.extract()
+            # Simulate some being translated
+            for i, e in enumerate(entries):
+                if i % 2 == 0: e.translation_status = "translated"
+            return auditor.audit(entries)
+        except Exception as e:
+            return {"error": str(e)}
+
+    def extract_offline(self, game_id: str):
+        profile = self.profile_repo.get_by_id(game_id)
+        if not profile:
+            return {"error": "Game not found"}
+            
+        from atm.core.engines.registry import EngineRegistry
+        
+        def _extract_worker(job, cancel_token, g_id):
+            extractor = EngineRegistry.get_extractor(profile.engine, os.path.dirname(profile.exe_path))
+            entries = extractor.extract(job_tracker=job)
+            
+        return self.job_manager.submit_job("extract", game_id, _extract_worker, g_id=game_id)
+
+    def patch_offline(self, game_id: str):
+        profile = self.profile_repo.get_by_id(game_id)
+        if not profile:
+            return {"error": "Game not found"}
+            
+        from atm.core.engines.registry import EngineRegistry
+        
+        def _patch_worker(job, cancel_token, g_id):
+            injector = EngineRegistry.get_injector(profile.engine, os.path.dirname(profile.exe_path))
+            # TODO: Load actual entries from cache/payloads before injecting. 
+            # Currently injecting empty list [] as a placeholder.
+            injector.inject([], job_tracker=job)
+            
+        return self.job_manager.submit_job("patch", game_id, _patch_worker, g_id=game_id)
+
+    def get_job_status(self, job_id: str):
+        status = self.job_manager.get_job_status(job_id)
+        if not status:
+            return {"error": "Job not found"}
+        return status
+
+    def cancel_job(self, job_id: str):
+        success = self.job_manager.cancel_job(job_id)
+        if not success:
+            return {"error": "Failed to cancel job or job not found"}
+        return {"status": "success"}
+

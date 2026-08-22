@@ -38,13 +38,18 @@ window.ATM.Modals = (function() {
             document.addEventListener('keydown', trapFocus);
             document.addEventListener('keydown', handleEscape);
             
-            // Gắn sự kiện đóng modal cho nút X hoặc vùng overlay
-            document.querySelectorAll('.btn-close, .modal-overlay').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    if (e.target === el) {
-                        const modal = el.closest('.modal-overlay');
-                        if (modal) window.ATM.Modals.close(modal.id);
+            // Gán sự kiện đóng modal cho nút X hoặc vùng overlay
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) {
+                        window.ATM.Modals.close(overlay.id);
                     }
+                });
+            });
+            document.querySelectorAll('.btn-close').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const modal = btn.closest('.modal-overlay');
+                    if (modal) window.ATM.Modals.close(modal.id);
                 });
             });
         },
@@ -76,7 +81,8 @@ window.ATM.Modals = (function() {
                 const btnNo = document.getElementById('confirm-no');
                 
                 if (!modal || !msgEl || !btnYes || !btnNo) {
-                    resolve(window.confirm(message)); // Fallback
+                    console.error("Missing confirm modal elements:", {modal, msgEl, btnYes, btnNo});
+                    resolve(false);
                     return;
                 }
                 
@@ -99,7 +105,4 @@ window.ATM.Modals = (function() {
         }
     };
 })();
-",
-
-
 

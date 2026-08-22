@@ -33,7 +33,7 @@ class BaseTranslator:
             return []
 
         try:
-            results = self._do_translate_batch(texts, target_lang, source_lang, is_cancelled=is_cancelled, progress_callback=progress_callback)
+            results = self._do_translate_batch(texts, target_lang, source_lang, category=category, is_cancelled=is_cancelled, progress_callback=progress_callback)
             if results and len(results) == len(texts):
                 return results
             else:

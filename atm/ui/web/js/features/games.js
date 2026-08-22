@@ -448,7 +448,4 @@ window.ATM.Games = (function() {
         refreshLibrary
     };
 })();
-",
-
-
 

@@ -1,7 +1,7 @@
 {
     "version": 1,
     "auto_update": true,
-    "dark_mode": true,
+    "dark_mode": false,
     "ui_language": "vi",
     "deepl_api_key": "",
     "translation_memory_threshold": 0.85

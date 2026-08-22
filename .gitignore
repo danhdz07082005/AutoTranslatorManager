@@ -78,3 +78,6 @@ temp.*
 
 # AI Rules
 .ai_docs/
+# Frontend
+node_modules/
+!atm/ui/web/dist/
