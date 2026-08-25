@@ -19,7 +19,7 @@ from atm.core.translation.renpy_tl_generator import (
 )
 from atm.core.translation.pipeline import TranslatableString, TranslationPipeline, TranslationOrigin
 from atm.core.translation.translation_memory import TranslationMemory
-from atm.core.translation.translators import BaseTranslator
+from atm.core.translation.translators import BaseTranslator, GoogleTranslator, DeepLTranslator
 from atm.storage.repositories.settings_repository import SettingsRepository
 from atm.utils.logger import get_logger
 
@@ -125,6 +125,32 @@ class RenPyTranslator:
             results[source_text] = translated if isinstance(translated, str) else source_text
         return results
 
+    def _extract_and_decompile(self, game_path: Path, progress_callback: Callable[[int, int, str], None] | None = None) -> None:
+        """Extract all .rpa archives and decompile all .rpyc files so the SDK can see them."""
+        import sys
+        import subprocess
+        
+        unren_dir = Path(__file__).parent / "unren_tools"
+        rpatool = unren_dir / "rpatool.py"
+        unrpyc = unren_dir / "unrpyc.py"
+
+        rpa_files = list(game_path.rglob("*.rpa"))
+        total = len(rpa_files)
+        for i, rpa in enumerate(rpa_files):
+            if progress_callback:
+                progress_callback(i, total + 1, f"Đang bung nén (Extracting) {rpa.name}...")
+            logger.info("Extracting %s", rpa)
+            subprocess.run([sys.executable, str(rpatool), "-x", str(rpa), "-o", str(game_path)], check=False)
+            try:
+                rpa.rename(rpa.with_suffix(".rpa.bak"))
+            except Exception as e:
+                logger.warning("Could not rename %s: %s", rpa, e)
+                
+        if progress_callback:
+            progress_callback(total, total + 1, "Đang dịch ngược (Decompiling) RPYC...")
+        logger.info("Decompiling RPYC files in %s", game_path)
+        subprocess.run([sys.executable, str(unrpyc), "--clobber", str(game_path)], check=False)
+
     def translate_game(
         self,
         profile: GameProfile,
@@ -161,8 +187,12 @@ class RenPyTranslator:
             return False
 
         if progress_callback:
+            progress_callback(0, 1, "Đang bung nén game (Extract & Decompile)...")
+        self._extract_and_decompile(game_path, progress_callback)
+
+        if progress_callback:
             progress_callback(0, 1, "Đang chuẩn bị mẫu dịch Ren'Py...")
-        generation = generator.ensure_templates()
+        generation = generator.generate_templates()
         if not generation.success:
             message = f"Lỗi: {generation.message}"
             logger.error(message)
