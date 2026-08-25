@@ -185,6 +185,7 @@ class RenPyTLGenerator:
 
     def generate_templates(self) -> TemplateGenerationResult:
         """Run Ren'Py's official translation-template generator."""
+        import re
 
         if not self.game_path.is_dir():
             return TemplateGenerationResult(
@@ -205,37 +206,78 @@ class RenPyTLGenerator:
             )
 
         command = (executable, str(self.project_path), "translate", self.language)
-        logger.info("Generating Ren'Py translation templates: %s", " ".join(command))
-        try:
-            completed = self._command_runner(
-                list(command),
-                cwd=str(self.project_path),
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-        except (OSError, subprocess.SubprocessError) as error:
-            logger.error("Unable to run Ren'Py SDK: %s", error)
-            return TemplateGenerationResult(
-                success=False,
-                template_files=(),
-                message=f"Could not run Ren'Py SDK: {error}",
-                command=command,
-            )
+        
+        max_retries = 15
+        for attempt in range(max_retries):
+            logger.info("Generating Ren'Py translation templates (Attempt %d/%d): %s", attempt + 1, max_retries, " ".join(command))
+            try:
+                completed = self._command_runner(
+                    list(command),
+                    cwd=str(self.project_path),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+            except (OSError, subprocess.SubprocessError) as error:
+                logger.error("Unable to run Ren'Py SDK: %s", error)
+                return TemplateGenerationResult(
+                    success=False,
+                    template_files=(),
+                    message=f"Could not run Ren'Py SDK: {error}",
+                    command=command,
+                )
 
-        stdout = str(getattr(completed, "stdout", "") or "")
-        stderr = str(getattr(completed, "stderr", "") or "")
-        return_code = getattr(completed, "returncode", 1)
-        if return_code != 0:
+            stdout = str(getattr(completed, "stdout", "") or "")
+            stderr = str(getattr(completed, "stderr", "") or "")
+            return_code = getattr(completed, "returncode", 1)
+            
+            if return_code == 0:
+                break
+                
             detail = stderr.strip() or stdout.strip() or f"exit code {return_code}"
-            logger.error("Ren'Py template generation failed: %s", detail)
+            
+            # Find files that caused the compilation error
+            matches = re.findall(r'File "([^"]+\.rpy)", line \d+:', detail)
+            if not matches:
+                logger.error("Ren'Py template generation failed and cannot be auto-healed: %s", detail)
+                return TemplateGenerationResult(
+                    success=False,
+                    template_files=(),
+                    message=f"Ren'Py template generation failed: {detail}",
+                    command=command,
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+                
+            # Auto-heal by deleting the broken decompiled files so RenPy uses the working .rpyc
+            deleted_any = False
+            for match in set(matches):
+                # match is like "game/screens.rpy"
+                broken_file = self.project_path / match
+                if broken_file.exists():
+                    logger.warning("Auto-healing: deleting broken decompiled file %s", broken_file)
+                    try:
+                        broken_file.unlink()
+                        deleted_any = True
+                    except OSError as e:
+                        logger.warning("Failed to delete %s: %s", broken_file, e)
+                        
+            if not deleted_any:
+                logger.error("Ren'Py template generation failed (could not heal files): %s", detail)
+                return TemplateGenerationResult(
+                    success=False,
+                    template_files=(),
+                    message=f"Ren'Py template generation failed: {detail}",
+                    command=command,
+                    stdout=stdout,
+                    stderr=stderr,
+                )
+            logger.info("Retrying template generation after auto-healing %d broken files...", len(set(matches)))
+        else:
             return TemplateGenerationResult(
                 success=False,
                 template_files=(),
-                message=f"Ren'Py template generation failed: {detail}",
-                command=command,
-                stdout=stdout,
-                stderr=stderr,
+                message=f"Ren'Py template generation failed after {max_retries} auto-healing attempts.",
             )
 
         template_files = tuple(self.template_files())
