@@ -42,7 +42,9 @@ window.ATM = window.ATM || {};
         
         async get(endpoint, options = {}) {
             try {
-                const response = await fetchWithTimeout(`/api/${endpoint}`, options);
+                const sep = endpoint.includes('?') ? '&' : '?';
+                const url = `/api/${endpoint}${sep}t=${Date.now()}`;
+                const response = await fetchWithTimeout(url, options);
                 if (!response.ok) {
                     throw new BackendError(`HTTP Error: ${response.status}`, response.status);
                 }

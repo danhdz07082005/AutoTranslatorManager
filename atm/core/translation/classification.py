@@ -107,6 +107,12 @@ _SCHEMA_REGISTRY = {
     "system.json": {
         "gametitle": _FieldSpec(StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY, "system"),
         "terms": _FieldSpec(StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY, "system"),
+        "equiptypes": _FieldSpec(StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY, "system"),
+        "skilltypes": _FieldSpec(StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY, "system"),
+        "weapontypes": _FieldSpec(StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY, "system"),
+        "armortypes": _FieldSpec(StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY, "system"),
+        "elements": _FieldSpec(StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY, "system"),
+        "currencyunit": _FieldSpec(StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY, "system"),
     },
     "mapinfos.json": {
         "name": _FieldSpec(StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY, "ui"),
@@ -161,8 +167,10 @@ def category_for(source_file: str, path: Sequence[Any]) -> str:
         # Check explicit schema registry first
         if last_key in _SCHEMA_REGISTRY[filename]:
             return _SCHEMA_REGISTRY[filename][last_key].category
-        if "terms" in [str(p).casefold() for p in path] and filename == "system.json":
-            return "system"
+        if filename == "system.json":
+            system_arrays = {"terms", "equiptypes", "skilltypes", "weapontypes", "armortypes", "elements"}
+            if not system_arrays.isdisjoint([str(p).casefold() for p in path]):
+                return "system"
 
     if filename == "commonevents.json" or filename == "troops.json" or filename.startswith("map"):
         return "dialogue"
@@ -204,8 +212,10 @@ def classify(
         if key in _SCHEMA_REGISTRY[filename]:
             spec = _SCHEMA_REGISTRY[filename][key]
             return spec.classification, spec.write_policy
-        if filename == "system.json" and "terms" in key_set:
-            return StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY
+        if filename == "system.json":
+            system_arrays = {"terms", "equiptypes", "skilltypes", "weapontypes", "armortypes", "elements"}
+            if not system_arrays.isdisjoint(key_set):
+                return StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY
 
     if filename.startswith("plugin") or "plugin" in filename or "config" in filename:
         return StringClassification.PROTECTED, WritePolicy.NONE

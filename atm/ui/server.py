@@ -48,11 +48,12 @@ class ATMHandler(BaseHTTPRequestHandler):
 
     # ============ API GET ============
     def _handle_api_get(self):
-        if self.path == '/api/games':
+        parsed_path = urllib.parse.urlparse(self.path).path
+        if parsed_path == '/api/games':
             self._json_response(self.api.get_games())
-        elif self.path == '/api/languages':
+        elif parsed_path == '/api/languages':
             self._json_response(self.api.get_languages())
-        elif self.path == '/api/settings':
+        elif parsed_path == '/api/settings':
             self._json_response(self.api.get_settings())
         elif self.path.startswith('/api/ping'):
             query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
@@ -70,7 +71,7 @@ class ATMHandler(BaseHTTPRequestHandler):
                 self._json_response(self.api.get_job_status(job_id))
             else:
                 self._json_response({"error": "Invalid job ID"}, 400)
-        elif self.path == '/api/cache/get':
+        elif parsed_path == '/api/cache/get':
             self._json_response(self.api.get_cache_entries())
         elif self.path.startswith('/api/translation-memory/suggest'):
             query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
@@ -79,7 +80,7 @@ class ATMHandler(BaseHTTPRequestHandler):
                 query.get('text', [''])[0],
                 query.get('category', ['unknown'])[0],
             ))
-        elif self.path == '/api/data/stats':
+        elif parsed_path == '/api/data/stats':
             self._json_response(self.api.get_data_stats())
         elif self.path.startswith('/api/cache/search'):
             query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
@@ -103,10 +104,17 @@ class ATMHandler(BaseHTTPRequestHandler):
     def _handle_api_post(self):
         try:
             self._handle_api_post_inner()
+        except ValueError as e:
+            self._json_response({"error": str(e)}, 413)
+        except (ConnectionAbortedError, ConnectionResetError):
+            pass
         except Exception as e:
             import traceback
             traceback.print_exc()
-            self._json_response({"error": str(e)}, 500)
+            try:
+                self._json_response({"error": str(e)}, 500)
+            except:
+                pass
 
     def _handle_api_post_inner(self):
         if ApplicationLifecycle().is_shutting_down():
@@ -114,6 +122,13 @@ class ATMHandler(BaseHTTPRequestHandler):
             return
 
         body = self._read_body()
+
+        if self.path.startswith('/api/ping/disconnect'):
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            client_id = query.get('client_id', ['unknown'])[0]
+            ApplicationLifecycle().disconnect_client(client_id)
+            self._json_response({"status": "disconnected"})
+            return
 
         if self.path == '/api/shutdown':
             # Send the response directly here to ensure it's flushed before shutdown
@@ -170,6 +185,21 @@ class ATMHandler(BaseHTTPRequestHandler):
                 body.get('strategy', 'merge')
             )
             self._json_response(result)
+
+        elif self.path == '/api/glossary/delete':
+            result = self.api.delete_glossary_term(
+                body.get('game_id', ''),
+                body.get('term', '')
+            )
+            self._json_response(result)
+
+        elif self.path == '/api/tm/update':
+            result = self.api.update_cache_entry(
+                body.get('game_id', ''),
+                body.get('key', ''),
+                body.get('value', '')
+            )
+            self._json_response(result)
             
         elif self.path == '/api/cache/update':
             result = self.api.update_cache_entry(
@@ -202,9 +232,7 @@ class ATMHandler(BaseHTTPRequestHandler):
             )
             self._json_response(result)
 
-        elif self.path == '/api/shutdown':
-            self._json_response({"status": "shutting_down"})
-            threading.Thread(target=self.server.shutdown, daemon=True).start()
+
 
         elif self.path == '/api/data/clear':
             clear_type = body.get('type')
@@ -239,9 +267,21 @@ class ATMHandler(BaseHTTPRequestHandler):
         filepath = os.path.join(self.web_dir, path)
 
         # Bảo vệ: không cho truy cập ngoài web_dir
-        filepath = os.path.normpath(filepath)
-        if not filepath.startswith(os.path.normpath(self.web_dir)):
+        filepath = os.path.abspath(filepath)
+        web_dir_abs = os.path.abspath(self.web_dir)
+        try:
+            common = os.path.commonpath([web_dir_abs, filepath])
+            if common != web_dir_abs:
+                self.send_error(403)
+                return
+        except ValueError:
             self.send_error(403)
+            return
+        
+        # Bỏ qua các tập hệ thống, favicon và .well-known
+        if self.path == '/favicon.ico' or self.path.startswith('/.well-known'):
+            self.send_response(204)
+            self.end_headers()
             return
 
         if os.path.isfile(filepath):
@@ -256,6 +296,13 @@ class ATMHandler(BaseHTTPRequestHandler):
                 
             with open(filepath, 'rb') as f:
                 content = f.read()
+                
+            if filepath.endswith('index.html'):
+                import re, time
+                html_str = content.decode('utf-8')
+                html_str = re.sub(r'\?v=\d+', f'?v={int(time.time())}', html_str)
+                content = html_str.encode('utf-8')
+                
             self.send_response(200)
             self.send_header('Content-Type', mime_type)
             self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
@@ -263,20 +310,24 @@ class ATMHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(content)
         else:
-            logger.error(f"[HTTP] 404 Not Found: {filepath} (Original path: {self.path})")
+            if not self.path.endswith('favicon.ico') and '.well-known' not in self.path:
+                logger.error(f"[HTTP] 404 Not Found: {filepath} (Original path: {self.path})")
             self.send_error(404)
 
     # ============ Helpers ============
     def _json_response(self, data, code=200):
         body = json.dumps(data, ensure_ascii=False).encode('utf-8')
         self.send_response(code)
-        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         self.send_header('Content-Length', len(body))
         self.end_headers()
         self.wfile.write(body)
 
     def _read_body(self):
         length = int(self.headers.get('Content-Length', 0))
+        if length > 10 * 1024 * 1024:
+            raise ValueError("Payload too large. Maximum allowed is 10MB.")
         if length > 0:
             try:
                 return json.loads(self.rfile.read(length))
@@ -286,7 +337,7 @@ class ATMHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         msg = format % args
-        if "/api/ping" in msg:
+        if "/api/ping" in msg or "/api/games/translation-status" in msg or "/api/data/stats" in msg:
             return
         if "favicon.ico" in msg or ".well-known" in msg:
             return
@@ -294,14 +345,24 @@ class ATMHandler(BaseHTTPRequestHandler):
 
     def log_error(self, format, *args):
         msg = format % args
-        if "favicon.ico" in msg or ".well-known" in msg:
+        if "favicon.ico" in self.path or ".well-known" in self.path:
             return
-        logger.error(f"[HTTP] {msg}")
+        logger.error(f"[HTTP] {msg} (Path: {self.path})")
 
+
+import sys
+
+class ATMServer(ThreadingHTTPServer):
+    def handle_error(self, request, client_address):
+        err_type = sys.exc_info()[0]
+        if err_type is ConnectionAbortedError or err_type is ConnectionResetError:
+            pass  # Suppress harmless TCP disconnections (WinError 10053/10054)
+        else:
+            super().handle_error(request, client_address)
 
 def create_server(port, api):
     """Tạo HTTP server với API backend đã khởi tạo."""
     ATMHandler.api = api
-    server = ThreadingHTTPServer(('127.0.0.1', port), ATMHandler)
+    server = ATMServer(('127.0.0.1', port), ATMHandler)
     server.daemon_threads = True
     return server

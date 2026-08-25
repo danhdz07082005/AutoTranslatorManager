@@ -102,6 +102,32 @@ window.ATM.Modals = (function() {
                 
                 window.ATM.Modals.open('confirm-modal');
             });
+        },
+        info: (title, message) => {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('info-modal');
+                const titleEl = document.getElementById('info-title');
+                const msgEl = document.getElementById('info-message');
+                const btnOk = document.getElementById('info-ok');
+
+                if (!modal || !titleEl || !msgEl || !btnOk) {
+                    console.error("Missing info modal elements");
+                    resolve();
+                    return;
+                }
+
+                titleEl.textContent = title;
+                msgEl.textContent = message;
+
+                const cleanup = () => {
+                    btnOk.removeEventListener('click', onOk);
+                    window.ATM.Modals.close('info-modal');
+                };
+                const onOk = () => { cleanup(); resolve(); };
+
+                btnOk.addEventListener('click', onOk);
+                window.ATM.Modals.open('info-modal');
+            });
         }
     };
 })();

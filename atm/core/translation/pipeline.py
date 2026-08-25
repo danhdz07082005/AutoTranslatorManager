@@ -533,7 +533,7 @@ class TranslationPipeline:
             if not validation.is_valid:
                 stats.validation_rejected += 1
                 stats.validation_rejected_entries += len(group.occurrences)
-                self.log.warning(
+                self.log.debug(
                     "Rejected %s translation for category=%s at %s location(s): %s",
                     origin.value if origin is not None else "missing",
                     group.category,
@@ -863,6 +863,7 @@ class TranslationPipeline:
             return
 
         set_batch = getattr(self.cache, "set_batch", None)
+        wrote_any = False
         if callable(set_batch):
             for category, values in writes.items():
                 texts = [text for text, _ in values]

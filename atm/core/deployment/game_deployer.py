@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from typing import List
+from typing import List, Optional
 from atm.core.events.event_bus import EventBus, SystemEvents
 from atm.core.deployment.process_monitor import ProcessMonitor
 from atm.storage.repositories.settings_repository import SettingsRepository

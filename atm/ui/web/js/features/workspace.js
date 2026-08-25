@@ -37,27 +37,53 @@ window.ATM.features = window.ATM.features || {};
         const container = document.getElementById('workspace-container');
         if (!container) return;
         
-        container.innerHTML = `
-            <div style="padding: 20px; display:flex; flex-direction:column; height: 100%;">
-                <div class="workspace-tabs" style="display:flex; border-bottom: 1px solid var(--border-color); margin-bottom: 20px;">
-                    <button class="tab-btn active" style="padding: 12px 20px; background: transparent; border: none; border-bottom: 2px solid var(--accent); color: var(--accent); font-weight: 600; cursor: pointer;">Editor</button>
-                    <button class="tab-btn" style="padding: 12px 20px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;" onclick="if(window.ATM.Glossary) window.ATM.Glossary.open('${game.id}')">Thuật ngữ (Glossary)</button>
-                    <button class="tab-btn" style="padding: 12px 20px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;" onclick="if(window.ATM.Modals) window.ATM.Modals.open('translation-memory-modal')">Bộ nhớ dịch (TM)</button>
-                    ${['Bakin', 'RenPy', 'RPG Maker'].includes(game.engine) ? `<button class="tab-btn" style="padding: 12px 20px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-weight:bold;" onclick="window.ATM.Workspace.auditCoverage('${game.id}', '${game.engine}')">🔍 Coverage Audit</button>` : ''}
-                    ${['Bakin', 'RenPy', 'RPG Maker'].includes(game.engine) ? `<button class="tab-btn" style="padding: 12px 20px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-weight:bold;" onclick="window.ATM.Workspace.runExtractJob('${game.id}')">📦 Extract Offline</button>` : ''}
-                    <div id="job-progress-container-${game.id}" style="display:none; padding: 12px 20px; align-items:center;">
-                        <span id="job-progress-text-${game.id}" style="margin-right: 10px; font-size: 0.9em; color: var(--text-secondary);"></span>
-                        <div style="width: 150px; height: 8px; background: var(--surface-200); border-radius: 4px; overflow: hidden;">
-                            <div id="job-progress-bar-${game.id}" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s ease;"></div>
-                        </div>
-                    </div>
-                </div>
-                <div id="editor-workspace-mount" style="flex: 1; overflow: hidden; display:flex; flex-direction:column;">
-                    <!-- Editor mounts here -->
-                </div>
-            </div>
-        `;
-
+        const template = document.getElementById('workspace-shell-template');
+        if (!template) {
+            console.error("Missing workspace-shell-template");
+            return;
+        }
+        
+        const clone = template.content.cloneNode(true);
+        const tabEditor = clone.querySelector('.tab-editor');
+        const tabGlossary = clone.querySelector('.tab-glossary');
+        const tabTm = clone.querySelector('.tab-tm');
+        const tabAudit = clone.querySelector('.tab-audit');
+        const tabExtract = clone.querySelector('.tab-extract');
+        
+        if (tabGlossary) {
+            tabGlossary.addEventListener('click', () => {
+                if(window.ATM.Glossary) window.ATM.Glossary.open(game.id);
+            });
+        }
+        if (tabTm) {
+            tabTm.addEventListener('click', () => {
+                if(window.ATM.Modals) window.ATM.Modals.open('translation-memory-modal');
+            });
+        }
+        
+        if (['Bakin'].includes(game.engine)) {
+            if (tabAudit) {
+                tabAudit.style.display = 'block';
+                tabAudit.addEventListener('click', () => window.ATM.Workspace.auditCoverage(game.id, game.engine));
+            }
+            if (tabExtract) {
+                tabExtract.style.display = 'block';
+                tabExtract.addEventListener('click', () => window.ATM.Workspace.runExtractJob(game.id));
+            }
+        }
+        
+        // Cập nhật id động cho các element theo game.id (nếu cần cho poller truy xuất)
+        const progressContainer = clone.querySelector('.job-progress-container');
+        if (progressContainer) progressContainer.id = `job-progress-container-${game.id}`;
+        
+        const progressText = clone.querySelector('.job-progress-text');
+        if (progressText) progressText.id = `job-progress-text-${game.id}`;
+        
+        const progressBar = clone.querySelector('.job-progress-bar');
+        if (progressBar) progressBar.id = `job-progress-bar-${game.id}`;
+        
+        container.replaceChildren(clone);
+        if (window.ATM.i18n && window.ATM.i18n.updateDOM) window.ATM.i18n.updateDOM();
         startEditor(game.id);
     }
 
@@ -84,7 +110,7 @@ window.ATM.features = window.ATM.features || {};
         }
         currentGame = null;
         const container = document.getElementById('workspace-container');
-        if (container) container.innerHTML = ''; // Clean up memory
+        if (container) container.replaceChildren(); // Clean up memory
     }
 
     function leave() {
@@ -103,9 +129,11 @@ window.ATM.features = window.ATM.features || {};
     async function auditCoverage(gameId, engine) {
         try {
             const res = await window.ATM.api.get(`engines/coverage?game_id=${gameId}`);
-            alert(`${engine} Coverage Report:\nTotal Strings: ${res.total}\nTranslated: ${res.translated}\nUntranslated: ${res.untranslated}\nCoverage: ${res.coverage_percent}%`);
+            const data = res;
+            window.ATM.Modals.info(`${engine} Coverage Report`, 
+                `Total Strings: ${data.total}\nTranslated: ${data.translated}\nUntranslated: ${data.untranslated}\nCoverage: ${data.coverage_percent}%`);
         } catch (e) {
-            alert(`Failed to audit ${engine} coverage.`);
+            window.ATM.Toast.show(`Failed to audit ${engine} coverage.`, "error");
         }
     }
 
@@ -113,7 +141,7 @@ window.ATM.features = window.ATM.features || {};
         try {
             const res = await window.ATM.api.post('jobs/extract', { game_id: gameId });
             if (res.error) {
-                alert(res.error);
+                window.ATM.Toast.show(res.error, "error");
                 return;
             }
             if (res.status === 'already_running') {

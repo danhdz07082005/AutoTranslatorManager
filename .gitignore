@@ -81,3 +81,8 @@ temp.*
 # Frontend
 node_modules/
 !atm/ui/web/dist/
+ 
+data/
+*.db
+*.db-wal
+*.db-shm

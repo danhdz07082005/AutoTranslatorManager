@@ -10,12 +10,20 @@ window.ATM.Settings = (function() {
 
             const saveSettings = () => {
                 const isDark = toggle ? toggle.checked : true;
-                window.ATM.api.post('settings', {
+                const payload = {
                     dark_mode: isDark,
-                    deepl_api_key: deepl ? deepl.value : '',
                     translation_memory_threshold: tmEl ? Number(tmEl.value) : 0.85,
                     ui_language: langSel ? langSel.value : 'vi'
-                }).then(() => {
+                };
+                if (deepl && deepl.value) {
+                    payload.deepl_api_key = deepl.value;
+                }
+
+                window.ATM.api.post('settings', payload).then(() => {
+                    if (deepl && deepl.value) {
+                        deepl.value = '';
+                        deepl.placeholder = 'Đã cập nhật khóa mới';
+                    }
                     if (langSel && langSel.value !== window.ATM.i18n.getLang()) {
                         window.ATM.i18n.setLang(langSel.value);
                     }
@@ -28,10 +36,7 @@ window.ATM.Settings = (function() {
             if (deepl) deepl.addEventListener('change', saveSettings);
             if (tmEl) tmEl.addEventListener('change', saveSettings);
             if (langSel) langSel.addEventListener('change', saveSettings);
-            // toggle 'theme-toggle' is handled in theme.js for saving, but we can also bind it here or let theme.js handle it.
-            // Actually, theme.js ONLY saves dark_mode, so let's let theme.js do it.
-            
-            
+            if (toggle) toggle.addEventListener('change', saveSettings);
             // Accent color picker
             const picker = document.getElementById('accent-color-picker');
             const resetBtn = document.getElementById('accent-reset-btn');
@@ -81,7 +86,14 @@ window.ATM.Settings = (function() {
                 if (langSel) langSel.value = s.ui_language || 'vi';
 
                 const deepl = document.getElementById('deepl-api-key');
-                if (deepl) deepl.value = s.deepl_api_key || '';
+                if (deepl) {
+                    if (s.deepl_api_key_configured) {
+                        deepl.placeholder = "Đã cấu hình";
+                    } else {
+                        deepl.placeholder = "Nhập API Key (tùy chọn)";
+                    }
+                    deepl.value = "";
+                }
 
                 const tmEl = document.getElementById('tm-threshold');
                 if (tmEl) tmEl.value = s.translation_memory_threshold != null ? s.translation_memory_threshold : 0.85;

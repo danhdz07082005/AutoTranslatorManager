@@ -318,6 +318,38 @@ class RPGMakerTranslator:
             )
             os.replace(tmp_path, dest_file)
 
+        if self._translation_memory:
+            try:
+                tm_entries = self._translation_memory.entries()
+                output_lang = getattr(profile, "output_lang", "vi") or "vi"
+                for idx, tm in enumerate(tm_entries):
+                    if tm.target_lang == output_lang:
+                        fake_path = f"__tm_{idx}"
+                        overlay_entries[fake_path] = {
+                            "source_file": "tm",
+                            "path": fake_path,
+                            "category": "ui",
+                            "classification": "translatable",
+                            "original": tm.original_text,
+                            "translation": tm.translated_text,
+                        }
+            except Exception as e:
+                logger.error(f"Failed to inject TM into overlay: {e}")
+
+        # Also inject local glossary (from GameProfile)
+        if hasattr(profile, "glossary") and isinstance(profile.glossary, dict):
+            for idx, (orig, trans) in enumerate(profile.glossary.items()):
+                if isinstance(orig, str) and isinstance(trans, str):
+                    fake_path = f"__glossary_{idx}"
+                    overlay_entries[fake_path] = {
+                        "source_file": "glossary",
+                        "path": fake_path,
+                        "category": "ui",
+                        "classification": "translatable",
+                        "original": orig,
+                        "translation": trans,
+                    }
+
         self._atomic_write_overlay(data_dir / self.OVERLAY_FILENAME, overlay_entries)
         self._install_overlay_plugin(game_dir, data_dir)
 
@@ -393,6 +425,7 @@ class RPGMakerTranslator:
 
   var ATMOverlay = window.ATMOverlay = window.ATMOverlay || {{}};
   ATMOverlay.byOriginal = {{}};
+  ATMOverlay.byLower = {{}};
   ATMOverlay.patched = false;
 
   var _Scene_Boot_isReady = Scene_Boot.prototype.isReady;
@@ -410,17 +443,23 @@ class RPGMakerTranslator:
       Object.keys(entries).forEach(function(key) {{
           var item = entries[key];
           if (item && item.original && item.translation) {{
-              ATMOverlay.byOriginal[String(item.original)] = String(item.translation);
+              ATMOverlay.byOriginal[item.original] = item.translation;
+              ATMOverlay.byLower[item.original.toLowerCase()] = item.translation;
           }}
       }});
   }};
 
-  function translateText(text) {{
-      var key = String(text);
-      return Object.prototype.hasOwnProperty.call(ATMOverlay.byOriginal, key)
-          ? ATMOverlay.byOriginal[key]
-          : text;
-  }}
+  var translateText = function(text) {{
+      if (typeof text !== 'string') return text;
+      if (Object.prototype.hasOwnProperty.call(ATMOverlay.byOriginal, text)) {{
+          return ATMOverlay.byOriginal[text];
+      }}
+      var lowerText = text.toLowerCase();
+      if (Object.prototype.hasOwnProperty.call(ATMOverlay.byLower, lowerText)) {{
+          return ATMOverlay.byLower[lowerText];
+      }}
+      return text;
+  }};
 
   var drawText = Window_Base.prototype.drawText;
   Window_Base.prototype.drawText = function(text, x, y, maxWidth, align) {{
@@ -431,6 +470,13 @@ class RPGMakerTranslator:
   Window_Base.prototype.drawTextEx = function(text, x, y) {{
       return drawTextEx.call(this, translateText(text), x, y);
   }};
+
+  var bitmapDrawText = Bitmap.prototype.drawText;
+  if (bitmapDrawText) {{
+      Bitmap.prototype.drawText = function(text, x, y, maxWidth, lineHeight, align) {{
+          return bitmapDrawText.call(this, translateText(text), x, y, maxWidth, lineHeight, align);
+      }};
+  }}
 
   var drawItemName = Window_Base.prototype.drawItemName;
   Window_Base.prototype.drawItemName = function(item, x, y, width) {{

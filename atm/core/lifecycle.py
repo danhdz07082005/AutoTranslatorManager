@@ -25,7 +25,7 @@ class ApplicationLifecycle:
     def _init(self):
         self.state = AppState.RUNNING
         self.active_clients = {}
-        self.grace_period_seconds = 15
+        self.grace_period_seconds = 120
         self.startup_grace_period_seconds = 45
         self.has_ever_connected = False
         self.start_time = time.time()
@@ -60,6 +60,12 @@ class ApplicationLifecycle:
     def is_shutting_down(self) -> bool:
         return self.state in (AppState.SHUTTING_DOWN, AppState.STOPPED)
 
+    def disconnect_client(self, client_id: str):
+        """Xóa client ngay lập tức khi họ đóng tab (gửi qua sendBeacon)."""
+        with self.lock:
+            if client_id in self.active_clients:
+                del self.active_clients[client_id]
+
     def should_shutdown(self) -> bool:
         """Kiểm tra xem hệ thống có nên tắt (do request hoặc do mồ côi)."""
         with self.lock:
@@ -75,9 +81,15 @@ class ApplicationLifecycle:
                 
                 # Check for orphaned state
                 if len(self.active_clients) == 0:
-                    effective_grace = self.grace_period_seconds if self.has_ever_connected else self.startup_grace_period_seconds
-                    if now - self.last_active_time > effective_grace:
-                        logger.warning("Heartbeat grace period expired! No active UI clients left.")
-                        self.state = AppState.SHUTDOWN_REQUESTED
-                        return True
+                    if self.has_ever_connected:
+                        # Wait 10s for F5 reload before shutting down
+                        if now - self.last_active_time > 10:
+                            logger.warning("All UI clients disconnected. Shutting down.")
+                            self.state = AppState.SHUTDOWN_REQUESTED
+                            return True
+                    else:
+                        if now - self.start_time > self.startup_grace_period_seconds:
+                            logger.warning("Startup grace period expired! No UI clients connected.")
+                            self.state = AppState.SHUTDOWN_REQUESTED
+                            return True
         return False

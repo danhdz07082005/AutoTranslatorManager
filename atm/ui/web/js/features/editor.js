@@ -153,7 +153,7 @@ window.ATM.Editor = (function() {
             window.ATM.Toast.show('Lỗi khi chạy QA', 'error');
         } finally {
             const qaBtn = document.getElementById('editor-run-qa-btn');
-            qaBtn.textContent = "🔍 Chạy QA Scanner";
+            qaBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Chạy QA Scanner';
             qaBtn.disabled = false;
         }
     };
@@ -330,7 +330,7 @@ window.ATM.Editor = (function() {
                     accBtn.style.padding = '2px 8px';
                     accBtn.style.fontSize = '11px';
                     accBtn.textContent = 'Accept';
-                    accBtn.onclick = () => handleSuggestAccept(entry.original, finding.suggestion);
+                    accBtn.addEventListener('click', () => handleSuggestAccept(entry.original, finding.suggestion));
 
                     suggBox.appendChild(suggText);
                     suggBox.appendChild(accBtn);
@@ -346,6 +346,11 @@ window.ATM.Editor = (function() {
         });
     };
 
-    return { init, open };
+    const close = () => {
+        if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+        currentGameId = null;
+    };
+
+    return { init, open, close };
 })();
 

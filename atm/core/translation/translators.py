@@ -50,6 +50,8 @@ class BaseTranslator:
         entries: Iterable[Tuple[str, str]],
         target_lang: str = "vi",
         source_lang: str = "auto",
+        is_cancelled = None,
+        progress_callback = None,
     ) -> List[str]:
         ordered_entries = list(entries)
         grouped: dict[str, list[tuple[int, str]]] = defaultdict(list)
@@ -63,24 +65,28 @@ class BaseTranslator:
                 target_lang=target_lang,
                 source_lang=source_lang,
                 category=category,
-                is_cancelled=None
+                is_cancelled=is_cancelled,
+                progress_callback=progress_callback
             )
             for (index, original), translated_text in zip(group, translated):
-                results[index] = translated_text if translated_text is not None else original
+                results[index] = translated_text
         return results
 
-    def _do_translate_batch(self, texts: List[str], target_lang: str, source_lang: str, is_cancelled=None, progress_callback=None) -> List[str]:
+    def _do_translate_batch(self, texts: List[str], target_lang: str, source_lang: str, is_cancelled=None, progress_callback=None, **kwargs) -> List[str]:
         raise NotImplementedError
 
 class GoogleTranslator(BaseTranslator):
-    MAX_CHARS_PER_CHUNK = 4500
-    MAX_TEXTS_PER_CHUNK = 25
+    MAX_CHARS_PER_CHUNK = 3500
+    MAX_TEXTS_PER_CHUNK = 50
     MAX_WORKERS = 1
-    SLEEP_BETWEEN_CHUNKS = 2.0
-    MAX_RETRIES = 4
+    MIN_DELAY = 3.0
+    MAX_DELAY = 15.0
+    MAX_RETRIES = 5
 
-    def _do_translate_batch(self, texts: List[str], target_lang: str = "vi", source_lang: str = "auto", is_cancelled=None, progress_callback=None) -> List[Optional[str]]:
-        translated_texts = list(texts)
+    gtx_blocked_until = 0
+
+    def _do_translate_batch(self, texts: List[str], target_lang: str = "vi", source_lang: str = "auto", is_cancelled=None, progress_callback=None, **kwargs) -> List[Optional[str]]:
+        translated_texts = [None] * len(texts)
         error_event = threading.Event()
 
         def translate_chunk_with_retry(chunk_texts):
@@ -92,12 +98,43 @@ class GoogleTranslator(BaseTranslator):
 
             for attempt in range(self.MAX_RETRIES):
                 try:
-                    url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl={source_lang}&tl={target_lang}&dt=t"
-                    data = f"q={urllib.parse.quote(combined_text)}".encode('utf-8')
-                    req = urllib.request.Request(url, data=data, headers={'User-Agent': 'Mozilla/5.0'})
-                    with urllib.request.urlopen(req) as response:
-                        res_data = json.loads(response.read().decode('utf-8'))
-                        translated = "".join([sentence[0] for sentence in res_data[0] if sentence[0]])
+                    use_rpc = time.time() < GoogleTranslator.gtx_blocked_until
+                    
+                    if use_rpc:
+                        rpc_data = json.dumps([[[
+                            'MkEWBc',
+                            json.dumps([[combined_text, source_lang, target_lang, True], [None]], separators=(',', ':')),
+                            None,
+                            'generic'
+                        ]]], separators=(',', ':'))
+                        url = "https://translate.google.com/_/TranslateWebserverUi/data/batchexecute"
+                        data = urllib.parse.urlencode({'f.req': rpc_data}).encode('utf-8')
+                        req = urllib.request.Request(url, data=data, headers={
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
+                        })
+                    else:
+                        url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl={source_lang}&tl={target_lang}&dt=t"
+                        data = f"q={urllib.parse.quote(combined_text)}".encode('utf-8')
+                        req = urllib.request.Request(url, data=data, headers={'User-Agent': 'Mozilla/5.0'})
+                    
+                    with urllib.request.urlopen(req, timeout=30.0) as response:
+                        res_text = response.read().decode('utf-8')
+                        if use_rpc:
+                            idx = res_text.find('\n')
+                            if idx != -1: res_text = res_text[idx:]
+                            parsed = json.loads(res_text)
+                            translated = ""
+                            for item in parsed:
+                                if item[0] == 'wrb.fr' and item[1] == 'MkEWBc':
+                                    inner = json.loads(item[2])
+                                    trans_arr = inner[1][0][0][5]
+                                    translated = "".join([part[0] for part in trans_arr if part[0]])
+                                    break
+                        else:
+                            res_data = json.loads(res_text)
+                            translated = "".join([sentence[0] for sentence in res_data[0] if sentence[0]])
+                                
                         parts = [p.strip() for p in re.split(r'(?i)<\s*br\s*>', translated)]
 
                         if len(parts) == len(chunk_texts):
@@ -107,6 +144,11 @@ class GoogleTranslator(BaseTranslator):
                             return [None] * len(chunk_texts)
                 except urllib.error.HTTPError as e:
                     if e.code == 429:
+                        if not use_rpc:
+                            logger.warning("GTX blocked. Switching to RPC for 5 minutes.")
+                            GoogleTranslator.gtx_blocked_until = time.time() + 300
+                            continue
+                        
                         wait = (10 * (2 ** attempt)) + random.uniform(0, 3)
                         logger.warning(f"HTTP 429 (Too Many Requests). Retry {attempt+1}/{self.MAX_RETRIES} in {wait:.1f}s...")
                         elapsed = 0
@@ -118,10 +160,12 @@ class GoogleTranslator(BaseTranslator):
                             elapsed += 1.0
                     else:
                         logger.error(f"Google translate HTTP error {e.code}: {e}")
-                        return [None] * len(chunk_texts)
+                        time.sleep(2.0)
+                        continue # retry on other HTTP errors
                 except Exception as e:
-                    logger.error(f"Google translate batch error: {e}")
-                    return [None] * len(chunk_texts)
+                    logger.error(f"Google translate batch error (Attempt {attempt+1}/{self.MAX_RETRIES}): {e}")
+                    time.sleep(2.0)
+                    continue # retry on network drop or JSON parsing errors
 
             logger.error(f"Google translate: exhausted {self.MAX_RETRIES} retries for chunk of {len(chunk_texts)} texts.")
             error_event.set()
@@ -161,29 +205,27 @@ class GoogleTranslator(BaseTranslator):
             self.MAX_TEXTS_PER_CHUNK,
         )
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_WORKERS) as executor:
-            futures = []
-            for chunk in chunks:
+        for chunk in chunks:
+            if (is_cancelled and is_cancelled()) or error_event.is_set():
+                break
+            
+            chunk_texts = [text for _, text in chunk]
+            res_parts = translate_chunk_with_retry(chunk_texts)
+            
+            if res_parts and None not in res_parts:
+                if progress_callback:
+                    progress_callback(len(chunk))
+            
+            for (target_idx, _source_text), res_text in zip(chunk, res_parts):
+                translated_texts[target_idx] = res_text
+            
+            elapsed = 0
+            sleep_time = random.uniform(self.MIN_DELAY, self.MAX_DELAY)
+            while elapsed < sleep_time:
                 if (is_cancelled and is_cancelled()) or error_event.is_set():
                     break
-                
-                chunk_texts = [text for _, text in chunk]
-                futures.append((chunk, executor.submit(translate_chunk_with_retry, chunk_texts)))
-                
-                elapsed = 0
-                while elapsed < self.SLEEP_BETWEEN_CHUNKS:
-                    if (is_cancelled and is_cancelled()) or error_event.is_set():
-                        break
-                    time.sleep(min(0.5, self.SLEEP_BETWEEN_CHUNKS - elapsed))
-                    elapsed += 0.5
-
-            for chunk, future in futures:
-                res_parts = future.result()
-                if res_parts and None not in res_parts:
-                    if progress_callback:
-                        progress_callback(len(chunk))
-                for (target_idx, _source_text), res_text in zip(chunk, res_parts):
-                    translated_texts[target_idx] = res_text
+                time.sleep(min(0.5, sleep_time - elapsed))
+                elapsed += 0.5
 
         return translated_texts
 
@@ -195,7 +237,7 @@ class DeepLTranslator(BaseTranslator):
         if api_key.endswith(":fx"):
             self.api_url = "https://api-free.deepl.com/v2/translate"
 
-    def _do_translate_batch(self, texts: List[str], target_lang: str = "VI", source_lang: Optional[str] = None) -> List[str]:
+    def _do_translate_batch(self, texts: List[str], target_lang: str = "VI", source_lang: Optional[str] = None, **kwargs) -> List[str]:
         if not self.api_key:
             logger.warning("DeepL API Key is empty. Falling back to None.")
             return [None] * len(texts)
@@ -214,7 +256,7 @@ class DeepLTranslator(BaseTranslator):
                 'Authorization': f'DeepL-Auth-Key {self.api_key}',
                 'Content-Type': 'application/json'
             })
-            with urllib.request.urlopen(req) as response:
+            with urllib.request.urlopen(req, timeout=30.0) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
                 return [item["text"] for item in res_data.get("translations", [])]
         except urllib.error.HTTPError as e:

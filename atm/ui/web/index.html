@@ -24,9 +24,9 @@
             var banner = document.getElementById('error-banner');
             if (banner) {
                 banner.style.display = 'block';
-                banner.innerHTML = '<b>JS Error:</b> ' + msg + '<br><small>' + url + ':' + line + ':' + col + '</small>';
+                banner.textContent = 'JS Error: ' + msg + ' | ' + url + ':' + line + ':' + col;
             }
-            fetch('/api/ping?client_id=ERR_' + encodeURIComponent(msg));
+            fetch('/api/ping?client_id=ERR_' + encodeURIComponent(msg)).catch(function(){});
         };
         window.addEventListener('unhandledrejection', function(event) {
             var errDiv = document.createElement('div');
@@ -38,33 +38,48 @@
       })();
     </script>
     <!-- Scripts loaded with defer (non-blocking, executed in order) -->
-    <script defer src="js/core/api.js?v=2"></script>
-    <script defer src="js/core/dom.js?v=2"></script>
-    <script defer src="js/core/i18n.js?v=2"></script>
-    <script defer src="js/core/navigation.js?v=2"></script>
-    <script defer src="js/ui/theme.js?v=2"></script>
-    <script defer src="js/ui/modals.js?v=2"></script>
-    <script defer src="js/toast.js?v=2"></script>
-    <script defer src="js/features/polling.js?v=2"></script>
-    <script defer src="js/features/games.js?v=2"></script>
-    <script defer src="js/features/workspace.js?v=2"></script>
-    <script defer src="js/features/editor.js?v=2"></script>
-    <script defer src="js/features/settings.js?v=2"></script>
-    <script defer src="js/features/data.js?v=2"></script>
-    <script defer src="js/features/glossary.js?v=2"></script>
-    <script defer src="js/features/tm.js?v=2"></script>
-    <script defer src="js/app.js?v=2"></script>
+    <script src="/js/core/api.js?v=3" defer></script>
+    <script src="/js/core/dom.js?v=3" defer></script>
+    <script src="/js/core/i18n.js?v=3" defer></script>
+    <script src="/js/core/navigation.js?v=3" defer></script>
+    
+    <!-- UI Components -->
+    <script src="/js/ui/theme.js?v=3" defer></script>
+    <script src="/js/ui/modals.js?v=3" defer></script>
+    <script src="/js/toast.js?v=3" defer></script>
+    
+    <!-- Features -->
+    <script src="/js/features/polling.js?v=3" defer></script>
+    <script src="/js/features/games.js?v=3" defer></script>
+    <script src="/js/features/workspace.js?v=3" defer></script>
+    <script src="/js/features/editor.js?v=3" defer></script>
+    <script src="/js/features/settings.js?v=3" defer></script>
+    <script src="/js/features/data.js?v=3" defer></script>
+    <script src="/js/features/glossary.js?v=3" defer></script>
+    <script src="/js/features/tm.js?v=3" defer></script>
+    
+    <!-- App Entry -->
+    <script src="/js/app.js?v=3" defer></script>
     <style>
       .fouc-guard body { visibility: hidden; }
     </style>
 </head>
 <body>
-<div id="confirm-modal" class="modal-overlay" style="display:none;z-index:10000;">
+    <div id="confirm-modal" class="modal-overlay" style="display:none;z-index:10000;">
         <div class="modal-content">
             <h3 id="confirm-message"></h3>
             <div class="confirm-actions">
                 <button id="confirm-no" class="btn-secondary" data-i18n="confirm.no">Huỷ</button>
                 <button id="confirm-yes" class="btn-primary" data-i18n="confirm.yes">Đồng ý</button>
+            </div>
+        </div>
+    </div>
+    <div id="info-modal" class="modal-overlay" style="display:none;z-index:10000;">
+        <div class="modal-content">
+            <h3 id="info-title" style="margin-bottom: 12px; font-weight: 600;">Thông báo</h3>
+            <div id="info-message" style="margin-bottom: 20px; white-space: pre-wrap; font-size: 14px; color: var(--text-secondary); max-height: 400px; overflow-y: auto; text-align: left;"></div>
+            <div class="confirm-actions" style="justify-content: flex-end;">
+                <button id="info-ok" class="btn-primary" data-i18n="confirm.ok">OK</button>
             </div>
         </div>
     </div>
@@ -142,19 +157,40 @@
             </div>
         </div>
     </template>
+    
+    <!-- ════════════ TEMPLATE: WORKSPACE SHELL ════════════ -->
+    <template id="workspace-shell-template">
+        <div class="workspace-shell" style="padding: 20px; display:flex; flex-direction:column; height: 100%;">
+            <div class="workspace-tabs" style="display:flex; border-bottom: 1px solid var(--border-color); margin-bottom: 20px;">
+                <button class="tab-btn tab-editor active" style="padding: 12px 20px; background: transparent; border: none; border-bottom: 2px solid var(--accent); color: var(--accent); font-weight: 600; cursor: pointer;" data-i18n="workspace.tab_editor">Editor</button>
+                <button class="tab-btn tab-glossary" style="padding: 12px 20px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;" data-i18n="workspace.tab_glossary">Thuật ngữ (Glossary)</button>
+                <button class="tab-btn tab-tm" style="padding: 12px 20px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;" data-i18n="workspace.tab_tm">Bộ nhớ dịch (TM)</button>
+                <button class="tab-btn tab-audit hidden" style="padding: 12px 20px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-weight:bold; display: none;" data-i18n="workspace.tab_audit">🔍 Coverage Audit</button>
+                <button class="tab-btn tab-extract hidden" style="padding: 12px 20px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-weight:bold; display: none;" data-i18n="workspace.tab_extract">📦 Extract Offline</button>
+                
+                <div class="job-progress-container" style="display:none; padding: 12px 20px; align-items:center;">
+                    <span class="job-progress-text" style="margin-right: 10px; font-size: 0.9em; color: var(--text-secondary);"></span>
+                    <div style="width: 150px; height: 8px; background: var(--surface-200); border-radius: 4px; overflow: hidden;">
+                        <div class="job-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="editor-workspace-mount" id="editor-workspace-mount" style="flex: 1; overflow: hidden; display:flex; flex-direction:column;">
+                <!-- Editor mounts here -->
+            </div>
+        </div>
+    </template>
 
 
 
     <script>
-      /* Remove FOUC guard as early as possible */
-      document.documentElement.classList.remove('fouc-guard');
-      var lang = localStorage.getItem('atm_lang') || 'vi';
-      if (lang === 'en') {
-          setTimeout(function() {
-              var el = document.getElementById('hello-loading-text');
-              if (el) el.textContent = 'System Initializing...';
-          }, 0);
-      }
+      window.addEventListener('DOMContentLoaded', function() {
+          var lang = localStorage.getItem('atm_lang') || 'vi';
+          if (window.ATM && window.ATM.i18n) {
+              window.ATM.i18n.setLang(lang);
+          }
+          document.documentElement.classList.remove('fouc-guard');
+      });
     </script>
 
     <!-- ════════════ Hello Screen ════════════ -->
@@ -351,9 +387,11 @@
                 </div>
 
                 <!-- Game Data -->
-                <div class="data-card" style="margin-top:24px;">
-                    <div class="card-title" data-i18n="data.game_data">Dữ liệu theo Game</div>
-                    <div id="data-games-list"></div>
+                <div class="card mt-20" style="padding:15px; border:1px solid var(--primary-color);">
+                    <h3 data-i18n="data.game_data_title" style="margin-bottom: 15px;">Dữ liệu theo Game (Game Data)</h3>
+                    <div id="game-data-list" style="color: var(--text-secondary); font-size: 14px; text-align: center; padding: 20px;">
+                        Tính năng quản lý Dữ liệu từng game (như thiết kế của sếp) sẽ được hoàn thiện ở Phase tiếp theo.
+                    </div>
                 </div>
             </section>
 
@@ -419,12 +457,15 @@
     <template id="workspace-editor-template">
         <div style="display:flex;flex-direction:column;height:100%;">
             <div style="margin-bottom:16px; display:flex; gap:8px; align-items:center;">
-                <input type="text" id="editor-search" class="themed-input" placeholder="Tìm kiếm..." style="flex:1;padding:8px; border-radius: var(--radius-sm);">
+                <input type="text" id="editor-search" class="themed-input" placeholder="Tìm kiếm..." data-i18n-placeholder="editor.search_placeholder" style="flex:1;padding:8px; border-radius: var(--radius-sm);">
                 <select id="editor-filter-type" class="lang-select">
-                    <option value="all">Tất cả</option>
-                    <option value="qa_error">Có lỗi QA</option>
+                    <option value="all" data-i18n="editor.filter_all">Tất cả</option>
+                    <option value="qa_error" data-i18n="editor.filter_qa">Có lỗi QA</option>
                 </select>
-                <button class="btn-secondary" id="editor-run-qa-btn">🔍 Chạy QA Scanner</button>
+                <button class="btn-secondary" id="editor-run-qa-btn" style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    Chạy QA Scanner
+                </button>
             </div>
             
             <!-- Header Cột -->
@@ -466,17 +507,18 @@
                     </p>
                     <div style="display:flex; gap:8px;">
                         <input type="file" id="glossary-import-file" accept=".csv" style="display:none;">
-                        <button class="btn-secondary" id="glossary-import-btn" style="padding:4px 8px; font-size:12px;">📥 Nhập (Import)</button>
-                        <button class="btn-secondary" id="glossary-export-btn" style="padding:4px 8px; font-size:12px;">📤 Xuất (Export)</button>
+                        <button class="btn-secondary" id="glossary-import-btn" style="padding:4px 8px; font-size:12px;" data-i18n="glossary.import">📥 Nhập (Import)</button>
+                        <button class="btn-secondary" id="glossary-export-btn" style="padding:4px 8px; font-size:12px;" data-i18n="glossary.export">📤 Xuất (Export)</button>
                     </div>
                 </div>
                 
                 <div id="glossary-list" style="max-height:300px;overflow-y:auto;margin-bottom:12px;background:var(--bg-hover);padding:8px;border-radius:8px;"></div>
                 
                 <div style="display:flex;gap:8px; align-items:center;">
-                    <input type="text" id="glossary-source" class="themed-input"
+                    <input type="text" id="glossary-source" class="themed-input" list="glossary-suggestions"
                            data-i18n-placeholder="glossary.source_placeholder"
                            placeholder="Từ gốc" style="flex:1;padding:8px;border-radius:6px;">
+                    <datalist id="glossary-suggestions"></datalist>
                     <span style="font-weight:bold;color:var(--text-muted);">→</span>
                     <input type="text" id="glossary-target" class="themed-input"
                            data-i18n-placeholder="glossary.target_placeholder"

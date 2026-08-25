@@ -57,23 +57,25 @@ class SQLiteTranslationCache:
             ''')
 
     def get(self, source_lang: str, target_lang: str, category: str, original: str, debounce_seconds: float = 300.0) -> Optional[str]:
-        with self.transaction() as conn:
-            cursor = conn.execute('''
-                SELECT translated, last_accessed_at FROM cache 
-                WHERE source_lang = ? AND target_lang = ? AND category = ? AND original = ?
-            ''', (source_lang, target_lang, category, original))
-            row = cursor.fetchone()
-            
-            if row:
-                translated, last_accessed_at = row
-                now = time.time()
-                if now - last_accessed_at > debounce_seconds:
+        # Avoid explicit transaction block for SELECT to prevent SQLite from creating 
+        # a new journal/lock for every single read operation in a tight loop.
+        cursor = self.conn.execute('''
+            SELECT translated, last_accessed_at FROM cache 
+            WHERE source_lang = ? AND target_lang = ? AND category = ? AND original = ?
+        ''', (source_lang, target_lang, category, original))
+        row = cursor.fetchone()
+        
+        if row:
+            translated, last_accessed_at = row
+            now = time.time()
+            if now - last_accessed_at > debounce_seconds:
+                with self.transaction() as conn:
                     conn.execute('''
                         UPDATE cache SET last_accessed_at = ? 
                         WHERE source_lang = ? AND target_lang = ? AND category = ? AND original = ?
                     ''', (now, source_lang, target_lang, category, original))
-                return translated
-            return None
+            return translated
+        return None
 
     def set(self, source_lang: str, target_lang: str, category: str, original: str, translated: str):
         now = time.time()
@@ -129,6 +131,14 @@ class SQLiteTranslationCache:
                         LIMIT ?
                     )
                 ''', (keep_count,))
+        
+        # Force WAL checkpoint to allow VACUUM to shrink the file effectively
+        with self.transaction() as conn:
+            conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
+
+        # Run VACUUM outside the transaction block to reclaim disk space
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("VACUUM")
 
     def run_integrity_check(self) -> bool:
         with self.transaction() as conn:

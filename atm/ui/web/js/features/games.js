@@ -34,6 +34,12 @@ window.ATM.Games = (function() {
                         const container = getContainer();
                         const empty = container.querySelector('.empty-state');
                         if (empty) empty.remove();
+                        const msg = window.ATM.i18n ? window.ATM.i18n.t('toast.add_game_success') || "Đã thêm game thành công!" : "Đã thêm game thành công!";
+                        if (window.ATM.Toast) window.ATM.Toast.show(msg, "success");
+                    } else if (res && res.error) {
+                        const isDup = res.error.includes("thêm vào hệ thống trước đó");
+                        const msg = isDup && window.ATM.i18n ? window.ATM.i18n.t('toast.duplicate_game') || res.error : res.error;
+                        if (window.ATM.Toast) window.ATM.Toast.show(msg, "error");
                     }
                 } catch(e) {
                     console.error("Failed to add game:", e);
@@ -197,7 +203,7 @@ window.ATM.Games = (function() {
     }
 
     function buildOptions(select, opts, selected, excludeAuto = false) {
-        select.innerHTML = ''; // Select options are safe as they are hardcoded
+        select.textContent = ''; // Clear options
         opts.forEach(opt => {
             if (excludeAuto && opt.value === 'auto') return;
             const option = document.createElement('option');
@@ -256,6 +262,7 @@ window.ATM.Games = (function() {
         const t = (key, fallback) => window.ATM.i18n ? (window.ATM.i18n.t(key) || fallback) : fallback;
 
         if (state === 'READY') {
+            btnStart.setAttribute('data-i18n', 'card.start');
             btnStart.textContent = t('card.start', "Bắt đầu dịch");
             btnStart.className = "btn-start flex-1 btn-action-start";
             btnStart.style.color = "";
@@ -268,6 +275,7 @@ window.ATM.Games = (function() {
             }
         } 
         else if (state === 'TRANSLATING') {
+            btnStart.removeAttribute('data-i18n');
             btnStart.textContent = "Dừng";
             btnStart.className = "btn-danger-ghost flex-1 btn-action-start";
             btnStart.style.color = "var(--danger)";
@@ -285,7 +293,8 @@ window.ATM.Games = (function() {
             }
         }
         else if (state === 'COMPLETE') {
-            btnStart.textContent = "🎮 Chơi Game";
+            btnStart.removeAttribute('data-i18n');
+            btnStart.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>Chơi Game';
             btnStart.className = "btn-start flex-1 btn-action-start"; // We can add btn-success if it exists, otherwise just btn-start with inline style
             btnStart.style.backgroundColor = "var(--success)";
             btnStart.style.color = "white";
@@ -300,6 +309,7 @@ window.ATM.Games = (function() {
             }
         }
         else if (state === 'INTERRUPTED') {
+            btnStart.removeAttribute('data-i18n');
             btnStart.textContent = "Tiếp tục (Lỗi mạng/Khởi động lại)";
             btnStart.className = "btn-secondary flex-1 btn-action-start";
             btnStart.style.color = "var(--warning)";
@@ -363,7 +373,10 @@ window.ATM.Games = (function() {
                 
                 if (status.done) {
                     updateCardPartial(card, status.error ? 'READY' : 'COMPLETE');
-                    if (status.error && window.ATM.Toast) window.ATM.Toast.show(status.message, true);
+                    if (status.error && window.ATM.Toast) {
+                        const errMsg = (status.code ? window.ATM.i18n.t(status.code) : null) || status.details || window.ATM.i18n.t('status.failed') || 'Translation Failed';
+                        window.ATM.Toast.show(errMsg, 'error');
+                    }
                     cleanupPoller(gameId);
                     return;
                 }

@@ -86,9 +86,9 @@ body {
   background-attachment: fixed;
 }
 
-/* FOUC prevention — body hidden until JS applies theme */
-body.fouc-guard {
-  visibility: hidden;
+/* FOUC prevention - body hidden until JS applies theme */
+.fouc-guard body {
+    visibility: hidden;
 }
 
 /* ── 3. Shared Input ── */

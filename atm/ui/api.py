@@ -47,9 +47,19 @@ class BackendApi:
         self.cancel_flags = {}  # game_id -> bool
         self._lock = threading.Lock()
         self.job_manager = JobManager(max_workers=4)
-        
-        # Recover paused jobs
+        # Recover zombie jobs from before last restart
         self._recover_jobs()
+
+    def is_idle(self) -> bool:
+        """Kiểm tra xem hệ thống có đang rảnh rỗi không (không có game nào đang dịch/chạy nền)."""
+        with self._lock:
+            if len(self.cancel_flags) > 0:
+                return False
+            for job in self.job_manager.jobs.values():
+                if job.status in ("running", "queued"):
+                    return False
+            return True
+
 
     def _recover_jobs(self):
         # Scan job repository for jobs that are still 'running' or 'paused' across backend restarts
@@ -75,7 +85,12 @@ class BackendApi:
     def get_settings(self):
         """Trả về cấu hình hiện tại"""
         settings = self.settings_repo.load()
-        return settings.model_dump()
+        data = settings.model_dump()
+        has_key = bool(data.get("deepl_api_key"))
+        if "deepl_api_key" in data:
+            del data["deepl_api_key"]
+        data["deepl_api_key_configured"] = has_key
+        return data
 
     def update_settings(self, **kwargs):
         """Cập nhật cấu hình"""
@@ -163,6 +178,13 @@ class BackendApi:
             return {"error": str(e)}
 
         if file_path:
+            # Validate duplicate exe_path
+            existing_profiles = self.profile_repo.get_all()
+            for existing in existing_profiles:
+                if existing.exe_path and os.path.normpath(existing.exe_path) == os.path.normpath(file_path):
+                    logger.warning(f"Game already exists: {file_path}")
+                    return {"error": f"Game này đã được thêm vào hệ thống trước đó!"}
+
             game_name = os.path.basename(os.path.dirname(file_path))
             if not game_name:
                 game_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -510,6 +532,16 @@ class BackendApi:
         except Exception as e:
             return {"status": "error", "error": str(e)}
 
+    def delete_glossary_term(self, game_id: str, term: str):
+        profile = self.profile_repo.get_by_id(game_id)
+        if not profile:
+            return {"status": "error", "error": "Game not found"}
+        if hasattr(profile, "glossary") and isinstance(profile.glossary, dict):
+            if term in profile.glossary:
+                del profile.glossary[term]
+                self.profile_repo.save(profile)
+        return {"status": "success"}
+
     def update_cache_entry(self, game_id, key, value):
         """Cập nhật một mục trong Cache từ Grid Editor"""
         profile = self.profile_repo.get_by_id(game_id)
@@ -683,7 +715,7 @@ class BackendApi:
         if not profile:
             return {"status": "error", "error": "Game not found"}
             
-        profile.glossary = []
+        profile.glossary = {}  # BUG-C02 fix: must be dict, not list
         self.profile_repo.save(profile)
         
         # Xóa file metadata và history
@@ -784,9 +816,8 @@ class BackendApi:
             auditor = EngineRegistry.get_auditor(profile.engine)
             extractor = EngineRegistry.get_extractor(profile.engine, os.path.dirname(profile.exe_path))
             entries = extractor.extract()
-            # Simulate some being translated
-            for i, e in enumerate(entries):
-                if i % 2 == 0: e.translation_status = "translated"
+            # TODO(Phase 2): Implement real cache lookup for translation_status
+            # Currently returns raw extracted entries (0% coverage by default)
             return auditor.audit(entries)
         except Exception as e:
             return {"error": str(e)}

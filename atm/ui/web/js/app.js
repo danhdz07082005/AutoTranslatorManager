@@ -81,6 +81,12 @@ function initWorkspace() {
     sendHeartbeat();
     setInterval(sendHeartbeat, 5000);
 
+    window.addEventListener('pagehide', () => {
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(`/api/ping/disconnect?client_id=${clientId}`);
+        }
+    });
+
     // --- Navigation Logic ---
     const navLinks = document.querySelectorAll('.nav-links li');
     const viewSections = document.querySelectorAll('.view-section');

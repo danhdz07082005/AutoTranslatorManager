@@ -58,6 +58,7 @@ def main() -> None:
     print("[ATM] (Dong cua so nay se tat hoan toan ung dung)\n")
     
     lifecycle = ApplicationLifecycle()
+    lifecycle.is_idle_callback = api.is_idle
     
     # Giữ main thread sống
     try:
