@@ -27,7 +27,7 @@ window.ATM.Games = (function() {
             btnAdd.addEventListener('click', async () => {
                 btnAdd.disabled = true;
                 try {
-                    const res = await window.ATM.api.post('games/add');
+                    const res = await window.ATM.api.post('games/add', {}, { timeout: 300000 });
                     if (res && res.status === 'success' && res.game) {
                         appendGameCard(res.game);
                         

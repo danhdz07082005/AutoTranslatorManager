@@ -5,7 +5,7 @@ window.ATM = window.ATM || {};
  * Đảm bảo Timeout, Parse JSON tự động, và cung cấp AbortController.
  */
 (function() {
-    const DEFAULT_TIMEOUT = 10000; // 10 giây mặc định
+    const DEFAULT_TIMEOUT = 60000; // 60 seconds (Add game/extract can take a while)
 
     class NetworkError extends Error {
         constructor(message) {
