@@ -141,26 +141,37 @@ class RenPyTranslator:
             if progress_callback:
                 progress_callback(i, total + 1, f"Đang bung nén (Extracting) {rpa.name}...")
             logger.info("Extracting %s", rpa)
-            subprocess.run(
-                [sys.executable, str(rpatool), "-x", str(rpa), "-o", str(game_path)],
-                check=False,
-                capture_output=True,
-                creationflags=creationflags
-            )
             try:
-                rpa.rename(rpa.with_suffix(".rpa.bak"))
+                subprocess.run(
+                    [sys.executable, str(rpatool), "-x", str(rpa), "-o", str(game_path)],
+                    check=False,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=creationflags,
+                    timeout=300
+                )
+            except subprocess.TimeoutExpired:
+                logger.error("RPA extraction timed out for %s", rpa)
+            
+            try:
+                rpa.replace(rpa.with_suffix(".rpa.bak"))
             except Exception as e:
                 logger.warning("Could not rename %s: %s", rpa, e)
                 
         if progress_callback:
             progress_callback(total, total + 1, "Đang dịch ngược (Decompiling) RPYC...")
         logger.info("Decompiling RPYC files in %s", game_path)
-        subprocess.run(
-            [sys.executable, str(unrpyc), "--clobber", str(game_path)],
-            check=False,
-            capture_output=True,
-            creationflags=creationflags
-        )
+        try:
+            subprocess.run(
+                [sys.executable, str(unrpyc), "--clobber", str(game_path)],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                creationflags=creationflags,
+                timeout=600
+            )
+        except subprocess.TimeoutExpired:
+            logger.error("RPYC decompilation timed out for %s", game_path)
 
     def translate_game(
         self,
