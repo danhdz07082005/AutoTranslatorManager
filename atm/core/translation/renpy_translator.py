@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Callable, Mapping, Sequence
 
 from atm.config.schema import GameProfile
+from atm.core.translation.translators import RateLimitError
 from atm.core.translation.renpy_tl_generator import (
     RenPyTLGenerator,
     TranslationTemplateEntry,
@@ -218,10 +219,7 @@ class RenPyTranslator:
                 progress_callback=progress_callback,
             )
             if getattr(result, "rate_limited", False):
-                from atm.core.translation.translators import RateLimitError
-                rate_limited_error = RateLimitError("Pipeline rate limited during Ren'Py translation")
-                logger.warning("Rate limit hit during Ren'Py translation. Writing partial results...")
-                raise rate_limited_error
+                raise RateLimitError("Pipeline rate limited during Ren'Py translation")
         except RateLimitError as rate_limit_err:
             logger.warning("Rate limit hit. Writing partial translations...")
             generator.write_translations(translations)

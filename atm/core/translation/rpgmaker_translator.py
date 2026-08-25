@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from atm.config.schema import GameProfile
+from atm.core.translation.translators import RateLimitError
 from atm.core.translation.cache_manager import TranslationCache
 from atm.core.translation.classification import (
     StringClassification,
@@ -279,7 +280,6 @@ class RPGMakerTranslator:
 
         rate_limited_error = None
         if getattr(result, "rate_limited", False):
-            from atm.core.translation.translators import RateLimitError
             rate_limited_error = RateLimitError("Pipeline rate limited during RPG Maker translation")
             logger.warning("Rate limit hit during RPG Maker translation. Writing partial results...")
 
