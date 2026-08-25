@@ -134,13 +134,19 @@ class RenPyTranslator:
         rpatool = unren_dir / "rpatool.py"
         unrpyc = unren_dir / "unrpyc.py"
 
+        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         rpa_files = list(game_path.rglob("*.rpa"))
         total = len(rpa_files)
         for i, rpa in enumerate(rpa_files):
             if progress_callback:
                 progress_callback(i, total + 1, f"Đang bung nén (Extracting) {rpa.name}...")
             logger.info("Extracting %s", rpa)
-            subprocess.run([sys.executable, str(rpatool), "-x", str(rpa), "-o", str(game_path)], check=False)
+            subprocess.run(
+                [sys.executable, str(rpatool), "-x", str(rpa), "-o", str(game_path)],
+                check=False,
+                capture_output=True,
+                creationflags=creationflags
+            )
             try:
                 rpa.rename(rpa.with_suffix(".rpa.bak"))
             except Exception as e:
@@ -149,7 +155,12 @@ class RenPyTranslator:
         if progress_callback:
             progress_callback(total, total + 1, "Đang dịch ngược (Decompiling) RPYC...")
         logger.info("Decompiling RPYC files in %s", game_path)
-        subprocess.run([sys.executable, str(unrpyc), "--clobber", str(game_path)], check=False)
+        subprocess.run(
+            [sys.executable, str(unrpyc), "--clobber", str(game_path)],
+            check=False,
+            capture_output=True,
+            creationflags=creationflags
+        )
 
     def translate_game(
         self,
