@@ -593,7 +593,7 @@ class TranslationPipeline:
         self._log_stats(stats)
         
         # Check if rate limited
-        is_rate_limited = stats.api_errors > 0 or getattr(stats, "rate_limited", False)
+        is_rate_limited = getattr(stats, "rate_limited", False)
         return PipelineResult(tuple(results), stats, groups, rate_limited=is_rate_limited)
 
     def process(self, *args: Any, **kwargs: Any) -> PipelineResult:

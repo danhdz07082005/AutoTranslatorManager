@@ -305,7 +305,10 @@ class RenPyTLGenerator:
 
         written = 0
         for template_path, replacements in entries_by_file.items():
-            written += self._write_template_replacements(template_path, replacements)
+            try:
+                written += self._write_template_replacements(template_path, replacements)
+            except OSError as e:
+                logger.error("Failed to write to %s: %s", template_path, e)
         return written
 
     def _parse_template(self, template_path: Path) -> list[TranslationTemplateEntry]:

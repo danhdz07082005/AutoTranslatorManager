@@ -43,6 +43,7 @@ window.ATM.Games = (function() {
                     }
                 } catch(e) {
                     console.error("Failed to add game:", e);
+                    if (window.ATM.Toast) window.ATM.Toast.show(e.message || "Lỗi thêm game", "error");
                 } finally {
                     btnAdd.disabled = false;
                 }
