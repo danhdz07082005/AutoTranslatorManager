@@ -40,6 +40,33 @@ class TranslationTemplateEntry:
 
 
 @dataclass(frozen=True)
+class DialogueEntry:
+    """One dialogue line inside a ``translate <lang> <label>:`` block.
+
+    RenPy templates contain two kinds of translatable content:
+    1. ``old``/``new`` string pairs (UI strings) — handled by TranslationTemplateEntry
+    2. Dialogue blocks where a character line appears directly — handled here
+
+    Example template block::
+
+        translate vi start_abc123:
+
+            # e "Hello, world!"
+            e "Hello, world!"
+
+    ``character_prefix`` is everything before the opening quote (``e `` above,
+    or empty string for narration).  ``text`` is the quoted content.
+    ``line_number`` is the 1-based index of the active (non-comment) line.
+    """
+
+    template_path: Path
+    character_prefix: str
+    text: str
+    line_number: int
+    indent: str
+
+
+@dataclass(frozen=True)
 class TemplateGenerationResult:
     """Outcome of asking the Ren'Py SDK to create translation templates."""
 
@@ -352,6 +379,207 @@ class RenPyTLGenerator:
             except OSError as e:
                 logger.error("Failed to write to %s: %s", template_path, e)
         return written
+
+    # ------------------------------------------------------------------
+    # Dialogue block parsing — handles ``translate <lang> <label>:`` blocks
+    # ------------------------------------------------------------------
+
+    _TRANSLATE_HEADER_RE = None  # lazily compiled
+
+    @classmethod
+    def _translate_header_pattern(cls):
+        """Compile the translate-header regex once and cache it."""
+        import re
+        if cls._TRANSLATE_HEADER_RE is None:
+            # Matches: translate <language> <label_with_hash>:
+            # Does NOT match: translate <language> strings:  (those are old/new blocks)
+            # Does NOT match: translate <language> python:   (code blocks)
+            cls._TRANSLATE_HEADER_RE = re.compile(
+                r"^translate\s+\S+\s+(?!strings\b|python\b)(\w+)\s*:\s*$"
+            )
+        return cls._TRANSLATE_HEADER_RE
+
+    def parse_dialogue_blocks(self) -> list[DialogueEntry]:
+        """Extract all dialogue lines from ``translate <lang> <label>:`` blocks.
+
+        This is complementary to ``parse_templates()`` which only extracts
+        ``old``/``new`` string pairs.  Dialogue blocks have a different
+        structure::
+
+            translate vi start_abc123:
+
+                # e "Hello, world!"
+                e "Hello, world!"
+
+        The commented line (``#``) is the original; the active line below it
+        is the one we read and later overwrite with the translation.
+        """
+
+        entries: list[DialogueEntry] = []
+        for template_path in self.template_files():
+            entries.extend(self._parse_dialogue_blocks_in_file(template_path))
+        return entries
+
+    def _parse_dialogue_blocks_in_file(self, template_path: Path) -> list[DialogueEntry]:
+        """Parse a single template file for dialogue blocks."""
+
+        lines = self._read_template_lines(template_path)
+        pattern = self._translate_header_pattern()
+        entries: list[DialogueEntry] = []
+        index = 0
+
+        while index < len(lines):
+            line = lines[index].strip()
+
+            # Look for translate header
+            if not pattern.match(line):
+                index += 1
+                continue
+
+            # Found a translate block — scan forward for the dialogue line
+            # Skip: blank lines, comment lines (# ...), and look for the
+            # active dialogue statement.
+            block_start = index
+            index += 1
+            found_dialogue = False
+
+            while index < len(lines):
+                raw_line = lines[index]
+                stripped = raw_line.strip()
+
+                # Empty line inside block — skip
+                if not stripped:
+                    index += 1
+                    continue
+
+                # Comment line (original text for reference) — skip
+                if stripped.startswith("#"):
+                    index += 1
+                    continue
+
+                # Next translate block or top-level statement — block ended
+                if not raw_line[0].isspace():
+                    break
+
+                # old/new directives belong to the string-pair parser — skip
+                if stripped.startswith(("old ", "new ")):
+                    index += 1
+                    continue
+
+                # This is the active dialogue line — parse it
+                parsed = self._parse_dialogue_line(raw_line, index, template_path)
+                if parsed is not None:
+                    entries.append(parsed)
+                    found_dialogue = True
+
+                index += 1
+                # Only take the first dialogue line per block
+                if found_dialogue:
+                    break
+
+        return entries
+
+    @staticmethod
+    def _parse_dialogue_line(raw_line: str, line_index: int, template_path: Path) -> DialogueEntry | None:
+        """Extract character prefix and quoted text from a dialogue line.
+
+        Handles these forms::
+
+            e "Hello, world!"           → prefix="e ", text="Hello, world!"
+            myla "Good night."          → prefix="myla ", text="Good night."
+            "Narration line."           → prefix="", text="Narration line."
+            e happy "Hi!"               → prefix="e happy ", text="Hi!"
+            random "{font=...}Text{/font}" → prefix="random ", text="{font=...}Text{/font}"
+        """
+
+        stripped = raw_line.strip()
+        indent = raw_line[: len(raw_line) - len(raw_line.lstrip())]
+
+        # Find the first quote character
+        quote_pos = -1
+        for i, ch in enumerate(stripped):
+            if ch in ('"', "'"):
+                quote_pos = i
+                break
+
+        if quote_pos < 0:
+            return None
+
+        prefix = stripped[:quote_pos]
+        literal_part = stripped[quote_pos:]
+
+        # Parse the string literal using ast.literal_eval for safety
+        try:
+            text = ast.literal_eval(literal_part)
+        except (SyntaxError, ValueError):
+            return None
+
+        if not isinstance(text, str):
+            return None
+
+        # Skip empty strings and pure whitespace
+        if not text.strip():
+            return None
+
+        return DialogueEntry(
+            template_path=template_path,
+            character_prefix=prefix,
+            text=text,
+            line_number=line_index + 1,  # 1-based
+            indent=indent.rstrip("\r\n"),
+        )
+
+    def write_dialogue_translations(self, translations: Mapping[str, str]) -> int:
+        """Write translated text into dialogue blocks and return a count.
+
+        ``translations`` is keyed by the source dialogue text.  Only the
+        active dialogue line is replaced; the commented original is untouched.
+        """
+
+        entries = self.parse_dialogue_blocks()
+        entries_by_file: dict[Path, list[tuple[DialogueEntry, str]]] = {}
+        for entry in entries:
+            translated = translations.get(entry.text)
+            if not isinstance(translated, str) or translated == entry.text:
+                continue
+            entries_by_file.setdefault(entry.template_path, []).append((entry, translated))
+
+        written = 0
+        for template_path, replacements in entries_by_file.items():
+            try:
+                written += self._write_dialogue_replacements(template_path, replacements)
+            except OSError as e:
+                logger.error("Failed to write dialogue to %s: %s", template_path, e)
+        return written
+
+    def _write_dialogue_replacements(
+        self,
+        template_path: Path,
+        replacements: Sequence[tuple[DialogueEntry, str]],
+    ) -> int:
+        """Overwrite dialogue lines in a single template file."""
+
+        raw = template_path.read_bytes()
+        has_bom = raw.startswith(codecs.BOM_UTF8)
+        lines = raw.decode("utf-8-sig").splitlines(keepends=True)
+
+        # Replace bottom-to-top to keep line indexes valid
+        for entry, translated in sorted(
+            replacements, key=lambda item: item[0].line_number, reverse=True
+        ):
+            line_idx = entry.line_number - 1
+            if line_idx < 0 or line_idx >= len(lines):
+                continue
+
+            ending = self._line_ending(lines[line_idx]) or "\n"
+            rendered = f"{entry.indent}{entry.character_prefix}{json.dumps(translated, ensure_ascii=False)}{ending}"
+            lines[line_idx] = rendered
+
+        updated = "".join(lines).encode("utf-8")
+        if has_bom:
+            updated = codecs.BOM_UTF8 + updated
+        template_path.write_bytes(updated)
+        return len(replacements)
 
     def _parse_template(self, template_path: Path) -> list[TranslationTemplateEntry]:
         lines = self._read_template_lines(template_path)

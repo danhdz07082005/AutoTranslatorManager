@@ -16,6 +16,7 @@ from atm.core.translation.translators import RateLimitError
 from atm.core.translation.renpy_tl_generator import (
     RenPyTLGenerator,
     TranslationTemplateEntry,
+    DialogueEntry,
 )
 from atm.core.translation.pipeline import TranslatableString, TranslationPipeline, TranslationOrigin
 from atm.core.translation.translation_memory import TranslationMemory
@@ -179,7 +180,11 @@ class RenPyTranslator:
         progress_callback: Callable[[int, int, str], None] | None = None,
         is_cancelled: Callable[[], bool] | None = None,
     ) -> bool:
-        """Generate/read templates, translate `old` values, and update `new`.
+        """Generate/read templates, translate both string pairs and dialogue blocks.
+
+        Handles two types of RenPy translatable content:
+        1. ``old``/``new`` string pairs (UI: Save, Load, etc.)
+        2. Dialogue blocks (``translate <lang> <label>:`` with character dialogue)
 
         Original scripts are intentionally never passed to a write operation.
         If templates already exist they are reused, so a later resume does not
@@ -222,33 +227,70 @@ class RenPyTranslator:
                 progress_callback(1, 1, message)
             return False
 
-        entries = generator.parse_templates()
-        if not entries:
-            message = "Không có chuỗi old/new nào cần dịch trong mẫu Ren'Py."
+        # ── Extract BOTH types of translatable content ──────────────────
+        string_entries = generator.parse_templates()
+        dialogue_entries = generator.parse_dialogue_blocks()
+
+        total_strings = len(string_entries)
+        total_dialogue = len(dialogue_entries)
+        total = total_strings + total_dialogue
+
+        if total == 0:
+            message = "Không tìm thấy chuỗi hoặc hội thoại nào cần dịch."
             logger.info(message)
             if progress_callback:
                 progress_callback(1, 1, message)
             return True
 
+        logger.info(
+            "Found %d string pairs + %d dialogue blocks = %d total entries",
+            total_strings, total_dialogue, total,
+        )
+
         if self._is_cancelled(is_cancelled):
             return False
 
-        total = len(entries)
         if progress_callback:
-            progress_callback(0, total, f"Đang dịch {total} chuỗi từ mẫu Ren'Py...")
+            progress_callback(0, total, f"Đang dịch {total} mục ({total_strings} chuỗi UI + {total_dialogue} hội thoại)...")
 
-        try:
-            translator = self._get_translator(profile)
-            translations: dict[str, str] = {}
-            pipeline_entries = [
+        # ── Build unified pipeline entries ──────────────────────────────
+        pipeline_entries: list[TranslatableString] = []
+
+        # String pairs (old/new)
+        for entry in string_entries:
+            pipeline_entries.append(
                 TranslatableString(
                     text=entry.old,
                     path=(str(entry.template_path), entry.new_line),
-                    category="dialogue",
-                    metadata={"template_entry": entry},
+                    category="ui_string",
+                    metadata={"type": "old_new", "template_entry": entry},
                 )
-                for entry in entries
-            ]
+            )
+
+        # Dialogue blocks
+        for entry in dialogue_entries:
+            pipeline_entries.append(
+                TranslatableString(
+                    text=entry.text,
+                    path=(str(entry.template_path), entry.line_number),
+                    category="dialogue",
+                    metadata={"type": "dialogue", "dialogue_entry": entry},
+                )
+            )
+
+        # ── Run translation pipeline ────────────────────────────────────
+        try:
+            translator = self._get_translator(profile)
+            string_translations: dict[str, str] = {}
+            dialogue_translations: dict[str, str] = {}
+
+            def _write_callback(entry: TranslatableString, text: str) -> None:
+                entry_type = entry.metadata.get("type", "old_new")
+                if entry_type == "dialogue":
+                    dialogue_translations[entry.text] = text
+                else:
+                    string_translations[entry.text] = text
+
             result = TranslationPipeline(
                 translator,
                 cache=(
@@ -266,7 +308,7 @@ class RenPyTranslator:
                 pipeline_entries,
                 source_lang=getattr(profile, "input_lang", "auto") or "auto",
                 target_lang=language,
-                writer=lambda entry, text: translations.__setitem__(entry.text, text),
+                writer=_write_callback,
                 is_cancelled=is_cancelled,
                 progress_callback=progress_callback,
             )
@@ -274,7 +316,8 @@ class RenPyTranslator:
                 raise RateLimitError("Pipeline rate limited during Ren'Py translation")
         except RateLimitError as rate_limit_err:
             logger.warning("Rate limit hit. Writing partial translations...")
-            generator.write_translations(translations)
+            generator.write_translations(string_translations)
+            generator.write_dialogue_translations(dialogue_translations)
             if progress_callback:
                 progress_callback(total, total, "translation.rate_limited", {"error": str(rate_limit_err)})
             raise
@@ -287,12 +330,18 @@ class RenPyTranslator:
         if self._is_cancelled(is_cancelled):
             return False
 
-        updated = generator.write_translations(translations)
+        # ── Write back both types ───────────────────────────────────────
+        updated_strings = generator.write_translations(string_translations)
+        updated_dialogue = generator.write_dialogue_translations(dialogue_translations)
+        updated_total = updated_strings + updated_dialogue
+
         message = (
-            f"Dịch Ren'Py hoàn tất: đã cập nhật {updated}/{total} mẫu dịch, "
+            f"Dịch Ren'Py hoàn tất: {updated_total}/{total} mục "
+            f"({updated_strings} chuỗi UI + {updated_dialogue} hội thoại), "
             f"unique={result.stats.unique}, rejected={result.stats.validation_rejected}."
         )
         logger.info(message)
         if progress_callback:
             progress_callback(total, total, message)
         return True
+
