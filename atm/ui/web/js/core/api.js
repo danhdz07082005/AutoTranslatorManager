@@ -48,7 +48,11 @@ window.ATM = window.ATM || {};
                 if (!response.ok) {
                     throw new BackendError(`HTTP Error: ${response.status}`, response.status);
                 }
-                return await response.json();
+                const data = await response.json();
+                if (data.status === 'error') {
+                    throw new BackendError(data.error || "Lỗi xử lý từ máy chủ", response.status);
+                }
+                return data;
             } catch (error) {
                 if (error.name === 'AbortError') {
                     throw new NetworkError("Request timed out.");
@@ -70,7 +74,11 @@ window.ATM = window.ATM || {};
                     const errorData = await response.json().catch(() => ({}));
                     throw new BackendError(errorData.error || `HTTP Error: ${response.status}`, response.status);
                 }
-                return await response.json();
+                const data = await response.json();
+                if (data.status === 'error') {
+                    throw new BackendError(data.error || "Lỗi xử lý từ máy chủ", response.status);
+                }
+                return data;
             } catch (error) {
                 if (error.name === 'AbortError') {
                     throw new NetworkError("Request timed out.");

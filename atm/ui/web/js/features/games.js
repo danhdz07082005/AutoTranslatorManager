@@ -350,7 +350,7 @@ window.ATM.Games = (function() {
                 startPoller(gameId, card);
             } catch(e) {
                 updateCardPartial(card, 'READY');
-                if (window.ATM.Toast) window.ATM.Toast.show("Lỗi khởi chạy", "error");
+                if (window.ATM.Toast) window.ATM.Toast.show(e.message || "Lỗi khởi chạy", "error");
             } finally {
                 btnStart.disabled = false;
             }
@@ -419,7 +419,7 @@ window.ATM.Games = (function() {
             if (window.ATM.Toast) window.ATM.Toast.show("Đang khởi chạy game...", false);
             await window.ATM.api.post('games/play', { game_id: gameId }); 
         } catch(e) {
-            if (window.ATM.Toast) window.ATM.Toast.show("Không thể khởi chạy game. Vui lòng thử lại!", true);
+            if (window.ATM.Toast) window.ATM.Toast.show(e.message || "Không thể khởi chạy game. Vui lòng thử lại!", "error");
         }
     }
 
