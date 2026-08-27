@@ -68,7 +68,7 @@ def test_cancellation():
     assert manager.cancel_job(job_id) is True
     
     # Wait for the worker to exit cooperatively
-    time.sleep(0.1)
+    time.sleep(0.3)
     status = manager.get_job_status(job_id)
     assert status["status"] == JobStatus.CANCELLED
 

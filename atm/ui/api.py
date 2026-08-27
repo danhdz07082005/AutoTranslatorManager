@@ -205,7 +205,8 @@ class BackendApi:
             logger.info(f"Added game profile: {profile.game_name} [{profile.id}]")
             return {"status": "success", "game": profile.model_dump()}
 
-        return None  # User cancelled
+        return {"status": "cancelled"}  # User cancelled the file dialog
+
 
     def update_game_settings(self, game_id, input_lang=None, output_lang=None, translator=None, glossary=None):
         """Cập nhật ngôn ngữ, bộ dịch, và từ điển cá nhân cho game"""
@@ -255,9 +256,13 @@ class BackendApi:
             
             def run_offline_translate():
                 if profile.engine == "RPG Maker":
+                    from atm.core.translation import RPGMakerTranslator
                     translator = RPGMakerTranslator()
                 else:
-                    translator = RenPyTranslator()
+                    from atm.core.translation.renpy_translator import RenPyTranslator
+                    from atm.core.translation.cache_manager import TranslationCache
+                    from atm.core.translation.translation_memory import TranslationMemory
+                    translator = RenPyTranslator(cache=TranslationCache(), translation_memory=TranslationMemory())
                 
                 def progress_cb(current, total, code, params=None):
                     self.translation_status[game_id] = {

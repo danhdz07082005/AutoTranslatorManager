@@ -12,6 +12,7 @@ import ast
 import codecs
 import json
 import os
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -212,7 +213,6 @@ class RenPyTLGenerator:
 
     def generate_templates(self) -> TemplateGenerationResult:
         """Run Ren'Py's official translation-template generator."""
-        import re
 
         if not self.game_path.is_dir():
             return TemplateGenerationResult(
@@ -389,7 +389,6 @@ class RenPyTLGenerator:
     @classmethod
     def _translate_header_pattern(cls):
         """Compile the translate-header regex once and cache it."""
-        import re
         if cls._TRANSLATE_HEADER_RE is None:
             # Matches: translate <language> <label_with_hash>:
             # Does NOT match: translate <language> strings:  (those are old/new blocks)
@@ -442,6 +441,7 @@ class RenPyTLGenerator:
             block_start = index
             index += 1
             found_dialogue = False
+            original_parsed = None
 
             while index < len(lines):
                 raw_line = lines[index]
@@ -452,8 +452,14 @@ class RenPyTLGenerator:
                     index += 1
                     continue
 
-                # Comment line (original text for reference) — skip
+                # Comment line (original text for reference)
                 if stripped.startswith("#"):
+                    # The commented line contains the original source text.
+                    # We strip the leading '# ' to parse it just like an active line.
+                    comment_content = raw_line.replace("#", "", 1)
+                    parsed_original = self._parse_dialogue_line(comment_content, index, template_path)
+                    if parsed_original is not None:
+                        original_parsed = parsed_original
                     index += 1
                     continue
 
@@ -466,10 +472,22 @@ class RenPyTLGenerator:
                     index += 1
                     continue
 
-                # This is the active dialogue line — parse it
-                parsed = self._parse_dialogue_line(raw_line, index, template_path)
-                if parsed is not None:
-                    entries.append(parsed)
+                # This is the active dialogue line. We overwrite this line later.
+                # If we found the original text in a comment, use its text.
+                # Otherwise, fallback to parsing the active line.
+                parsed_active = self._parse_dialogue_line(raw_line, index, template_path)
+                if parsed_active is not None:
+                    if original_parsed is not None:
+                        # Use original text but keep active line number and prefix for writing
+                        entries.append(DialogueEntry(
+                            template_path=template_path,
+                            character_prefix=parsed_active.character_prefix,
+                            text=original_parsed.text,
+                            line_number=parsed_active.line_number,
+                            indent=parsed_active.indent,
+                        ))
+                    else:
+                        entries.append(parsed_active)
                     found_dialogue = True
 
                 index += 1

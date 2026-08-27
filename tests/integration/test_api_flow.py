@@ -63,7 +63,7 @@ def test_add_game_cancelled_dialog(temp_profiles_dir, monkeypatch):
     monkeypatch.setattr("tkinter.filedialog.askopenfilename", mock_askopenfilename)
 
     result = api.add_game()
-    assert result is None
+    assert result == {"status": "cancelled"}
     assert len(api.get_games().get("games", [])) == 0
 
 

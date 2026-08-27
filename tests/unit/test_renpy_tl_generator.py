@@ -1,7 +1,7 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-from atm.core.translation.renpy_tl_generator import RenPyTLGenerator
+from atm.core.translation.renpy_tl_generator import RenPyTLGenerator, TranslationTemplateEntry, TemplateGenerationResult
 from atm.core.translation.renpy_translator import RenPyTranslator
 
 
@@ -62,6 +62,14 @@ def test_renpy_translator_uses_pipeline_token_protection(tmp_path: Path):
         translation_memory=False,
         cache=False,
     )
+    # Patch to avoid running the SDK in unit tests
+    translator._extract_and_decompile = lambda *args: None
+    original_make = translator._make_generator
+    def fake_make_generator(path, lang):
+        gen = original_make(path, lang)
+        gen.generate_templates = lambda: TemplateGenerationResult(success=True, template_files=(), message="")
+        return gen
+    translator._make_generator = fake_make_generator
     profile = SimpleNamespace(
         exe_path=str(exe),
         translator="google",

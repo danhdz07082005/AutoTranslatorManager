@@ -36,6 +36,8 @@ window.ATM.Games = (function() {
                         if (empty) empty.remove();
                         const msg = window.ATM.i18n ? window.ATM.i18n.t('toast.add_game_success') || "Đã thêm game thành công!" : "Đã thêm game thành công!";
                         if (window.ATM.Toast) window.ATM.Toast.show(msg, "success");
+                    } else if (res && res.status === 'cancelled') {
+                        // User cancelled the file dialog — no action needed
                     } else if (res && res.error) {
                         const isDup = res.error.includes("thêm vào hệ thống trước đó");
                         const msg = isDup && window.ATM.i18n ? window.ATM.i18n.t('toast.duplicate_game') || res.error : res.error;
@@ -348,7 +350,7 @@ window.ATM.Games = (function() {
                 startPoller(gameId, card);
             } catch(e) {
                 updateCardPartial(card, 'READY');
-                if (window.ATM.Toast) window.ATM.Toast.show("Lỗi khởi chạy", true);
+                if (window.ATM.Toast) window.ATM.Toast.show("Lỗi khởi chạy", "error");
             } finally {
                 btnStart.disabled = false;
             }
@@ -375,7 +377,11 @@ window.ATM.Games = (function() {
                 if (status.done) {
                     updateCardPartial(card, status.error ? 'READY' : 'COMPLETE');
                     if (status.error && window.ATM.Toast) {
-                        const errMsg = (status.code ? window.ATM.i18n.t(status.code) : null) || status.details || window.ATM.i18n.t('status.failed') || 'Translation Failed';
+                        const i18n = window.ATM.i18n;
+                        const errMsg = (status.code && i18n ? i18n.t(status.code) : null)
+                            || status.details
+                            || (i18n ? i18n.t('status.failed') : null)
+                            || 'Translation Failed';
                         window.ATM.Toast.show(errMsg, 'error');
                     }
                     cleanupPoller(gameId);

@@ -116,10 +116,12 @@ window.ATM.Editor = (function() {
 
     const runQA = async () => {
         if (entries.length === 0) return;
+        const qaBtn = document.getElementById('editor-run-qa-btn');
         try {
-            const qaBtn = document.getElementById('editor-run-qa-btn');
-            qaBtn.textContent = "Đang quét...";
-            qaBtn.disabled = true;
+            if (qaBtn) {
+                qaBtn.textContent = "Đang quét...";
+                qaBtn.disabled = true;
+            }
 
             const payload = entries.map((e, idx) => ({
                 id: idx.toString(),
@@ -137,24 +139,26 @@ window.ATM.Editor = (function() {
                     }
                 }
                 
+                const filterSel = document.getElementById('editor-filter-type');
                 if (Object.keys(qaFindings).length > 0) {
-                    window.ATM.Toast.show(`Phát hiện ${Object.keys(qaFindings).length} lỗi QA!`, 'warning');
-                    if (document.getElementById('editor-filter-type').value !== 'qa_error') {
-                         document.getElementById('editor-filter-type').value = 'qa_error';
-                         currentFilter = 'qa_error';
+                    if (window.ATM.Toast) window.ATM.Toast.show(`Phát hiện ${Object.keys(qaFindings).length} lỗi QA!`, 'warning');
+                    if (filterSel && filterSel.value !== 'qa_error') {
+                        filterSel.value = 'qa_error';
+                        currentFilter = 'qa_error';
                     }
                 } else {
-                    window.ATM.Toast.show('Tuyệt vời! Không phát hiện lỗi QA nào.', 'success');
+                    if (window.ATM.Toast) window.ATM.Toast.show('Tuyệt vời! Không phát hiện lỗi QA nào.', 'success');
                 }
                 renderList();
             }
         } catch (e) {
             console.error(e);
-            window.ATM.Toast.show('Lỗi khi chạy QA', 'error');
+            if (window.ATM.Toast) window.ATM.Toast.show('Lỗi khi chạy QA', 'error');
         } finally {
-            const qaBtn = document.getElementById('editor-run-qa-btn');
-            qaBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Chạy QA Scanner';
-            qaBtn.disabled = false;
+            if (qaBtn) {
+                qaBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Chạy QA Scanner';
+                qaBtn.disabled = false;
+            }
         }
     };
 
@@ -180,6 +184,7 @@ window.ATM.Editor = (function() {
 
     const renderList = () => {
         const listEl = document.getElementById('editor-list');
+        if (!listEl) return;  // Editor not mounted — silently skip
         while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
         
         let displayEntries = entries;
