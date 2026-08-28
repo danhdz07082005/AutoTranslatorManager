@@ -182,6 +182,55 @@ window.ATM.Editor = (function() {
         }
     };
 
+    
+    const updateQADomLocal = (original, finding) => {
+        const safeId = 'row-' + btoa(encodeURIComponent(original)).replace(/[^a-zA-Z0-9]/g, '');
+        const row = document.getElementById(safeId);
+        if (!row) return; // if not rendered, do nothing
+        
+        // Remove existing QA boxes inside targetCol
+        const targetCol = row.children[1];
+        if (targetCol) {
+            const existingQa = targetCol.querySelectorAll('.qa-box');
+            existingQa.forEach(el => el.remove());
+        }
+        
+        if (finding) {
+            if (finding.severity === 'error') {
+                row.style.borderColor = 'var(--danger)';
+                row.style.boxShadow = '0 0 0 1px var(--danger)';
+            } else {
+                row.style.borderColor = 'var(--warning)';
+                row.style.boxShadow = '0 0 0 1px var(--warning)';
+            }
+            
+            // Re-render QA box (simplified for local patch)
+            const qaBox = document.createElement('div');
+                qaBox.className = 'qa-box';
+            qaBox.className = 'qa-box';
+            qaBox.style.fontSize = '12px';
+            qaBox.style.padding = '6px';
+            qaBox.style.borderRadius = '4px';
+            qaBox.style.display = 'flex';
+            qaBox.style.flexDirection = 'column';
+            qaBox.style.gap = '4px';
+            if (finding.severity === 'error') {
+                qaBox.style.background = 'rgba(239, 68, 68, 0.1)';
+                qaBox.style.color = 'var(--danger)';
+            } else {
+                qaBox.style.background = 'rgba(245, 158, 11, 0.1)';
+                qaBox.style.color = 'var(--warning)';
+            }
+            const msgSpan = document.createElement('div');
+            msgSpan.innerHTML = `<strong>QA ${finding.severity.toUpperCase()}</strong>: ${finding.message} <span class="badge">${finding.confidence}</span>`;
+            qaBox.appendChild(msgSpan);
+            targetCol.appendChild(qaBox);
+        } else {
+            row.style.borderColor = 'var(--border-color)';
+            row.style.boxShadow = 'none';
+        }
+    };
+
     const renderList = () => {
         const listEl = document.getElementById('editor-list');
         if (!listEl) return;  // Editor not mounted — silently skip
@@ -204,6 +253,8 @@ window.ATM.Editor = (function() {
 
         displayEntries.forEach(entry => {
             const row = document.createElement('div');
+            const safeId = 'row-' + btoa(encodeURIComponent(entry.original)).replace(/[^a-zA-Z0-9]/g, '');
+            row.id = safeId;
             row.style.display = 'flex';
             row.style.gap = '16px';
             row.style.padding = '8px';
@@ -268,7 +319,7 @@ window.ATM.Editor = (function() {
                             entry.translated = newValue;
                             if (qaFindings[entry.original]) {
                                 delete qaFindings[entry.original];
-                                renderList();
+                                updateQADomLocal(entry.original, null);
                             }
                         } else {
                             throw new Error(res.message || 'Lỗi server');
@@ -288,6 +339,7 @@ window.ATM.Editor = (function() {
 
             if (finding) {
                 const qaBox = document.createElement('div');
+                qaBox.className = 'qa-box';
                 qaBox.style.fontSize = '12px';
                 qaBox.style.padding = '6px';
                 qaBox.style.borderRadius = '4px';

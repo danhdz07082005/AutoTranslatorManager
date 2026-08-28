@@ -86,3 +86,10 @@ data/
 *.db
 *.db-wal
 *.db-shm
+
+# AI Assistants & Code Intelligence
+.agents/
+.claude/
+.gitnexus/
+AGENTS.md
+CLAUDE.md

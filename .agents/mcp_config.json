@@ -6,6 +6,10 @@
       "env": {
         "PYTHONPATH": "C:\\serena-main\\src"
       }
+    },
+    "gitnexus": {
+      "command": "cmd.exe",
+      "args": ["/c", "npx", "--yes", "gitnexus@latest", "mcp"]
     }
   }
 }

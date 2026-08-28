@@ -115,6 +115,8 @@ window.ATM.features = window.ATM.features || {};
 
     function leave() {
         cleanup();
+        if (window.ATM.Editor) window.ATM.Editor.close();
+        if (window.ATM.ProgressManager) window.ATM.ProgressManager.stop('extract_job');
         if (window.ATM.navigation) {
             window.ATM.navigation.showLibrary();
         }

@@ -25,11 +25,25 @@ window.ATM = window.ATM || {};
     async function fetchWithTimeout(resource, options = {}) {
         const timeout = options.timeout || DEFAULT_TIMEOUT;
         const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeout);
+        const id = setTimeout(() => controller.abort(new Error("Timeout")), timeout);
+
+        let finalSignal = controller.signal;
+        if (options.signal) {
+            if (AbortSignal.any) {
+                finalSignal = AbortSignal.any([controller.signal, options.signal]);
+            } else {
+                const composite = new AbortController();
+                const abort = () => composite.abort();
+                controller.signal.addEventListener('abort', abort);
+                options.signal.addEventListener('abort', abort);
+                if (controller.signal.aborted || options.signal.aborted) abort();
+                finalSignal = composite.signal;
+            }
+        }
 
         const response = await fetch(resource, {
             ...options,
-            signal: controller.signal  
+            signal: finalSignal
         });
         
         clearTimeout(id);
@@ -56,6 +70,9 @@ window.ATM = window.ATM || {};
                 return data;
             } catch (error) {
                 if (error.name === 'AbortError') {
+                    if (options.signal && options.signal.aborted) {
+                        throw error;
+                    }
                     throw new NetworkError("Request timed out.");
                 }
                 throw error;
@@ -83,6 +100,9 @@ window.ATM = window.ATM || {};
                 return resData;
             } catch (error) {
                 if (error.name === 'AbortError') {
+                    if (options.signal && options.signal.aborted) {
+                        throw error;
+                    }
                     throw new NetworkError("Request timed out.");
                 }
                 throw error;

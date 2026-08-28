@@ -5,26 +5,16 @@ window.ATM.features = window.ATM.features || {};
 window.ATM.ui = window.ATM.ui || {};
 window.ATM.core = window.ATM.core || {};
 
+let isInitialized = false;
 function initWorkspace() {
+    if (isInitialized) return;
+    isInitialized = true;
+    
     try { fetch('/api/ping?client_id=DEBUG_INIT_WORKSPACE'); } catch(e) {}
     console.log('[ATM Workspace] System Initializing...');
     
-    // --- Hello Screen Logic (Loading 3 seconds) ---
     const helloScreen = document.getElementById('hello-screen');
     const loadingBar = document.getElementById('hello-loading-bar');
-    if (helloScreen && loadingBar) {
-        let pct = 0;
-        const interval = setInterval(() => {
-            pct += (100 / 30); // 3 seconds (30 * 100ms)
-            loadingBar.style.width = Math.min(pct, 100) + '%';
-            if (pct >= 100) {
-                clearInterval(interval);
-                helloScreen.style.opacity = '0';
-                helloScreen.style.transition = 'opacity 0.5s ease';
-                setTimeout(() => helloScreen.style.display = 'none', 500);
-            }
-        }, 100);
-    }
     
     // --- Nơi khởi tạo các module ---
     try {
@@ -40,15 +30,20 @@ function initWorkspace() {
         console.error("Initialization Error: ", e);
     }
     
-    // Tải dữ liệu ban đầu
-    setTimeout(() => {
-        try {
-            if (window.ATM.Settings) window.ATM.Settings.load();
-            if (window.ATM.Data) window.ATM.Data.refresh(true);
-        } catch (e) {
-            console.error("Data Load Error: ", e);
+    // Tải dữ liệu ban đầu và dọn màn hình chờ khi thực sự xong
+    Promise.all([
+        window.ATM.Settings ? window.ATM.Settings.load() : Promise.resolve(),
+        window.ATM.Data ? window.ATM.Data.refresh(true) : Promise.resolve()
+    ]).then(() => {
+        if (loadingBar) loadingBar.style.width = '100%';
+        if (helloScreen) {
+            helloScreen.style.opacity = '0';
+            helloScreen.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => helloScreen.style.display = 'none', 500);
         }
-    }, 500);
+    }).catch(e => {
+        console.error("Data Load Error: ", e);
+    });
     
     // --- Shutdown Logic ---
     const exitBtn = document.getElementById('exit-btn');
