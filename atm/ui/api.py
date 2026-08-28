@@ -368,7 +368,7 @@ class BackendApi:
         elif profile.engine == "Unity IL2CPP":
             payload_dir = os.path.join(base_dir, "atm", "resources", "payloads", "bepinex_il2cpp")
         else:
-            return {"status": "error", "error": f"Engine {profile.engine} is not supported for real-time launch."}
+            return {"status": "error", "error": "Lỗi: Hệ thống chưa hỗ trợ tự động dịch cho Engine này (" + profile.engine + ").\nVui lòng chọn game Unity, RPG Maker hoặc RenPy."}
 
         # Khởi tạo Deployer
         deployer = GameDeployer()
@@ -386,7 +386,7 @@ class BackendApi:
             
         if game_id in self.active_deployers:
             deployer = self.active_deployers[game_id]
-            if deployer.monitor.is_monitoring:
+            if getattr(deployer, "is_deploying", False) or deployer.monitor.is_monitoring:
                 return {
                     "progress": 50,
                     "total": 100,
@@ -891,4 +891,6 @@ class BackendApi:
         if not success:
             return {"error": "Failed to cancel job or job not found"}
         return {"status": "success"}
+
+
 

@@ -1,16 +1,40 @@
 import os
 import shutil
-from typing import List
+import tempfile
+import uuid
+from typing import List, Dict, Any, Union
 from atm.utils.logger import get_logger
 
 logger = get_logger(__name__, "deploy.log")
 
-def copy_payload(src_dir: str, dest_dir: str) -> List[str]:
-    """
-    Copy toàn bộ nội dung từ src_dir sang dest_dir.
-    Trả về danh sách các đường dẫn tuyệt đối của các file/folder đã copy 
-    để sau này phục vụ việc dọn rác (cleanup).
-    """
+def atomic_write(filepath: str, content: Union[str, bytes], mode: str = 'w', encoding: str = 'utf-8') -> bool:
+    tmp_path = f"{filepath}.{uuid.uuid4().hex}.tmp"
+    try:
+        if 'b' in mode:
+            with open(tmp_path, mode) as f:
+                f.write(content)
+        else:
+            with open(tmp_path, mode, encoding=encoding) as f:
+                f.write(content)
+        
+        os.replace(tmp_path, filepath)
+        return True
+    except Exception as e:
+        logger.error(f"Atomic write failed for {filepath}: {e}")
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
+        return False
+
+class CopyResult:
+    def __init__(self, success: bool, items: List[str] = None, error: str = None):
+        self.success = success
+        self.copied_items = items or []
+        self.error = error
+
+def copy_payload(src_dir: str, dest_dir: str) -> CopyResult:
     copied_items = []
     
     def recursive_copy(current_src, current_dest):
@@ -21,13 +45,10 @@ def copy_payload(src_dir: str, dest_dir: str) -> List[str]:
             
             if os.path.exists(d):
                 if os.path.isdir(s):
-                    # Directory exists, recursively merge it
                     recursive_copy(s, d)
                 else:
-                    # File exists, skip to avoid overwriting user data
-                    logger.warning(f"File {d} already exists. Skipping to avoid overwriting user data.")
+                    logger.warning(f"File {d} already exists. Skipping.")
             else:
-                # Does not exist, copy and track
                 if os.path.isdir(s):
                     shutil.copytree(s, d)
                 else:
@@ -37,22 +58,28 @@ def copy_payload(src_dir: str, dest_dir: str) -> List[str]:
                 
     try:
         recursive_copy(src_dir, dest_dir)
+        return CopyResult(True, copied_items)
     except Exception as e:
         logger.error(f"Error copying payload from {src_dir} to {dest_dir}: {e}")
-        
-    return copied_items
+        return CopyResult(False, copied_items, str(e))
 
 def cleanup_items(items: List[str]) -> None:
-    """Xóa sạch sẽ các file/folder đã được copy vào (dựa theo danh sách truyền vào)."""
-    for item in items:
-        try:
-            if not os.path.exists(item):
-                continue
-            if os.path.isdir(item):
-                shutil.rmtree(item)
-                logger.info(f"Cleaned up directory: {item}")
-            else:
-                os.remove(item)
-                logger.info(f"Cleaned up file: {item}")
-        except Exception as e:
-            logger.error(f"Failed to cleanup {item}: {e}")
+    import time
+    items_sorted = sorted(items, key=lambda x: len(x), reverse=True)
+    for item in items_sorted:
+        for attempt in range(4):
+            try:
+                if not os.path.exists(item):
+                    break
+                if os.path.isdir(item):
+                    shutil.rmtree(item)
+                    logger.info(f"Cleaned up directory: {item}")
+                else:
+                    os.remove(item)
+                    logger.info(f"Cleaned up file: {item}")
+                break  # Success, exit retry loop
+            except Exception as e:
+                if attempt < 3:
+                    time.sleep(0.5)  # Wait for OS to release file locks
+                else:
+                    logger.error(f"Failed to cleanup {item} after 4 attempts: {e}")

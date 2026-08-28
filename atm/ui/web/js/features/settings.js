@@ -74,9 +74,9 @@ window.ATM.Settings = (function() {
                     if (window.ATM.Theme && window.ATM.Theme.applyTheme) {
                         window.ATM.Theme.applyTheme(toggle.checked);
                     }
-                    const localSettings = JSON.parse(localStorage.getItem('atm_settings') || '{}');
+                    const localSettings = window.ATM.store.get('atm_settings', {});
                     localSettings.dark_mode = toggle.checked;
-                    localStorage.setItem('atm_settings', JSON.stringify(localSettings));
+                    window.ATM.store.set('atm_settings', localSettings);
                 }
 
                 if (s.ui_language && s.ui_language !== window.ATM.i18n.getLang()) {

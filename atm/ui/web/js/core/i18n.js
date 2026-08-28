@@ -173,6 +173,7 @@ window.ATM.core = window.ATM.core || {};
             "data.clear_tm_confirm": "Bạn có chắc chắn muốn xóa toàn bộ Translation Memory?",
 
             // === MISC ===
+            "error.engine_not_supported": "Lỗi: Hệ thống chưa hỗ trợ tự động dịch cho Engine này ({engine}). Vui lòng chọn game Unity, RPG Maker hoặc RenPy.",
             "hello.loading": "Khởi tạo hệ thống...",
             "goodbye.title": "Cảm ơn bạn đã sử dụng ATM. Hẹn gặp lại!",
             "goodbye.subtitle": "Đang lưu cài đặt và tắt hệ thống...",
@@ -344,6 +345,7 @@ window.ATM.core = window.ATM.core || {};
             "data.clear_tm_confirm": "Are you sure you want to clear all Translation Memory?",
 
             // === MISC ===
+            "error.engine_not_supported": "Error: Real-time translation is not supported for this Engine ({engine}). Please select a Unity, RPG Maker or RenPy game.",
             "hello.loading": "Initializing system...",
             "goodbye.title": "Thank you for using ATM. See you again!",
             "goodbye.subtitle": "Saving settings and shutting down...",
@@ -351,7 +353,7 @@ window.ATM.core = window.ATM.core || {};
         }
     };
 
-    let currentLang = localStorage.getItem('atm_lang') || 'vi';
+    let currentLang = window.ATM.store.get('atm_lang') || 'vi';
 
     window.ATM.i18n = {
         /**
@@ -372,7 +374,7 @@ window.ATM.core = window.ATM.core || {};
         setLang: function(lang) {
             if (dict[lang]) {
                 currentLang = lang;
-                localStorage.setItem('atm_lang', lang);
+                window.ATM.store.set('atm_lang', lang);
                 this.updateDOM();
             }
         },

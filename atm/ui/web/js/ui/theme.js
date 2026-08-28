@@ -11,7 +11,7 @@ window.ATM.Theme = (function() {
         applyTheme,
         init: () => {
             // Đồng bộ UI với trạng thái đã load từ <head>
-            const settings = JSON.parse(localStorage.getItem('atm_settings') || '{}');
+            const settings = window.ATM.store.get('atm_settings', {});
             const isDark = settings.dark_mode !== false; // Default là true
             applyTheme(isDark);
 

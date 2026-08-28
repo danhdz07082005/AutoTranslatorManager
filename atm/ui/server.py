@@ -113,7 +113,7 @@ class ATMHandler(BaseHTTPRequestHandler):
             traceback.print_exc()
             try:
                 self._json_response({"error": str(e)}, 500)
-            except:
+            except Exception:
                 pass
 
     def _handle_api_post_inner(self):
@@ -130,23 +130,7 @@ class ATMHandler(BaseHTTPRequestHandler):
             self._json_response({"status": "disconnected"})
             return
 
-        if self.path == '/api/shutdown':
-            # Send the response directly here to ensure it's flushed before shutdown
-            data = {"status": "shutting_down", "message": "System is shutting down."}
-            body = json.dumps(data, ensure_ascii=False).encode('utf-8')
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json; charset=utf-8')
-            self.send_header('Content-Length', len(body))
-            self.end_headers()
-            self.wfile.write(body)
-            self.wfile.flush()
-            
-            # Start a background timer to shut down the server
-            import threading
-            threading.Timer(0.1, ApplicationLifecycle().request_shutdown).start()
-            return
-
-        elif self.path == '/api/games/add':
+        if self.path == '/api/games/add':
             result = self.api.add_game()
             self._json_response(result or {"status": "cancelled"})
 

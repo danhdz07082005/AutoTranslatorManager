@@ -1,4 +1,18 @@
 window.ATM = window.ATM || {};
+window.ATM.store = {
+    get: (key, defVal) => {
+        try { 
+            const val = localStorage.getItem(key);
+            if (val === null || val === undefined) return defVal;
+            return JSON.parse(val) ?? defVal; 
+        }
+        catch(e) { return defVal; }
+    },
+    set: (key, val) => {
+        try { localStorage.setItem(key, JSON.stringify(val)); }
+        catch(e) { console.error('Storage error', e); }
+    }
+};
 
 /**
  * ATM.api - Core Fetch Wrapper

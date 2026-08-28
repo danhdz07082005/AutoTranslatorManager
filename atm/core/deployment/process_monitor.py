@@ -21,14 +21,12 @@ class ProcessMonitor:
         sau đó gọi callback để dọn rác. Tránh lỗi cleanup sớm khi game có launcher.
         """
         try:
+            self.on_exit_callback = on_exit_callback
             logger.info(f"Starting process: {exe_path} in {cwd}")
             self.process = subprocess.Popen(exe_path, cwd=cwd)
             self.is_monitoring = True
             
             def wait_for_exit() -> None:
-                # Đợi một chút để tiến trình con (nếu có) kịp spawn
-                time.sleep(2.0)
-                
                 try:
                     if not self.process:
                         return
@@ -42,6 +40,9 @@ class ProcessMonitor:
                             self.is_monitoring = False
                             on_exit_callback()
                         return
+
+                    # Đợi một chút để tiến trình con (nếu có) kịp spawn
+                    time.sleep(2.0)
 
                     while self.is_monitoring:
                         try:
@@ -79,13 +80,13 @@ class ProcessMonitor:
         except Exception as e:
             logger.error(f"Failed to start process {exe_path}: {e}")
             self.is_monitoring = False
-            # Nếu khởi động thất bại, gọi dọn rác ngay lập tức
             on_exit_callback()
             return False
 
     def stop(self) -> None:
         """Dừng tiến trình và toàn bộ cây tiến trình nếu đang chạy."""
         self.is_monitoring = False
+        on_exit = getattr(self, 'on_exit_callback', None)
         if self.process:
             logger.info("Stopping process tree manually...")
             try:
@@ -101,8 +102,17 @@ class ProcessMonitor:
                             pass
                     # Kill cha sau
                     parent.kill()
+                    try:
+                        # Đợi tối đa 3 giây để OS thực sự giải phóng file locks (tránh lỗi rác BepInEx)
+                        parent.wait(timeout=3.0)
+                    except psutil.TimeoutExpired:
+                        pass
                 except psutil.NoSuchProcess:
                     # Nếu parent chết rồi thì pass
                     pass
             except Exception as e:
                 logger.error(f"Error killing process tree: {e}")
+            finally:
+                if on_exit:
+                    on_exit()
+

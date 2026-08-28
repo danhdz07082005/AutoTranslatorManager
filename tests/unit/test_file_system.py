@@ -33,8 +33,8 @@ def test_copy_payload(tmp_path):
     assert copied_file2.read_text(encoding="utf-8") == "config content"
 
     # Kiểm tra danh sách đường dẫn trả về
-    assert str(copied_file1) in copied_items
-    assert str(copied_folder) in copied_items
+    assert str(copied_file1) in copied_items.copied_items
+    assert str(copied_folder) in copied_items.copied_items
 
 
 def test_copy_payload_skip_existing(tmp_path):
@@ -56,7 +56,7 @@ def test_copy_payload_skip_existing(tmp_path):
 
     # File không bị ghi đè và không nằm trong danh sách copied_items
     assert file_dest.read_text(encoding="utf-8") == "original user content"
-    assert str(file_dest) not in copied_items
+    assert str(file_dest) not in copied_items.copied_items
 
 
 def test_cleanup_items(tmp_path):

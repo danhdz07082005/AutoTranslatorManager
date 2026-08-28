@@ -16,6 +16,20 @@ function initWorkspace() {
     const helloScreen = document.getElementById('hello-screen');
     const loadingBar = document.getElementById('hello-loading-bar');
     
+    if (helloScreen && loadingBar) {
+        let pct = 0;
+        const interval = setInterval(() => {
+            pct += (100 / 30);
+            loadingBar.style.width = Math.min(pct, 100) + '%';
+            if (pct >= 100) {
+                clearInterval(interval);
+                helloScreen.style.opacity = '0';
+                helloScreen.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => helloScreen.style.display = 'none', 500);
+            }
+        }, 100);
+    }
+    
     // --- Nơi khởi tạo các module ---
     try {
         if (window.ATM.Theme) window.ATM.Theme.init();
@@ -34,14 +48,7 @@ function initWorkspace() {
     Promise.all([
         window.ATM.Settings ? window.ATM.Settings.load() : Promise.resolve(),
         window.ATM.Data ? window.ATM.Data.refresh(true) : Promise.resolve()
-    ]).then(() => {
-        if (loadingBar) loadingBar.style.width = '100%';
-        if (helloScreen) {
-            helloScreen.style.opacity = '0';
-            helloScreen.style.transition = 'opacity 0.5s ease';
-            setTimeout(() => helloScreen.style.display = 'none', 500);
-        }
-    }).catch(e => {
+    ]).catch(e => {
         console.error("Data Load Error: ", e);
     });
     
@@ -91,7 +98,7 @@ function initWorkspace() {
     // Sidebar toggle (Pinned state)
     if (sidebarPinSwitch && sidebar) {
         // Load pinned state from settings
-        const settings = JSON.parse(localStorage.getItem('atm_settings') || '{}');
+        const settings = window.ATM.store.get('atm_settings', {});
         if (settings.sidebar_pinned === true) {
             sidebar.classList.add('expanded');
             sidebarPinSwitch.checked = true;
@@ -101,7 +108,7 @@ function initWorkspace() {
             sidebar.classList.toggle('expanded', e.target.checked);
             
             // Save state
-            const currentSettings = JSON.parse(localStorage.getItem('atm_settings') || '{}');
+            const currentSettings = window.ATM.store.get('atm_settings', {});
             currentSettings.sidebar_pinned = e.target.checked;
             localStorage.setItem('atm_settings', JSON.stringify(currentSettings));
         });
@@ -148,4 +155,7 @@ if (document.readyState === 'loading') {
 } else {
     initWorkspace();
 }
+
+
+
 

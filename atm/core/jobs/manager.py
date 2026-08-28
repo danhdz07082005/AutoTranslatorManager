@@ -77,6 +77,7 @@ class JobManager:
 
     def submit_job(self, job_type: str, game_id: str, func: Callable, *args, **kwargs) -> Dict[str, Any]:
         """Submit a job with deduplication based on job_type and game_id."""
+        self.cleanup_old_jobs()
         with self._lock:
             if self._is_shutting_down:
                 return {"error": "System is shutting down", "status": "failed"}

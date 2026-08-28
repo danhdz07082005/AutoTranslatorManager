@@ -1,4 +1,5 @@
 import os
+import json
 from typing import Dict
 from atm.utils.logger import get_logger
 
@@ -9,9 +10,6 @@ class GameDetector:
     
     @staticmethod
     def detect_engine(exe_path: str) -> str:
-        """
-        Phân tích thư mục game để nhận diện Engine (Unity Mono, Unity IL2CPP, RenPy).
-        """
         if not os.path.exists(exe_path):
             return "Unknown"
             
@@ -20,8 +18,8 @@ class GameDetector:
         data_dir_name = exe_name.replace(".exe", "_Data")
         data_dir_path = os.path.join(game_dir, data_dir_name)
         
+        # 1. Kiểm tra Unity
         if os.path.exists(data_dir_path):
-            # Là game Unity
             il2cpp_path = os.path.join(data_dir_path, "il2cpp_data")
             if os.path.exists(il2cpp_path) or os.path.exists(os.path.join(game_dir, "GameAssembly.dll")):
                 logger.info(f"Detected Unity IL2CPP game: {exe_name}")
@@ -30,19 +28,37 @@ class GameDetector:
                 logger.info(f"Detected Unity Mono game: {exe_name}")
                 return "Unity Mono"
                 
-        # Kiểm tra RenPy (thường có folder 'renpy' hoặc 'game')
-        if os.path.exists(os.path.join(game_dir, "renpy")) or os.path.exists(os.path.join(game_dir, "game", "script.rpyc")) or os.path.exists(os.path.join(game_dir, "game", "archive.rpa")):
+        # 2. Kiểm tra RenPy (Case insensitive check)
+        if os.path.exists(os.path.join(game_dir, "renpy")):
             logger.info(f"Detected RenPy game: {exe_name}")
             return "RenPy"
             
-        # Kiểm tra RPG Maker MV/MZ
-        if (os.path.exists(os.path.join(game_dir, "www", "data")) or 
-            os.path.exists(os.path.join(game_dir, "package.json")) or
-            os.path.exists(os.path.join(game_dir, "data", "System.json"))):
+        game_folder = os.path.join(game_dir, "game")
+        if os.path.isdir(game_folder):
+            try:
+                for f in os.listdir(game_folder):
+                    fl = f.lower()
+                    if fl.endswith('.rpa') or fl.endswith('.rpyc'):
+                        logger.info(f"Detected RenPy game: {exe_name}")
+                        return "RenPy"
+            except Exception:
+                pass
+            
+        # 3. Kiểm tra RPG Maker MV/MZ
+        # Robust check: either www/data exists, or data/System.json exists, or package.json exists.
+        if os.path.exists(os.path.join(game_dir, "www", "data")):
             logger.info(f"Detected RPG Maker game: {exe_name}")
             return "RPG Maker"
             
-        # Kiểm tra RPG Developer Bakin
+        if os.path.exists(os.path.join(game_dir, "data", "System.json")):
+            logger.info(f"Detected RPG Maker game: {exe_name}")
+            return "RPG Maker"
+            
+        if os.path.exists(os.path.join(game_dir, "package.json")):
+            logger.info(f"Detected RPG Maker game (via package.json): {exe_name}")
+            return "RPG Maker"
+            
+        # 4. Kiểm tra RPG Developer Bakin
         if (os.path.exists(os.path.join(game_dir, "data", "data.rbpack")) or
             os.path.exists(os.path.join(game_dir, "bakinplayer.exe")) or
             os.path.exists(os.path.join(game_dir, "bakinengine.dll"))):

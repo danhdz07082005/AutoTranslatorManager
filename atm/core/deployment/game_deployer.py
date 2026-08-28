@@ -5,7 +5,7 @@ from typing import List, Optional
 from atm.core.events.event_bus import EventBus, SystemEvents
 from atm.core.deployment.process_monitor import ProcessMonitor
 from atm.storage.repositories.settings_repository import SettingsRepository
-from atm.utils.file_system import copy_payload, cleanup_items
+from atm.utils.file_system import copy_payload, cleanup_items, atomic_write, CopyResult
 from atm.utils.logger import get_logger
 from atm.config.schema import GameProfile
 
@@ -17,8 +17,10 @@ class GameDeployer:
         self.event_bus = event_bus or EventBus()
         self.monitor = ProcessMonitor()
         self._deployed_items: List[str] = []
+        self.is_deploying = False
 
     def deploy_and_launch(self, profile: GameProfile, payload_dir: str) -> None:
+        self.is_deploying = True
         game_dir = os.path.dirname(profile.exe_path)
         logger.info(f"Preparing deployment for {profile.game_name} at {game_dir}")
         self.event_bus.publish(SystemEvents.GAME_STARTING, profile)
@@ -37,18 +39,24 @@ class GameDeployer:
                         junk_path = os.path.join(dest_dir, junk)
                         if os.path.exists(junk_path):
                             os.remove(junk_path)
-                except: pass
-            self._deployed_items = copy_payload(payload_dir, dest_dir)
+                except Exception: pass
+            copy_res = copy_payload(payload_dir, dest_dir)
+            self._deployed_items = copy_res.copied_items
+            if not copy_res.success:
+                logger.error(f"Failed to copy payload: {copy_res.error}")
+                cleanup_items(self._deployed_items)
+                self._deployed_items = []
+                self.is_running = False
+                if self.monitor:
+                    self.monitor.is_monitoring = False
+                return False
         else:
             self._deployed_items = []
         
         info_file = os.path.join(game_dir, "ATM_IS_RUNNING.txt")
         try:
-            with open(info_file, "w", encoding="utf-8") as f:
-                f.write("==== AUTO TRANSLATOR MANAGER ====\n")
-                f.write("Launcher đang chạy và đã tự động copy các file dịch thuật tạm thời vào đây.\n")
-                f.write("Khi bạn tắt game, toàn bộ các file này (bao gồm cả thư mục BepInEx) sẽ TỰ ĐỘNG BỊ XÓA sạch sẽ.\n")
-                f.write("Nếu bạn lỡ tắt đột ngột Launcher, bạn có thể tự tay xóa thư mục BepInEx và winhttp.dll mà không ảnh hưởng gì tới game gốc.\n")
+            msg = "==== AUTO TRANSLATOR MANAGER ====\nLauncher dang chay...\n"
+            atomic_write(info_file, msg)
             self._deployed_items.append(info_file)
         except Exception:
             pass
@@ -112,6 +120,7 @@ class GameDeployer:
             logger.info("Game launched successfully. Monitoring...")
         else:
             logger.error("Failed to launch game. Cleanup triggered early.")
+        self.is_deploying = False
 
     def _on_game_exited(self) -> None:
         self.event_bus.publish(SystemEvents.GAME_EXITED)
@@ -153,3 +162,5 @@ class GameDeployer:
         self._deployed_items.clear()
         self.event_bus.publish(SystemEvents.CLEANUP_FINISHED)
         logger.info("Cleanup complete. Game directory is pristine.")
+
+
