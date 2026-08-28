@@ -12,23 +12,31 @@ def copy_payload(src_dir: str, dest_dir: str) -> List[str]:
     để sau này phục vụ việc dọn rác (cleanup).
     """
     copied_items = []
-    try:
-        for item in os.listdir(src_dir):
-            s = os.path.join(src_dir, item)
-            d = os.path.join(dest_dir, item)
+    
+    def recursive_copy(current_src, current_dest):
+        os.makedirs(current_dest, exist_ok=True)
+        for item in os.listdir(current_src):
+            s = os.path.join(current_src, item)
+            d = os.path.join(current_dest, item)
             
             if os.path.exists(d):
-                logger.warning(f"File/Folder {item} already exists in target. Skipping to avoid overwriting user data.")
-                continue
-                
-            if os.path.isdir(s):
-                shutil.copytree(s, d)
+                if os.path.isdir(s):
+                    # Directory exists, recursively merge it
+                    recursive_copy(s, d)
+                else:
+                    # File exists, skip to avoid overwriting user data
+                    logger.warning(f"File {d} already exists. Skipping to avoid overwriting user data.")
             else:
-                shutil.copy2(s, d)
+                # Does not exist, copy and track
+                if os.path.isdir(s):
+                    shutil.copytree(s, d)
+                else:
+                    shutil.copy2(s, d)
+                copied_items.append(d)
+                logger.info(f"Copied: {s} -> {d}")
                 
-            copied_items.append(d)
-            logger.info(f"Copied: {item} -> {dest_dir}")
-            
+    try:
+        recursive_copy(src_dir, dest_dir)
     except Exception as e:
         logger.error(f"Error copying payload from {src_dir} to {dest_dir}: {e}")
         

@@ -384,6 +384,31 @@ class BackendApi:
         if game_id in self.translation_status:
             return self.translation_status[game_id]
             
+        if game_id in self.active_deployers:
+            deployer = self.active_deployers[game_id]
+            if deployer.monitor.is_monitoring:
+                return {
+                    "progress": 50,
+                    "total": 100,
+                    "code": "translation.realtime_active",
+                    "params": {},
+                    "done": False,
+                    "error": False,
+                    "status_str": "running"
+                }
+            else:
+                # Cleanup and remove from active deployers
+                del self.active_deployers[game_id]
+                return {
+                    "progress": 100,
+                    "total": 100,
+                    "code": "translation.realtime_finished",
+                    "params": {},
+                    "done": True,
+                    "error": False,
+                    "status_str": "completed"
+                }
+                
         # Try loading from saved job
         job = self.job_repo.load(game_id)
         if job:

@@ -50,7 +50,8 @@ window.ATM = window.ATM || {};
                 }
                 const data = await response.json();
                 if (data.status === 'error') {
-                    throw new BackendError(data.error || "Lỗi xử lý từ máy chủ", response.status);
+                    const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.server_error') : "Lỗi xử lý từ máy chủ";
+                    throw new BackendError(data.error || fallback, response.status);
                 }
                 return data;
             } catch (error) {
@@ -74,11 +75,12 @@ window.ATM = window.ATM || {};
                     const errorData = await response.json().catch(() => ({}));
                     throw new BackendError(errorData.error || `HTTP Error: ${response.status}`, response.status);
                 }
-                const data = await response.json();
-                if (data.status === 'error') {
-                    throw new BackendError(data.error || "Lỗi xử lý từ máy chủ", response.status);
+                const resData = await response.json();
+                if (resData.status === 'error') {
+                    const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.server_error') : "Lỗi xử lý từ máy chủ";
+                    throw new BackendError(resData.error || fallback, response.status);
                 }
-                return data;
+                return resData;
             } catch (error) {
                 if (error.name === 'AbortError') {
                     throw new NetworkError("Request timed out.");

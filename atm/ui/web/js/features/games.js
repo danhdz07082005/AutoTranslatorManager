@@ -350,7 +350,10 @@ window.ATM.Games = (function() {
                 startPoller(gameId, card);
             } catch(e) {
                 updateCardPartial(card, 'READY');
-                if (window.ATM.Toast) window.ATM.Toast.show(e.message || "Lỗi khởi chạy", "error");
+                if (window.ATM.Toast) {
+                    const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.start_failed') : "Lỗi khởi chạy";
+                    window.ATM.Toast.show(e.message || fallback, "error");
+                }
             } finally {
                 btnStart.disabled = false;
             }
@@ -375,7 +378,9 @@ window.ATM.Games = (function() {
                 if (!isPolling || card.dataset.state !== 'TRANSLATING') return;
                 
                 if (status.done) {
-                    updateCardPartial(card, status.error ? 'READY' : 'COMPLETE');
+                    const isRealtimeFinished = (status.code === 'translation.realtime_finished');
+                    const nextState = (status.error || isRealtimeFinished) ? 'READY' : 'COMPLETE';
+                    updateCardPartial(card, nextState);
                     if (status.error && window.ATM.Toast) {
                         const i18n = window.ATM.i18n;
                         const errMsg = (status.code && i18n ? i18n.t(status.code) : null)
@@ -419,7 +424,10 @@ window.ATM.Games = (function() {
             if (window.ATM.Toast) window.ATM.Toast.show("Đang khởi chạy game...", false);
             await window.ATM.api.post('games/play', { game_id: gameId }); 
         } catch(e) {
-            if (window.ATM.Toast) window.ATM.Toast.show(e.message || "Không thể khởi chạy game. Vui lòng thử lại!", "error");
+            if (window.ATM.Toast) {
+                const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.play_failed') : "Không thể khởi chạy game. Vui lòng thử lại!";
+                window.ATM.Toast.show(e.message || fallback, "error");
+            }
         }
     }
 
