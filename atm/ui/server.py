@@ -141,6 +141,10 @@ class ATMHandler(BaseHTTPRequestHandler):
         elif self.path == '/api/games/stop':
             result = self.api.stop_game(body.get('game_id', ''))
             self._json_response(result)
+            
+        elif self.path == '/api/games/sync':
+            result = self.api.sync_game(body.get('game_id', ''))
+            self._json_response(result)
 
         elif self.path == '/api/games/delete':
             result = self.api.delete_game(body.get('game_id', ''))

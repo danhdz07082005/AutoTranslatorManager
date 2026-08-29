@@ -22,7 +22,7 @@ window.ATM.Settings = (function() {
                 window.ATM.api.post('settings', payload).then(() => {
                     if (deepl && deepl.value) {
                         deepl.value = '';
-                        deepl.placeholder = 'Đã cập nhật khóa mới';
+                        deepl.placeholder = window.ATM.i18n.t('toast.settings_saved');
                     }
                     if (langSel && langSel.value !== window.ATM.i18n.getLang()) {
                         window.ATM.i18n.setLang(langSel.value);
@@ -88,9 +88,9 @@ window.ATM.Settings = (function() {
                 const deepl = document.getElementById('deepl-api-key');
                 if (deepl) {
                     if (s.deepl_api_key_configured) {
-                        deepl.placeholder = "Đã cấu hình";
+                        deepl.placeholder = window.ATM.i18n.t('plugins.deepl_configured');
                     } else {
-                        deepl.placeholder = "Nhập API Key (tùy chọn)";
+                        deepl.placeholder = window.ATM.i18n.t('plugins.deepl_placeholder');
                     }
                     deepl.value = "";
                 }

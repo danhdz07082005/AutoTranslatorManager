@@ -145,3 +145,13 @@ class SQLiteTranslationCache:
             cursor = conn.execute("PRAGMA integrity_check;")
             result = cursor.fetchone()
             return result and result[0] == "ok"
+
+    def invalidate_by_term(self, source_lang: str, target_lang: str, term: str) -> int:
+        """Xóa các bản dịch chứa term (từ vựng) bị thay đổi trong Glossary."""
+        with self.transaction() as conn:
+            # Dùng %term% để tìm chuỗi con. SQLite LIKE mặc định không phân biệt hoa thường với ASCII.
+            cursor = conn.execute("""
+                DELETE FROM cache
+                WHERE source_lang = ? AND target_lang = ? AND original LIKE ?
+            """, (source_lang, target_lang, f'%{term}%'))
+            return cursor.rowcount

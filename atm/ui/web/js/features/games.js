@@ -34,10 +34,10 @@ window.ATM.Games = (function() {
                         const container = getContainer();
                         const empty = container.querySelector('.empty-state');
                         if (empty) empty.remove();
-                        const msg = window.ATM.i18n ? window.ATM.i18n.t('toast.add_game_success') || "Đã thêm game thành công!" : "Đã thêm game thành công!";
+                        const msg = window.ATM.i18n ? window.ATM.i18n.t('toast.add_game_success') || window.ATM.i18n.t('toast.add_game_success') : window.ATM.i18n.t('toast.add_game_success');
                         if (window.ATM.Toast) window.ATM.Toast.show(msg, "success");
                     } else if (res && res.status === 'cancelled') {
-                        // User cancelled the file dialog — no action needed
+                        // User cancelled the file dialog  no action needed
                     } else if (res && res.error) {
                         const isDup = res.error.includes("thêm vào hệ thống trước đó");
                         const msg = isDup && window.ATM.i18n ? window.ATM.i18n.t('toast.duplicate_game') || res.error : res.error;
@@ -45,7 +45,7 @@ window.ATM.Games = (function() {
                     }
                 } catch(e) {
                     console.error("Failed to add game:", e);
-                    if (window.ATM.Toast) window.ATM.Toast.show(e.message || "Lỗi thêm game", "error");
+                    if (window.ATM.Toast) window.ATM.Toast.show(e.message || window.ATM.i18n.t('toast.add_game_error'), "error");
                 } finally {
                     btnAdd.disabled = false;
                 }
@@ -224,10 +224,10 @@ window.ATM.Games = (function() {
         div.style.padding = '40px';
         const h3 = document.createElement('h3');
         h3.dataset.i18n = 'dashboard.empty_title';
-        h3.textContent = window.ATM.i18n ? (window.ATM.i18n.t('dashboard.empty_title') || 'Chưa có game nào') : 'Chưa có game nào';
+        h3.textContent = window.ATM.i18n ? (window.ATM.i18n.t('dashboard.empty_title') || window.ATM.i18n.t('dashboard.empty_title')) : window.ATM.i18n.t('dashboard.empty_title');
         const p = document.createElement('p');
         p.dataset.i18n = 'dashboard.empty_desc';
-        p.textContent = window.ATM.i18n ? (window.ATM.i18n.t('dashboard.empty_desc') || 'Bấm "+ Thêm Game" để bắt đầu.') : 'Bấm "+ Thêm Game" để bắt đầu.';
+        p.textContent = window.ATM.i18n ? (window.ATM.i18n.t('dashboard.empty_desc') || window.ATM.i18n.t('dashboard.empty_desc')) : window.ATM.i18n.t('dashboard.empty_desc');
         div.appendChild(h3);
         div.appendChild(p);
         container.replaceChildren(div);
@@ -239,7 +239,7 @@ window.ATM.Games = (function() {
         div.style.textAlign = 'center';
         div.style.padding = '40px';
         const h3 = document.createElement('h3');
-        h3.textContent = 'Lỗi kết nối API';
+        h3.textContent = window.ATM.i18n.t('toast.connection_error');
         const p = document.createElement('p');
         p.textContent = errorMsg;
         p.style.color = 'var(--text-muted)';
@@ -266,7 +266,7 @@ window.ATM.Games = (function() {
 
         if (state === 'READY') {
             btnStart.setAttribute('data-i18n', 'card.start');
-            btnStart.textContent = t('card.start', "Bắt đầu dịch");
+            btnStart.textContent = t('card.start', window.ATM.i18n.t('card.start'));
             btnStart.className = "btn-start flex-1 btn-action-start";
             btnStart.style.color = "";
             btnStart.dataset.action = "start";
@@ -279,7 +279,7 @@ window.ATM.Games = (function() {
         } 
         else if (state === 'TRANSLATING') {
             btnStart.removeAttribute('data-i18n');
-            btnStart.textContent = "Dừng";
+            btnStart.textContent = window.ATM.i18n.t('card.stop');
             btnStart.className = "btn-danger-ghost flex-1 btn-action-start";
             btnStart.style.color = "var(--danger)";
             btnStart.dataset.action = "start";
@@ -287,7 +287,7 @@ window.ATM.Games = (function() {
             
             if (progBarFill) progBarFill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
             if (progPercent) progPercent.textContent = `${Math.round(percent)}%`;
-            if (progStatus) progStatus.textContent = t('card.translating', "Đang dịch...");
+            if (progStatus) progStatus.textContent = t('card.translating', window.ATM.i18n.t('status.running'));
             
             if (statusBadge) {
                 statusBadge.textContent = "Translating";
@@ -313,13 +313,13 @@ window.ATM.Games = (function() {
         }
         else if (state === 'INTERRUPTED') {
             btnStart.removeAttribute('data-i18n');
-            btnStart.textContent = "Tiếp tục (Lỗi mạng/Khởi động lại)";
+            btnStart.textContent = window.ATM.i18n.t('card.resume');
             btnStart.className = "btn-secondary flex-1 btn-action-start";
             btnStart.style.color = "var(--warning)";
             btnStart.style.backgroundColor = ""; // Reset if came from complete
             btnStart.dataset.action = "start";
             progContainer.style.display = 'block';
-            if (progStatus) progStatus.textContent = "Đã tạm dừng";
+            if (progStatus) progStatus.textContent = window.ATM.i18n.t('status.paused');
             
             if (statusBadge) {
                 statusBadge.textContent = "Paused";
@@ -351,7 +351,7 @@ window.ATM.Games = (function() {
             } catch(e) {
                 updateCardPartial(card, 'READY');
                 if (window.ATM.Toast) {
-                    const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.start_failed') : "Lỗi khởi chạy";
+                    const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.start_failed') : window.ATM.i18n.t('toast.start_failed');
                     window.ATM.Toast.show(e.message || fallback, "error");
                 }
             } finally {
@@ -421,11 +421,11 @@ window.ATM.Games = (function() {
 
     async function handlePlay(gameId) {
         try {
-            if (window.ATM.Toast) window.ATM.Toast.show("Đang khởi chạy game...", false);
+            if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.initializing'), false);
             await window.ATM.api.post('games/play', { game_id: gameId }); 
         } catch(e) {
             if (window.ATM.Toast) {
-                const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.play_failed') : "Không thể khởi chạy game. Vui lòng thử lại!";
+                const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.play_failed') : window.ATM.i18n.t('toast.play_failed');
                 window.ATM.Toast.show(e.message || fallback, "error");
             }
         }
@@ -451,7 +451,7 @@ window.ATM.Games = (function() {
             // Local mutation: Remove from DOM
             card.remove();
             
-            if (window.ATM.Toast) window.ATM.Toast.show("Đã xóa game");
+            if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.delete_success'));
             
             // Check if empty
             const container = getContainer();
@@ -460,7 +460,7 @@ window.ATM.Games = (function() {
             }
         } catch(e) {
             if (btnDel) btnDel.disabled = false;
-            if (window.ATM.Toast) window.ATM.Toast.show("Lỗi khi xóa", true);
+            if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.delete_error'), true);
         }
     }
     

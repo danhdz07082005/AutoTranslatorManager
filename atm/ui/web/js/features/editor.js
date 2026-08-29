@@ -119,7 +119,7 @@ window.ATM.Editor = (function() {
         const qaBtn = document.getElementById('editor-run-qa-btn');
         try {
             if (qaBtn) {
-                qaBtn.textContent = "Đang quét...";
+                qaBtn.textContent = window.ATM.i18n.t('editor.qa_running');
                 qaBtn.disabled = true;
             }
 
@@ -141,19 +141,19 @@ window.ATM.Editor = (function() {
                 
                 const filterSel = document.getElementById('editor-filter-type');
                 if (Object.keys(qaFindings).length > 0) {
-                    if (window.ATM.Toast) window.ATM.Toast.show(`Phát hiện ${Object.keys(qaFindings).length} lỗi QA!`, 'warning');
+                    if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('editor.qa_found', {count: Object.keys(qaFindings).length}), 'warning');
                     if (filterSel && filterSel.value !== 'qa_error') {
                         filterSel.value = 'qa_error';
                         currentFilter = 'qa_error';
                     }
                 } else {
-                    if (window.ATM.Toast) window.ATM.Toast.show('Tuyệt vời! Không phát hiện lỗi QA nào.', 'success');
+                    if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('editor.qa_clean'), 'success');
                 }
                 renderList();
             }
         } catch (e) {
             console.error(e);
-            if (window.ATM.Toast) window.ATM.Toast.show('Lỗi khi chạy QA', 'error');
+            if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('editor.qa_error'), 'error');
         } finally {
             if (qaBtn) {
                 qaBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Chạy QA Scanner';
@@ -169,7 +169,7 @@ window.ATM.Editor = (function() {
                 key: original,
                 value: newTranslated
             });
-            window.ATM.Toast.show('Đã áp dụng Suggestion', 'success');
+            window.ATM.Toast.show(window.ATM.i18n.t('editor.apply_success'), 'success');
             // Update local state and remove QA warning
             const entry = entries.find(e => e.original === original);
             if (entry) {
@@ -178,7 +178,7 @@ window.ATM.Editor = (function() {
             }
             renderList();
         } catch (e) {
-            window.ATM.Toast.show('Lỗi lưu Suggestion', 'error');
+            window.ATM.Toast.show(window.ATM.i18n.t('editor.apply_error'), 'error');
         }
     };
 
@@ -233,7 +233,7 @@ window.ATM.Editor = (function() {
 
     const renderList = () => {
         const listEl = document.getElementById('editor-list');
-        if (!listEl) return;  // Editor not mounted — silently skip
+        if (!listEl) return;  // Editor not mounted  silently skip
         while (listEl.firstChild) listEl.removeChild(listEl.firstChild);
         
         let displayEntries = entries;
@@ -246,7 +246,7 @@ window.ATM.Editor = (function() {
             div.style.textAlign = 'center';
             div.style.padding = '20px';
             div.style.color = 'var(--text-muted)';
-            div.textContent = 'Không có dữ liệu.';
+            div.textContent = window.ATM.i18n.t('editor.empty');
             listEl.appendChild(div);
             return;
         }
@@ -322,14 +322,14 @@ window.ATM.Editor = (function() {
                                 updateQADomLocal(entry.original, null);
                             }
                         } else {
-                            throw new Error(res.message || 'Lỗi server');
+                            throw new Error(res.message || window.ATM.i18n.t('toast.server_error'));
                         }
                     } catch(e) {
                         console.error(e);
                         // Graceful Reversion
                         input.value = oldValue;
                         if (window.ATM.Toast) {
-                            window.ATM.Toast.show('Không thể lưu bản dịch. Đã khôi phục lại.', true);
+                            window.ATM.Toast.show(window.ATM.i18n.t('editor.save_error'), true);
                         }
                     }
                 }, 1000);

@@ -93,6 +93,9 @@ window.ATM.features = window.ATM.features || {};
         
         if (mountPoint && template) {
             mountPoint.replaceChildren(template.content.cloneNode(true));
+            if (window.ATM.i18n && typeof window.ATM.i18n.updateDOM === 'function') {
+                window.ATM.i18n.updateDOM();
+            }
             if (window.ATM.Editor) {
                 window.ATM.Editor.open(gameId);
             }

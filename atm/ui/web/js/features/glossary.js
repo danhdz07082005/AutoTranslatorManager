@@ -21,11 +21,11 @@ window.ATM.Glossary = (function() {
                     row.style.borderBottom = '1px solid var(--border-color)';
                     
                     const textSpan = document.createElement('span');
-                    textSpan.textContent = `${item.source} ➔ ${item.target}`;
+                    textSpan.textContent = `${item.source}  ${item.target}`;
                     textSpan.style.color = 'var(--text-primary)';
                     
                     const delBtn = document.createElement('button');
-                    delBtn.innerHTML = '✖';
+                    delBtn.innerHTML = '';
                     delBtn.className = 'btn btn-icon';
                     delBtn.style.color = '#fff';
                     delBtn.style.background = 'var(--danger-color, #ef4444)';
@@ -97,13 +97,13 @@ window.ATM.Glossary = (function() {
                         strategy: 'merge'
                     });
                     if (res.status === 'success') {
-                        window.ATM.Toast.show("Đã thêm từ", "success");
+                        window.ATM.Toast.show(window.ATM.i18n.t('glossary.add_success'), "success");
                         srcInput.value = '';
                         tgtInput.value = '';
                         loadList();
                     }
                 } catch(err) {
-                    window.ATM.Toast.show("Lỗi thêm từ", "error");
+                    window.ATM.Toast.show(window.ATM.i18n.t('glossary.add_error'), "error");
                 }
             }
 
@@ -121,11 +121,11 @@ window.ATM.Glossary = (function() {
                         a.click();
                         document.body.removeChild(a);
                         URL.revokeObjectURL(url);
-                        if (window.ATM.Toast) window.ATM.Toast.show("Đã tải xuống file CSV", "success");
+                        if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('glossary.export_success'), "success");
                     }
                 } catch(err) {
                     console.error(err);
-                    if (window.ATM.Toast) window.ATM.Toast.show("Lỗi khi xuất Glossary", "error");
+                    if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('glossary.export_error'), "error");
                 }
             }
         });
@@ -174,7 +174,7 @@ window.ATM.Glossary = (function() {
                         
                         if (res.status === 'success') {
                             const data = res.data;
-                            const msg = `Preview Import: \n- ${data.new.length} New\n- ${data.conflict.length} Conflicts\n- ${data.duplicate.length} Duplicates\n- ${data.invalid.length} Invalid.\n\nBạn có muốn Merge (Ghi đè) không?`;
+                            const msg = window.ATM.i18n.t('glossary.import_confirm', {new: data.new.length, conflict: data.conflict.length, duplicate: data.duplicate.length, invalid: data.invalid.length});
                             
                             if (await window.ATM.Modals.confirm(msg)) {
                                 const parsedData = [...data.new, ...data.conflict, ...data.duplicate];
@@ -184,16 +184,16 @@ window.ATM.Glossary = (function() {
                                     strategy: 'merge'
                                 });
                                 if (applyRes.status === 'success') {
-                                    window.ATM.Toast.show("Đã import Glossary thành công", "success");
+                                    window.ATM.Toast.show(window.ATM.i18n.t('glossary.import_success'), "success");
                                     loadList();
                                 } else {
-                                    window.ATM.Toast.show("Lỗi khi apply Glossary", "error");
+                                    window.ATM.Toast.show(window.ATM.i18n.t('toast.server_error'), "error");
                                 }
                             }
                         }
                     } catch(err) {
                         console.error(err);
-                        window.ATM.Toast.show("Lỗi Import", "error");
+                        window.ATM.Toast.show(window.ATM.i18n.t('glossary.import_error'), "error");
                     } finally {
                         fileInput.value = ''; // reset
                     }

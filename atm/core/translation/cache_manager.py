@@ -183,3 +183,7 @@ class TranslationCache:
         if keep_count is None:
             keep_count = 0
         self.repo.clear(keep_count)
+
+    def invalidate_by_term(self, source_lang: str, target_lang: str, term: str) -> int:
+        """Invalidate cache entries containing a specific term."""
+        return self.repo.invalidate_by_term(source_lang, target_lang, term)

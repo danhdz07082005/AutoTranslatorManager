@@ -127,15 +127,15 @@ window.ATM.core = window.ATM.core || {};
             "editor.hint": "*Sửa trực tiếp bản dịch ở đây sẽ có tác dụng ngay lập tức cho lần dịch tiếp theo.",
             "editor.filter_all": "Tất cả",
             "editor.filter_qa": "Lỗi QA",
-            "editor.run_qa": "🔍 Chạy QA Scanner",
+            "editor.run_qa": " Chạy QA Scanner",
 
             // === GLOSSARY ===
             "glossary.title": "Từ điển cá nhân (Glossary)",
             "glossary.desc": "Thêm các cặp từ để không bị dịch sai (VD: Tên nhân vật, Chiêu thức). Từ điển áp dụng riêng cho game này.",
             "glossary.source_placeholder": "Từ gốc (bất kỳ ngôn ngữ)",
             "glossary.target_placeholder": "Dịch thành",
-            "glossary.import": "📥 Nhập (Import)",
-            "glossary.export": "📤 Xuất (Export)",
+            "glossary.import": " Nhập (Import)",
+            "glossary.export": " Xuất (Export)",
 
             // === TRANSLATION MEMORY ===
             "tm.title": "Gợi ý Translation Memory",
@@ -171,6 +171,66 @@ window.ATM.core = window.ATM.core || {};
             "data.game_data_title": "Dữ liệu theo Game (Game Data)",
             "data.clear_all_confirm": "Bạn có chắc chắn muốn xóa toàn bộ Cache?",
             "data.clear_tm_confirm": "Bạn có chắc chắn muốn xóa toàn bộ Translation Memory?",
+            "toast.add_game_success": "Đã thêm game thành công!",
+            "toast.add_game_error": "Lỗi thêm game",
+            "toast.delete_success": "Đã xóa game",
+            "toast.play_failed": "Không thể khởi chạy game. Vui lòng thử lại!",
+            "toast.start_failed": "Lỗi khởi chạy",
+            "card.start": "Bắt đầu dịch",
+            "card.stop": "Dừng",
+            "card.resume": "Tiếp tục (Lỗi/Khởi động lại)",
+            "dashboard.empty_title": "Chưa có game nào",
+            "dashboard.empty_desc": "Bấm '+ Thêm Game' để bắt đầu.",
+            "data.loading": "Đang tải dữ liệu...",
+            "editor.qa_running": "Đang quét...",
+            "editor.qa_found": "Phát hiện {count} lỗi QA!",
+            "editor.qa_clean": "Tuyệt vời! Không phát hiện lỗi QA nào.",
+            "editor.qa_error": "Lỗi khi chạy QA",
+            "editor.apply_success": "Đã áp dụng Suggestion",
+            "editor.apply_error": "Lỗi lưu Suggestion",
+            "editor.empty": "Không có dữ liệu.",
+            "editor.save_error": "Không thể lưu bản dịch. Đã khôi phục lại.",
+            "glossary.add_success": "Đã thêm từ",
+            "glossary.add_error": "Lỗi thêm từ",
+            "glossary.export_success": "Đã tải xuống file CSV",
+            "glossary.export_error": "Lỗi khi xuất Glossary",
+            "glossary.import_confirm": "Preview Import:\n- {new} Mới\n- {conflict} Xung đột\n- {duplicate} Trùng lặp\n- {invalid} Không hợp lệ.\n\nBạn có muốn Ghi đè (Merge) không?",
+            "glossary.import_success": "Đã import Glossary thành công",
+            "glossary.import_error": "Lỗi Import",
+            "plugins.deepl_configured": "Đã cấu hình",
+            "plugins.deepl_placeholder": "Nhập API Key (tùy chọn)",
+            "card.delete_confirm": "Bạn chắc chắn muốn xóa game này?",
+            "toast.add_game_success": "Game added successfully!",
+            "toast.add_game_error": "Error adding game",
+            "toast.delete_success": "Game deleted",
+            "toast.play_failed": "Failed to launch game. Please try again!",
+            "toast.start_failed": "Failed to start",
+            "card.start": "Start Translation",
+            "card.stop": "Stop",
+            "card.resume": "Resume (Error/Restart)",
+            "dashboard.empty_title": "No games found",
+            "dashboard.empty_desc": "Click '+ Add Game' to get started.",
+            "data.loading": "Loading data...",
+            "editor.qa_running": "Scanning...",
+            "editor.qa_found": "Found {count} QA errors!",
+            "editor.qa_clean": "Great! No QA errors found.",
+            "editor.qa_error": "Error running QA",
+            "editor.apply_success": "Suggestion applied",
+            "editor.apply_error": "Error saving Suggestion",
+            "editor.empty": "No data.",
+            "editor.save_error": "Failed to save translation. Reverted.",
+            "glossary.add_success": "Word added",
+            "glossary.add_error": "Error adding word",
+            "glossary.export_success": "CSV file downloaded",
+            "glossary.export_error": "Error exporting Glossary",
+            "glossary.import_confirm": "Import Preview:\n- {new} New\n- {conflict} Conflicts\n- {duplicate} Duplicates\n- {invalid} Invalid.\n\nDo you want to Merge?",
+            "glossary.import_success": "Glossary imported successfully",
+            "glossary.import_error": "Import error",
+            "plugins.deepl_configured": "Configured",
+            "plugins.deepl_placeholder": "Enter API Key (optional)",
+            "card.delete_confirm": "Are you sure you want to delete this game?",
+
+
 
             // === MISC ===
             "error.engine_not_supported": "Lỗi: Hệ thống chưa hỗ trợ tự động dịch cho Engine này ({engine}). Vui lòng chọn game Unity, RPG Maker hoặc RenPy.",
@@ -299,15 +359,15 @@ window.ATM.core = window.ATM.core || {};
             "editor.hint": "*Direct edits here apply immediately to the next translation.",
             "editor.filter_all": "All",
             "editor.filter_qa": "QA Errors",
-            "editor.run_qa": "🔍 Run QA Scanner",
+            "editor.run_qa": " Run QA Scanner",
 
             // === GLOSSARY ===
             "glossary.title": "Personal Glossary",
             "glossary.desc": "Add word pairs to prevent mistranslations (e.g., Character names, Skills). This glossary applies only to this game.",
             "glossary.source_placeholder": "Original word (any language)",
             "glossary.target_placeholder": "Translate to",
-            "glossary.import": "📥 Import",
-            "glossary.export": "📤 Export",
+            "glossary.import": " Import",
+            "glossary.export": " Export",
 
             // === TRANSLATION MEMORY ===
             "tm.title": "Translation Memory Suggestions",
@@ -343,6 +403,36 @@ window.ATM.core = window.ATM.core || {};
             "data.game_data_title": "Game Data",
             "data.clear_all_confirm": "Are you sure you want to clear all Cache?",
             "data.clear_tm_confirm": "Are you sure you want to clear all Translation Memory?",
+            "toast.add_game_success": "Game added successfully!",
+            "toast.add_game_error": "Error adding game",
+            "toast.delete_success": "Game deleted",
+            "toast.play_failed": "Failed to launch game. Please try again!",
+            "toast.start_failed": "Failed to start",
+            "card.start": "Start Translation",
+            "card.stop": "Stop",
+            "card.resume": "Resume (Error/Restart)",
+            "dashboard.empty_title": "No games found",
+            "dashboard.empty_desc": "Click '+ Add Game' to get started.",
+            "data.loading": "Loading data...",
+            "editor.qa_running": "Scanning...",
+            "editor.qa_found": "Found {count} QA errors!",
+            "editor.qa_clean": "Great! No QA errors found.",
+            "editor.qa_error": "Error running QA",
+            "editor.apply_success": "Suggestion applied",
+            "editor.apply_error": "Error saving Suggestion",
+            "editor.empty": "No data.",
+            "editor.save_error": "Failed to save translation. Reverted.",
+            "glossary.add_success": "Word added",
+            "glossary.add_error": "Error adding word",
+            "glossary.export_success": "CSV file downloaded",
+            "glossary.export_error": "Error exporting Glossary",
+            "glossary.import_confirm": "Import Preview:\n- {new} New\n- {conflict} Conflicts\n- {duplicate} Duplicates\n- {invalid} Invalid.\n\nDo you want to Merge?",
+            "glossary.import_success": "Glossary imported successfully",
+            "glossary.import_error": "Import error",
+            "plugins.deepl_configured": "Configured",
+            "plugins.deepl_placeholder": "Enter API Key (optional)",
+            "card.delete_confirm": "Are you sure you want to delete this game?",
+
 
             // === MISC ===
             "error.engine_not_supported": "Error: Real-time translation is not supported for this Engine ({engine}). Please select a Unity, RPG Maker or RenPy game.",
@@ -390,25 +480,39 @@ window.ATM.core = window.ATM.core || {};
          * Cập nhật toàn bộ thẻ HTML có data-i18n
          */
         updateDOM: function() {
-            if (window.ATM.dom) {
-                const els = window.ATM.dom.query('[data-i18n]');
+            if (!window.ATM.dom) return;
+            try {
+                const els = document.querySelectorAll('[data-i18n]');
                 els.forEach(el => {
-                    const key = el.dataset.i18n;
-                    window.ATM.dom.text(el, this.t(key));
+                    const key = el.getAttribute('data-i18n');
+                    if (key) {
+                        const val = this.t(key);
+                        if (val !== undefined) el.textContent = val;
+                    }
                 });
                 
-                // Cập nhật cả placeholder
-                const placeholders = window.ATM.dom.query('[data-i18n-placeholder]');
+                const placeholders = document.querySelectorAll('[data-i18n-placeholder]');
                 placeholders.forEach(el => {
-                    const key = el.dataset.i18nPlaceholder;
-                    el.placeholder = this.t(key);
+                    const key = el.getAttribute('data-i18n-placeholder');
+                    if (key) {
+                        const val = this.t(key);
+                        if (val !== undefined) el.placeholder = val;
+                    }
                 });
+                
+                const titles = document.querySelectorAll('[data-i18n-title]');
+                titles.forEach(el => {
+                    const key = el.getAttribute('data-i18n-title');
+                    if (key) {
+                        const val = this.t(key);
+                        if (val !== undefined) el.title = val;
+                    }
+                });
+            } catch(e) {
+                console.error("i18n Error: ", e);
             }
         },
         
-        /**
-         * Hàm này để các script khác báo cần update UI
-         */
         updateUI: function() {
             this.updateDOM();
         }

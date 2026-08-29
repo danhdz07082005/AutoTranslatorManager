@@ -15,11 +15,11 @@ window.ATM.Data = (function() {
                     const keep = input ? parseInt(input.value) : 10;
                     window.ATM.api.post('data/clear', { type: 'cache', keep: keep })
                         .then(() => {
-                            if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.cache_cleared') || 'Đã dọn dẹp Cache');
+                            if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.cache_cleared') || window.ATM.i18n.t('toast.cache_cleared'));
                             window.ATM.Data.refresh(true);
                         })
                         .catch(() => {
-                            if (window.ATM.Toast) window.ATM.Toast.show('Lỗi dọn dẹp Cache', true);
+                            if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.clear_cache_error'), true);
                         });
                 });
             }
@@ -31,7 +31,7 @@ window.ATM.Data = (function() {
                     if (await window.ATM.Modals.confirm(msg)) {
                         window.ATM.api.post('data/clear', { type: 'cache', keep: 0 })
                             .then(() => {
-                                if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.cache_cleared') || 'Đã xoá toàn bộ Cache');
+                                if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.cache_cleared') || window.ATM.i18n.t('toast.cache_cleared'));
                                 window.ATM.Data.refresh(true);
                             }).catch(() => {});
                     }
@@ -45,7 +45,7 @@ window.ATM.Data = (function() {
                     if (await window.ATM.Modals.confirm(msg)) {
                         window.ATM.api.post('data/clear', { type: 'tm' })
                             .then(() => {
-                                if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.tm_cleared') || 'Đã xóa TM');
+                                if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.tm_cleared') || window.ATM.i18n.t('toast.tm_cleared'));
                                 window.ATM.Data.refresh(true);
                             }).catch(() => {});
                     }
@@ -66,10 +66,10 @@ window.ATM.Data = (function() {
             const tmCount = document.getElementById('stat-memory-count');
             const tmSize = document.getElementById('stat-memory-size');
             
-            if (cacheCount) cacheCount.textContent = '…';
-            if (cacheSize) cacheSize.textContent = '…';
-            if (tmCount) tmCount.textContent = '…';
-            if (tmSize) tmSize.textContent = '…';
+            if (cacheCount) cacheCount.textContent = '';
+            if (cacheSize) cacheSize.textContent = '';
+            if (tmCount) tmCount.textContent = '';
+            if (tmSize) tmSize.textContent = '';
 
             try {
                 const res = await window.ATM.api.get('data/stats');
@@ -84,7 +84,7 @@ window.ATM.Data = (function() {
                 if (!silent && window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.stats_refreshed') || 'Đã làm mới dữ liệu');
             } catch (e) {
                 console.error('Data stats error:', e);
-                if (window.ATM.Toast) window.ATM.Toast.show('Lỗi tải dữ liệu', true);
+                if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.stats_error'), true);
             }
         }
     };
