@@ -41,7 +41,7 @@ window.ATM.TM = (function() {
                 });
             } else {
                 const noRes = document.createElement('p');
-                noRes.textContent = "Không tìm thấy kết quả.";
+                noRes.textContent = window.ATM.i18n ? window.ATM.i18n.t('tm.no_results') || 'No results found.' : 'No results found.';
                 noRes.style.color = 'var(--text-muted)';
                 suggContainer.appendChild(noRes);
             }

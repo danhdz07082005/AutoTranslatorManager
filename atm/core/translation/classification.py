@@ -137,7 +137,7 @@ PROTECTED_FIELDS = {
     "formula",
     "script",
 }
-EVENT_TEXT_CODES = {401, 102, 105, 108, 408}
+EVENT_TEXT_CODES = {401, 102, 105, 405, 108, 408}
 ASSET_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".ogg", ".m4a", ".wav", ".mp3")
 PLACEHOLDER_RE = re.compile(r"<<\s*\d+\s*>>|\{[^{}\r\n]*\}|\[[^\[\]\r\n]*\]")
 NOTE_TAG_RE = re.compile(r"^\s*<[^>\r\n]+>\s*$")

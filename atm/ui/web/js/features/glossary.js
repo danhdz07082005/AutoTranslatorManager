@@ -21,11 +21,13 @@ window.ATM.Glossary = (function() {
                     row.style.borderBottom = '1px solid var(--border-color)';
                     
                     const textSpan = document.createElement('span');
-                    textSpan.textContent = `${item.source}  ${item.target}`;
+                    textSpan.innerHTML = `<span>${item.source}</span><svg style="margin: 0 10px; color: var(--text-muted);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg><span>${item.target}</span>`;
                     textSpan.style.color = 'var(--text-primary)';
+                    textSpan.style.display = 'flex';
+                    textSpan.style.alignItems = 'center';
                     
                     const delBtn = document.createElement('button');
-                    delBtn.innerHTML = '';
+                    delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
                     delBtn.className = 'btn btn-icon';
                     delBtn.style.color = '#fff';
                     delBtn.style.background = 'var(--danger-color, #ef4444)';
@@ -34,9 +36,9 @@ window.ATM.Glossary = (function() {
                     delBtn.style.fontSize = '12px';
                     delBtn.style.border = 'none';
                     delBtn.style.cursor = 'pointer';
-                    delBtn.title = window.ATM.i18n.t('btn.delete') || 'Xóa';
+                    delBtn.title = window.ATM.i18n.t('btn.delete') || 'Delete';
                     delBtn.onclick = async () => {
-                        const msg = (window.ATM.i18n.t('confirm.delete_glossary') || 'Xóa từ: {word}?').replace('{word}', item.source);
+                        const msg = (window.ATM.i18n.t('confirm.delete_glossary') || 'Delete term: {word}?').replace('{word}', item.source);
                         const confirmed = await window.ATM.Modals.confirm(msg);
                         if (confirmed) {
                             const res = await window.ATM.api.post('glossary/delete', {
@@ -45,8 +47,11 @@ window.ATM.Glossary = (function() {
                             });
                             if (res.status === 'success') {
                                 loadList();
+                                if (window.ATM.events) {
+                                    window.ATM.events.publish('glossary:changed', { gameId: currentGameId });
+                                }
                             } else {
-                                window.ATM.Toast.show(window.ATM.i18n.t('toast.delete_error') || "Lỗi khi xóa từ", "error");
+                                window.ATM.Toast.show(window.ATM.i18n.t('toast.delete_error') || "Error deleting term", "error");
                             }
                         }
                     };
@@ -101,6 +106,9 @@ window.ATM.Glossary = (function() {
                         srcInput.value = '';
                         tgtInput.value = '';
                         loadList();
+                        if (window.ATM.events) {
+                            window.ATM.events.publish('glossary:changed', { gameId: currentGameId });
+                        }
                     }
                 } catch(err) {
                     window.ATM.Toast.show(window.ATM.i18n.t('glossary.add_error'), "error");
@@ -131,6 +139,7 @@ window.ATM.Glossary = (function() {
         });
 
         if (sourceInput && datalist) {
+            let searchCtrl = null;
             sourceInput.addEventListener('input', (e) => {
                 const val = e.target.value.trim();
                 if (val.length < 2) {
@@ -140,8 +149,10 @@ window.ATM.Glossary = (function() {
                 
                 if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
                 searchDebounceTimer = setTimeout(async () => {
+                    if (searchCtrl) searchCtrl.abort();
+                    searchCtrl = new AbortController();
                     try {
-                        const res = await window.ATM.api.get(`cache/search?q=${encodeURIComponent(val)}&limit=10&page=1`);
+                        const res = await window.ATM.api.get(`cache/search?q=${encodeURIComponent(val)}&limit=10&page=1`, { signal: searchCtrl.signal });
                         if (res.status === 'success' && res.data && res.data.items) {
                             datalist.replaceChildren();
                             res.data.items.forEach(item => {
@@ -186,6 +197,9 @@ window.ATM.Glossary = (function() {
                                 if (applyRes.status === 'success') {
                                     window.ATM.Toast.show(window.ATM.i18n.t('glossary.import_success'), "success");
                                     loadList();
+                                    if (window.ATM.events && parsedData.length > 0) {
+                                        window.ATM.events.publish('glossary:changed', { gameId: currentGameId });
+                                    }
                                 } else {
                                     window.ATM.Toast.show(window.ATM.i18n.t('toast.server_error'), "error");
                                 }

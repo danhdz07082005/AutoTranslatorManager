@@ -129,7 +129,7 @@ def _visit_note_field(
 
 
 class RPGMakerTranslator:
-    """Xử lý dịch thuật Offline cho RPG Maker MV/MZ."""
+    """Offline translation processor for RPG Maker MV/MZ."""
 
     OVERLAY_FILENAME = "translation_overlay.json"
     OVERLAY_PLUGIN_FILENAME = "ATM_Overlay.js"
@@ -271,8 +271,8 @@ class RPGMakerTranslator:
         )
         result = pipeline.run(
             pipeline_entries,
-            source_lang=getattr(profile, "input_lang", "auto") or "auto",
-            target_lang=getattr(profile, "output_lang", "vi") or "vi",
+            source_lang=getattr(profile, "input_lang", None),
+            target_lang=getattr(profile, "output_lang", None),
             writer=lambda entry, text: translated_by_path.__setitem__(str(entry.path[0]), text),
             is_cancelled=is_cancelled,
             progress_callback=progress_callback,
@@ -287,6 +287,19 @@ class RPGMakerTranslator:
             return False
 
         write_back_files: set[Path] = set()
+
+        glossary_dict = getattr(profile, "glossary", {}) or {}
+        for src_key, tgt_val in glossary_dict.items():
+            if isinstance(src_key, str) and src_key and tgt_val:
+                fake_path = f"__glossary__.{src_key}"
+                overlay_entries[fake_path] = {
+                    "source_file": "glossary",
+                    "path": fake_path,
+                    "category": "glossary",
+                    "classification": "translatable",
+                    "original": src_key,
+                    "translation": str(tgt_val),
+                }
 
         for entry in extracted_entries:
             translated = translated_by_path.get(entry.path)
@@ -321,7 +334,9 @@ class RPGMakerTranslator:
         if self._translation_memory:
             try:
                 tm_entries = self._translation_memory.entries()
-                output_lang = getattr(profile, "output_lang", "vi") or "vi"
+                output_lang = getattr(profile, "output_lang", None)
+                if not output_lang:
+                    raise ValueError("output_lang must be provided")
                 for idx, tm in enumerate(tm_entries):
                     if tm.target_lang == output_lang:
                         fake_path = f"__tm_{idx}"
@@ -336,25 +351,11 @@ class RPGMakerTranslator:
             except Exception as e:
                 logger.error(f"Failed to inject TM into overlay: {e}")
 
-        # Also inject local glossary (from GameProfile)
-        if hasattr(profile, "glossary") and isinstance(profile.glossary, dict):
-            for idx, (orig, trans) in enumerate(profile.glossary.items()):
-                if isinstance(orig, str) and isinstance(trans, str):
-                    fake_path = f"__glossary_{idx}"
-                    overlay_entries[fake_path] = {
-                        "source_file": "glossary",
-                        "path": fake_path,
-                        "category": "ui",
-                        "classification": "translatable",
-                        "original": orig,
-                        "translation": trans,
-                    }
-
         self._atomic_write_overlay(data_dir / self.OVERLAY_FILENAME, overlay_entries)
         self._install_overlay_plugin(game_dir, data_dir)
 
         message = (
-            f"Hoàn tất RPG Maker (hoặc tạm dừng): {len(write_back_files)} files written back, {len(overlay_entries)} entries in overlay / "
+            f"Finished RPG Maker (or paused): {len(write_back_files)} files written back, {len(overlay_entries)} entries in overlay / "
             f"{len(extracted_entries)} total entries, unique={result.stats.unique}, "
             f"rejected={result.stats.validation_rejected}."
         )
@@ -396,15 +397,27 @@ class RPGMakerTranslator:
             try:
                 content = plugins_js_path.read_text(encoding="utf-8-sig")
                 if "ATM_Overlay" not in content:
-                    last_bracket = content.rfind("]")
-                    if last_bracket != -1:
-                        plugin_entry = '{"name":"ATM_Overlay","status":true,"description":"AutoTranslatorManager overlay","parameters":{}}'
-                        inner_content = content[:last_bracket].strip()
-                        needs_comma = not inner_content.endswith("[") and not inner_content.endswith(",")
-                        prefix = ",\n" if needs_comma else "\n"
-                        new_content = content[:last_bracket] + prefix + plugin_entry + "\n" + content[last_bracket:]
-                        plugins_js_path.write_text(new_content, encoding="utf-8-sig")
-                        logger.info("Patched plugins.js to include ATM_Overlay.")
+                    import re, json
+                    match = re.search(r'(?s)var\s+\$plugins\s*=\s*(\[.*\])\s*;', content)
+                    if match:
+                        try:
+                            plugins_arr = json.loads(match.group(1))
+                            plugins_arr.append({"name": "ATM_Overlay", "status": True, "description": "AutoTranslatorManager overlay", "parameters": {}})
+                            new_arr_str = json.dumps(plugins_arr, indent=0, ensure_ascii=False)
+                            new_content = content[:match.start(1)] + new_arr_str + content[match.end(1):]
+                            plugins_js_path.write_text(new_content, encoding="utf-8-sig")
+                            logger.info("Patched plugins.js to include ATM_Overlay.")
+                        except Exception as parse_e:
+                            logger.warning(f"JSON parsing plugins.js failed: {parse_e}, trying fallback...")
+                            last_bracket = content.rfind("]")
+                            if last_bracket != -1:
+                                plugin_entry = '{"name":"ATM_Overlay","status":true,"description":"AutoTranslatorManager overlay","parameters":{}}'
+                                inner_content = content[:last_bracket].strip()
+                                needs_comma = not inner_content.endswith("[") and not inner_content.endswith(",")
+                                prefix = ",\n" if needs_comma else "\n"
+                                new_content = content[:last_bracket] + prefix + plugin_entry + "\n" + content[last_bracket:]
+                                plugins_js_path.write_text(new_content, encoding="utf-8-sig")
+                                logger.info("Patched plugins.js to include ATM_Overlay (fallback).")
             except Exception as e:
                 logger.error(f"Failed to patch plugins.js: {e}")
 

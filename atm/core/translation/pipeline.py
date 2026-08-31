@@ -228,8 +228,8 @@ class BatchTranslator(Protocol):
     def translate_batch(
         self,
         texts: Sequence[str],
-        target_lang: str = "vi",
-        source_lang: str = "auto",
+        target_lang: str,
+        source_lang: str,
         *,
         category: str = "unknown",
     ) -> Sequence[str | None]: ...
@@ -335,12 +335,12 @@ def protect_glossary_terms(
     replacements: dict[str, str] = {}
     protected = text
     for term, translation in sorted(glossary_terms.items(), key=lambda item: len(item[0]), reverse=True):
-        if not term or term == text or not isinstance(translation, str):
+        if not term or term.lower() == text.lower() or not isinstance(translation, str):
             continue
-        pattern = re.compile(re.escape(term))
+        pattern = re.compile(re.escape(term), re.IGNORECASE)
 
         def replace(match: re.Match[str]) -> str:
-            placeholder = f"<<{9000 + len(replacements)}>>"
+            placeholder = f"[[GL{len(replacements)}]]"
             replacements[placeholder] = translation
             return placeholder
 
@@ -353,10 +353,10 @@ def restore_glossary_terms(text: object, replacements: Mapping[str, str]) -> obj
         return text
 
     def replace(match: re.Match[str]) -> str:
-        placeholder = f"<<{match.group(1)}>>"
+        placeholder = f"[[GL{match.group(1)}]]"
         return replacements.get(placeholder, match.group(0))
 
-    return _API_PLACEHOLDER_RE.sub(replace, text)
+    return re.sub(r"\[\[GL(\d+)\]\]", replace, text)
 
 
 def validate_translation(source: str, translated: object) -> ValidationResult:
@@ -510,8 +510,8 @@ class TranslationPipeline:
         stats.unique = len(groups)
         stats.duplicate_entries = stats.normalized - stats.unique
 
-        source_lang = source_lang or "auto"
-        target_lang = target_lang or "vi"
+        if not target_lang:
+            raise ValueError("target_lang must be provided")
         active_glossary = self._normalise_glossary(
             self.glossary if glossary is None else glossary
         )
@@ -656,6 +656,15 @@ class TranslationPipeline:
             glossary_value = contextual_glossary.get(group.key, _GLOSSARY_MISS)
             if glossary_value is _GLOSSARY_MISS:
                 glossary_value = generic_glossary.get(group.text, _GLOSSARY_MISS)
+                
+            # Case-insensitive fallback for full exact match
+            if glossary_value is _GLOSSARY_MISS:
+                text_lower = group.text.lower()
+                for k, v in generic_glossary.items():
+                    if k.lower() == text_lower:
+                        glossary_value = v
+                        break
+                        
             if glossary_value is not _GLOSSARY_MISS:
                 stats.glossary_hits += 1
                 candidates[group.key] = (glossary_value, TranslationOrigin.GLOSSARY)

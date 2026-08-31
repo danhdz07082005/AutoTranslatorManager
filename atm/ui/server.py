@@ -230,7 +230,7 @@ class ATMHandler(BaseHTTPRequestHandler):
             elif clear_type == 'tm':
                 result = self.api.clear_global_memory()
             else:
-                result = {"status": "error", "message": "Invalid type"}
+                result = {"status": "error", "error": "Invalid type"}
             self._json_response(result)
 
         elif self.path == '/api/data/open_folder':

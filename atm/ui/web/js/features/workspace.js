@@ -8,19 +8,30 @@ window.ATM.features = window.ATM.features || {};
 (function() {
     let currentGame = null;
 
+    let currentFetchCtrl = null;
+
     function open(gameId) {
         if (window.ATM.navigation) {
             window.ATM.navigation.showWorkspace(gameId);
         }
         
+        if (currentFetchCtrl) currentFetchCtrl.abort();
+        currentFetchCtrl = new AbortController();
+        
         // Fetch game details to show in header
-        window.ATM.api.get(`games`)
+        window.ATM.api.get(`games`, { signal: currentFetchCtrl.signal })
             .then(data => {
+                if (!document.getElementById('workspace-container')) return; // View changed
+                
                 const game = data.games.find(g => g.id === gameId);
                 if (game) {
                     currentGame = game;
-                    document.getElementById('workspace-title').textContent = game.game_name || 'Unknown Game';
-                    document.getElementById('workspace-subtitle').textContent = `Engine: ${game.engine || 'Unknown'} | Translator: ${game.translator || 'Google'}`;
+                    const titleEl = document.getElementById('workspace-title');
+                    const subtitleEl = document.getElementById('workspace-subtitle');
+                    if (titleEl) titleEl.textContent = game.game_name || 'Unknown Game';
+                    if (subtitleEl) {
+                        subtitleEl.innerHTML = `Engine: <span class="engine-badge" data-engine="${game.engine || 'Unknown'}">${game.engine || 'Unknown'}</span> &nbsp;|&nbsp; Translator: <span class="engine-badge translator-badge">${game.translator || 'Google'}</span>`;
+                    }
                     
                     mount(game);
                 } else {
@@ -44,6 +55,81 @@ window.ATM.features = window.ATM.features || {};
         }
         
         const clone = template.content.cloneNode(true);
+                const dockStatusText = clone.querySelector('.workspace-status-text');
+        if (dockStatusText) dockStatusText.id = `workspace-status-text-${game.id}`;
+
+        const dockPercentText = clone.querySelector('.workspace-percent-text');
+        if (dockPercentText) dockPercentText.id = `workspace-percent-text-${game.id}`;
+        
+        const dockProgressBar = clone.querySelector('.workspace-progress-bar');
+        if (dockProgressBar) dockProgressBar.id = `workspace-progress-bar-${game.id}`;
+
+        const btnRefresh = clone.querySelector('.btn-refresh-workspace');
+        if (btnRefresh) {
+            if (localStorage.getItem('atm_needs_sync_' + game.id) === 'true') {
+                btnRefresh.classList.add('btn-needs-sync');
+            }
+            btnRefresh.addEventListener('click', () => {
+                if (!currentGame) return;
+                const i18n = window.ATM.i18n;
+                const confirmMsg = i18n ? i18n.t('confirm.sync_translation') : 'Sync translation data?';
+                
+                if (window.ATM.Modals && window.ATM.Modals.confirm) {
+                    window.ATM.Modals.confirm(confirmMsg).then(agreed => {
+                        if (!agreed) return;
+                        doSync();
+                    });
+                } else {
+                    if (!confirm(confirmMsg)) return;
+                    doSync();
+                }
+
+                function doSync() {
+                    if (!currentGame) return;
+                    btnRefresh.classList.remove('btn-needs-sync');
+                    const gameId = currentGame.id;
+                    localStorage.removeItem('atm_needs_sync_' + gameId);
+                    const statusText = document.getElementById(`workspace-status-text-${gameId}`);
+                    const percentText = document.getElementById(`workspace-percent-text-${gameId}`);
+                    const progressBar = document.getElementById(`workspace-progress-bar-${gameId}`);
+                    
+                    if (statusText && percentText) {
+                        statusText.textContent = i18n ? i18n.t('workspace.refreshing') : 'Syncing...';
+                        statusText.style.color = '#8b5cf6';
+                        percentText.style.color = '#8b5cf6';
+                    }
+                    if (progressBar) {
+                        progressBar.style.backgroundColor = '#8b5cf6';
+                    }
+                    
+                    window.ATM.api.post('games/sync', { game_id: gameId })
+                        .then((res) => {
+                            if (res.is_running) {
+                                setTimeout(() => {
+                                    if (window.ATM.events) {
+                                        window.ATM.events.publish('force_poller_restart', { gameId: gameId });
+                                    }
+                                }, 1000);
+                            }
+                            if (window.ATM.Toast) {
+                                const now = new Date();
+                                const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0') + ':' + now.getSeconds().toString().padStart(2, '0');
+                                let msg = i18n ? i18n.t('workspace.sync_success') : '[OK] Synced at {time}';
+                                if (msg) msg = msg.replace('{time}', timeStr);
+                                window.ATM.Toast.show(msg, 'success');
+                            }
+                        })
+                        .catch(e => {
+                            if (window.ATM.Toast) {
+                                let fallback = i18n ? i18n.t('error.sync_failed') : 'Sync Error';
+                                window.ATM.Toast.show(e.error || fallback, 'error');
+                            }
+                            if (window.ATM.polling) window.ATM.polling.pollTranslation(currentGame.id);
+                        });
+                }
+            });
+        }
+
         const tabEditor = clone.querySelector('.tab-editor');
         const tabGlossary = clone.querySelector('.tab-glossary');
         const tabTm = clone.querySelector('.tab-tm');
@@ -84,7 +170,56 @@ window.ATM.features = window.ATM.features || {};
         
         container.replaceChildren(clone);
         if (window.ATM.i18n && window.ATM.i18n.updateDOM) window.ATM.i18n.updateDOM();
+        
+        const card = document.getElementById(`card-${game.id}`);
+        const initPct = (card && card.dataset.percent) ? parseFloat(card.dataset.percent) : 0;
+        const initState = (card && card.dataset.state) ? card.dataset.state : (game.runtime_state || 'READY');
+        updateProgress(game.id, initState, initPct);
+        
         startEditor(game.id);
+        
+    }
+
+    
+    function updateProgress(gameId, state, percent) {
+        const statusText = document.getElementById(`workspace-status-text-${gameId}`);
+        const percentText = document.getElementById(`workspace-percent-text-${gameId}`);
+        const progressBar = document.getElementById(`workspace-progress-bar-${gameId}`);
+        const i18n = window.ATM.i18n;
+        
+        let displayPercent = percent;
+        if (state === 'COMPLETE') {
+            displayPercent = 100;
+        }
+        
+        if (statusText && percentText) {
+            percentText.textContent = `${displayPercent.toFixed(1)}%`;
+            if (state === 'TRANSLATING') {
+                statusText.setAttribute('data-i18n', 'status.running');
+                statusText.textContent = (i18n ? i18n.t('status.running') : 'Translating...');
+                statusText.style.color = 'var(--accent)';
+                percentText.style.color = 'var(--accent)';
+            } else if (state === 'COMPLETE') {
+                statusText.setAttribute('data-i18n', 'status.completed');
+                statusText.textContent = (i18n ? i18n.t('status.completed') : 'Completed');
+                statusText.style.color = 'var(--success)';
+                percentText.style.color = 'var(--success)';
+            } else if (state === 'INTERRUPTED' || state === 'PAUSED') {
+                statusText.setAttribute('data-i18n', 'status.interrupted');
+                statusText.textContent = (i18n ? i18n.t('status.interrupted') : 'Interrupted');
+                statusText.style.color = 'var(--warning)';
+                percentText.style.color = 'var(--warning)';
+            } else {
+                statusText.setAttribute('data-i18n', 'workspace.status_ready');
+                statusText.textContent = (i18n ? i18n.t('workspace.status_ready') : 'Ready');
+                statusText.style.color = 'var(--text-secondary)';
+                percentText.style.color = 'var(--text-secondary)';
+            }
+        }
+        if (progressBar) {
+            progressBar.style.width = `${displayPercent}%`;
+            progressBar.style.backgroundColor = state === 'TRANSLATING' ? 'var(--accent)' : (state === 'COMPLETE' ? 'var(--success)' : 'var(--text-muted)');
+        }
     }
 
     function startEditor(gameId) {
@@ -130,13 +265,31 @@ window.ATM.features = window.ATM.features || {};
     if (backBtn) {
         backBtn.addEventListener('click', leave);
     }
+    
+    // Global translation progress listener
+    if (window.ATM.events && !window.ATM.Workspace?._progSubscribed) {
+        window.ATM.events.subscribe('translation_progress', (data) => {
+            if (currentGame && String(data.gameId) === String(currentGame.id)) {
+                updateProgress(data.gameId, data.state, data.percent);
+            }
+        });
+        window.ATM.events.subscribe('glossary:changed', (payload) => {
+            if (payload && payload.gameId) {
+                localStorage.setItem('atm_needs_sync_' + payload.gameId, 'true');
+            }
+            if (payload && payload.gameId && currentGame && payload.gameId !== currentGame.id) return;
+            const btn = document.querySelector('.btn-refresh-workspace');
+            if (btn) btn.classList.add('btn-needs-sync');
+        });
+        // We defer attaching the flag to window.ATM.Workspace below
+    }
 
     async function auditCoverage(gameId, engine) {
         try {
             const res = await window.ATM.api.get(`engines/coverage?game_id=${gameId}`);
             const data = res;
             window.ATM.Modals.info(`${engine} Coverage Report`, 
-                `Total Strings: ${data.total}\nTranslated: ${data.translated}\nUntranslated: ${data.untranslated}\nCoverage: ${data.coverage_percent}%`);
+                `Total: ${data.total}\nTranslated: ${data.translated}\nUntranslated: ${data.untranslated}\nCoverage: ${data.coverage_percent}%`);
         } catch (e) {
             window.ATM.Toast.show(`Failed to audit ${engine} coverage.`, "error");
         }
@@ -156,6 +309,8 @@ window.ATM.features = window.ATM.features || {};
             }
             
             const jobId = res.job_id;
+            if (!jobId) return;
+            
             const container = document.getElementById(`job-progress-container-${gameId}`);
             const textEl = document.getElementById(`job-progress-text-${gameId}`);
             const barEl = document.getElementById(`job-progress-bar-${gameId}`);
@@ -193,6 +348,7 @@ window.ATM.features = window.ATM.features || {};
     }
 
     window.ATM.Workspace = {
+        _progSubscribed: true,
         open,
         auditCoverage,
         runExtractJob,

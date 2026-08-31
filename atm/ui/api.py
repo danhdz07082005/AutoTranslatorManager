@@ -54,10 +54,14 @@ class BackendApi:
     def is_idle(self) -> bool:
         """Kiểm tra xem hệ thống có đang rảnh rỗi không (không có game nào đang dịch/chạy nền)."""
         with self._lock:
-            if len(self.cancel_flags) > 0:
-                return False
             for job in self.job_manager.jobs.values():
                 if job.status in ("running", "queued"):
+                    return False
+            for status in self.translation_status.values():
+                if not status.get("done", True):
+                    return False
+            for deployer in self.active_deployers.values():
+                if getattr(deployer, "is_deploying", False) or deployer.monitor.is_monitoring:
                     return False
             return True
 
@@ -132,6 +136,18 @@ class BackendApi:
                     p_dict["runtime_state"] = "READY"
             else:
                 p_dict["runtime_state"] = "READY"
+            
+            # Override from live memory status
+            with self._lock:
+                if p.id in self.translation_status:
+                    live_status = self.translation_status[p.id]
+                    if not live_status.get("done", True):
+                        p_dict["runtime_state"] = "TRANSLATING"
+                        
+                if p.id in self.active_deployers:
+                    deployer = self.active_deployers[p.id]
+                    if getattr(deployer, "is_deploying", False) or deployer.monitor.is_monitoring:
+                        p_dict["runtime_state"] = "TRANSLATING"
                 
             # --- KIỂM TRA MẶT VẬT LÝ (WATERMARK) ---
             if p_dict["runtime_state"] == "COMPLETE":
@@ -144,15 +160,14 @@ class BackendApi:
                         import json
                         with open(marker_path, 'r', encoding='utf-8') as f:
                             marker_data = json.load(f)
-                        
                         expected_fingerprint = self._calculate_fingerprint(p)
                         if marker_data.get("game_fingerprint") != expected_fingerprint:
-                            logger.info(f"Fingerprint mismatch for {p.game_name}. Dropping to READY.")
+                            p_dict["runtime_state"] = "READY"
+                        elif marker_data.get("source_language") != p.input_lang or marker_data.get("target_language") != p.output_lang:
                             p_dict["runtime_state"] = "READY"
                 except Exception as e:
-                    logger.error(f"Error checking watermark for {p.game_name}: {e}")
-                    p_dict["runtime_state"] = "READY"
-
+                    logger.warning(f"Failed to check marker for {p.id}: {e}")
+                    
             if job:
                 p_dict["runtime_progress"] = job.progress
                 p_dict["runtime_total"] = job.total
@@ -169,14 +184,14 @@ class BackendApi:
                 root.withdraw()
                 root.attributes('-topmost', True)
                 file_path = filedialog.askopenfilename(
-                    title="Chọn file chạy của game (.exe)",
+                    title="Select game executable (.exe)",
                     filetypes=[("Executable Files", "*.exe"), ("All files", "*.*")]
                 )
             finally:
                 root.destroy()
         except Exception as e:
             logger.error(f"File dialog error: {e}")
-            return {"error": str(e)}
+            return {"status": "error", "error": str(e)}
 
         if file_path:
             # Validate duplicate exe_path
@@ -184,7 +199,7 @@ class BackendApi:
             for existing in existing_profiles:
                 if existing.exe_path and os.path.normpath(existing.exe_path) == os.path.normpath(file_path):
                     logger.warning(f"Game already exists: {file_path}")
-                    return {"error": f"Game này đã được thêm vào hệ thống trước đó!"}
+                    return {"status": "error", "error": f"Game already exists in the system!"}
 
             game_name = os.path.basename(os.path.dirname(file_path))
             if not game_name:
@@ -199,7 +214,7 @@ class BackendApi:
                 engine=engine,
                 translator="google",
                 input_lang="auto",
-                output_lang="vi"
+                output_lang=self.settings_repo.load().ui_language or "vi"
             )
 
             self.profile_repo.save(profile)
@@ -214,6 +229,8 @@ class BackendApi:
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
+        if not profile.output_lang:
+            return {"status": "error", "error": "Target language not configured (output_lang)."}
 
         if input_lang is not None:
             profile.input_lang = input_lang
@@ -227,11 +244,13 @@ class BackendApi:
         logger.info(f"Updated settings for {profile.game_name}: {input_lang} -> {output_lang}, engine: {translator}")
         return {"status": "success"}
 
-    def start_game(self, game_id):
+    def start_game(self, game_id, auto_launch=True):
         """Khởi chạy game với bộ dịch"""
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game profile not found"}
+        if not profile.output_lang:
+            return {"status": "error", "error": "Please select target language (output_lang) before starting translation."}
 
         from atm.core.deployment.game_deployer import GameDeployer
         from atm.core.translation import RPGMakerTranslator
@@ -240,20 +259,22 @@ class BackendApi:
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
         # Block multiple starts
-        if game_id in self.translation_status and not self.translation_status[game_id].get("done", True):
-            return {"status": "translating", "message": "Already translating"}
+        with self._lock:
+            if game_id in self.translation_status and not self.translation_status[game_id].get("done", True):
+                return {"status": "translating", "message": "Already translating"}
 
         if profile.engine in ("RPG Maker", "RenPy"):
             # Dịch Offline cho RPG Maker và RenPy
-            self.translation_status[game_id] = {
-                "progress": 0, 
-                "total": 100, 
-                "code": "translation.preparing", 
-                "params": {"engine": profile.engine},
-                "done": False,
-                "error": False
-            }
-            self.cancel_flags[game_id] = False
+            with self._lock:
+                self.translation_status[game_id] = {
+                    "progress": 0, 
+                    "total": 100, 
+                    "code": "translation.preparing", 
+                    "params": {"engine": profile.engine},
+                    "done": False,
+                    "error": False
+                }
+                self.cancel_flags[game_id] = False
             
             def run_offline_translate():
                 if profile.engine == "RPG Maker":
@@ -266,14 +287,15 @@ class BackendApi:
                     translator = RenPyTranslator(cache=TranslationCache(), translation_memory=TranslationMemory())
                 
                 def progress_cb(current, total, code, params=None):
-                    self.translation_status[game_id] = {
-                        "progress": current, 
-                        "total": total, 
-                        "code": code,
-                        "params": params or {},
-                        "done": current >= total,
-                        "error": False
-                    }
+                    with self._lock:
+                        self.translation_status[game_id] = {
+                            "progress": current, 
+                            "total": total, 
+                            "code": code,
+                            "params": params or {},
+                            "done": current >= total,
+                            "error": False
+                        }
                     if current % 10 == 0 or current >= total:
                         self.job_repo.save(TranslationJob(
                             game_id=game_id,
@@ -285,25 +307,28 @@ class BackendApi:
                         ))
                 
                 def is_cancelled():
-                    return self.cancel_flags.get(game_id, False)
+                    with self._lock:
+                        return self.cancel_flags.get(game_id, False)
 
                 try:
                     success = translator.translate_game(profile, progress_callback=progress_cb, is_cancelled=is_cancelled)
-                    if self.cancel_flags.get(game_id, False):
-                        self.translation_status[game_id] = {
-                            "progress": 0, "total": 1, 
-                            "code": "translation.cancelled", 
-                            "params": {},
-                            "done": True, 
-                            "error": True
-                        }
+                    if is_cancelled():
+                        with self._lock:
+                            self.translation_status[game_id] = {
+                                "progress": 0, "total": 1, 
+                                "code": "translation.cancelled", 
+                                "params": {},
+                                "done": True, 
+                                "error": True
+                            }
                         self.job_repo.save(TranslationJob(game_id=game_id, status="error", message_code="translation.cancelled", error_details="Cancelled by user"))
                         return
 
                     if success:
-                        self.translation_status[game_id]["done"] = True
-                        self.translation_status[game_id]["code"] = "translation.success"
-                        self.translation_status[game_id]["params"] = {}
+                        with self._lock:
+                            self.translation_status[game_id]["done"] = True
+                            self.translation_status[game_id]["code"] = "translation.success"
+                            self.translation_status[game_id]["params"] = {}
                         
                         # Thêm dấu ấn (Watermark)
                         import json
@@ -320,44 +345,49 @@ class BackendApi:
                                 "completed_at": datetime.datetime.now().isoformat()
                             }, f, indent=2)
 
-                        # Chạy game sau khi dịch xong (không cần payload cho offline)
-                        deployer = GameDeployer()
-                        self.active_deployers[game_id] = deployer
-                        deployer.deploy_and_launch(profile, None)
+                        # Chạy game sau khi dịch xong (nếu được phép)
+                        if auto_launch:
+                            deployer = GameDeployer()
+                            with self._lock:
+                                self.active_deployers[game_id] = deployer
+                            deployer.deploy_and_launch(profile, None)
                     else:
-                        self.translation_status[game_id] = {
-                            "progress": 0, "total": 1, 
-                            "code": "translation.failed", 
-                            "params": {},
-                            "done": True, 
-                            "error": True
-                        }
+                        with self._lock:
+                            self.translation_status[game_id] = {
+                                "progress": 0, "total": 1, 
+                                "code": "translation.failed", 
+                                "params": {},
+                                "done": True, 
+                                "error": True
+                            }
                         self.job_repo.save(TranslationJob(game_id=game_id, status="error", message_code="translation.failed"))
                         
                 except RateLimitError as e:
                     logger.warning(f"{profile.engine} translation paused due to rate limit.")
-                    self.translation_status[game_id] = {
-                        "progress": 0, "total": 1, 
-                        "code": "translation.rate_limited", 
-                        "params": {},
-                        "details": "API bị giới hạn (HTTP 429). Đã tạm dừng.",
-                        "done": True, 
-                        "error": True,
-                        "error_code": "RATE_LIMITED"
-                    }
+                    with self._lock:
+                        self.translation_status[game_id] = {
+                            "progress": 0, "total": 1, 
+                            "code": "translation.rate_limited", 
+                            "params": {},
+                            "details": "API rate limited (HTTP 429). Paused.",
+                            "done": True, 
+                            "error": True,
+                            "error_code": "RATE_LIMITED"
+                        }
                     self.job_repo.save(TranslationJob(game_id=game_id, status="paused", message_code="translation.rate_limited", error_details="HTTP 429"))
                     return
 
                 except Exception as e:
                     logger.error(f"{profile.engine} translate error: {e}")
-                    self.translation_status[game_id] = {
-                        "progress": 0, "total": 1, 
-                        "code": "translation.error", 
-                        "params": {},
-                        "details": str(e),
-                        "done": True, 
-                        "error": True
-                    }
+                    with self._lock:
+                        self.translation_status[game_id] = {
+                            "progress": 0, "total": 1, 
+                            "code": "translation.error", 
+                            "params": {},
+                            "details": str(e),
+                            "done": True, 
+                            "error": True
+                        }
                     self.job_repo.save(TranslationJob(game_id=game_id, status="error", message_code="translation.error", error_details=str(e)))
 
             t = threading.Thread(target=run_offline_translate, daemon=True)
@@ -369,11 +399,13 @@ class BackendApi:
         elif profile.engine == "Unity IL2CPP":
             payload_dir = os.path.join(base_dir, "atm", "resources", "payloads", "bepinex_il2cpp")
         else:
-            return {"status": "error", "error": "Lỗi: Hệ thống chưa hỗ trợ tự động dịch cho Engine này (" + profile.engine + ").\nVui lòng chọn game Unity, RPG Maker hoặc RenPy."}
+            return {"status": "error", "error": "Unsupported engine: " + profile.engine}
 
         # Khởi tạo Deployer
+        from atm.core.deployment.game_deployer import GameDeployer
         deployer = GameDeployer()
-        self.active_deployers[game_id] = deployer
+        with self._lock:
+            self.active_deployers[game_id] = deployer
         
         # Deploy và Launch (chạy background)
         t = threading.Thread(target=deployer.deploy_and_launch, args=(profile, payload_dir), daemon=True)
@@ -382,70 +414,44 @@ class BackendApi:
 
     def get_translation_status(self, game_id):
         """Trả về tiến độ dịch offline"""
-        if game_id in self.translation_status:
-            return self.translation_status[game_id]
-            
-        if game_id in self.active_deployers:
-            deployer = self.active_deployers[game_id]
-            if getattr(deployer, "is_deploying", False) or deployer.monitor.is_monitoring:
-                return {
-                    "progress": 50,
-                    "total": 100,
-                    "code": "translation.realtime_active",
-                    "params": {},
-                    "done": False,
-                    "error": False,
-                    "status_str": "running"
-                }
-            else:
-                # Cleanup and remove from active deployers
-                del self.active_deployers[game_id]
-                return {
-                    "progress": 100,
-                    "total": 100,
-                    "code": "translation.realtime_finished",
-                    "params": {},
-                    "done": True,
-                    "error": False,
-                    "status_str": "completed"
-                }
+        with self._lock:
+            if game_id in self.translation_status:
+                return self.translation_status[game_id].copy()
                 
-        # Try loading from saved job
-        job = self.job_repo.load(game_id)
-        if job:
-            return {
-                "progress": job.progress,
-                "total": job.total,
-                "code": job.message_code,
-                "params": job.params,
-                "done": job.status in ("completed", "error", "paused"),
-                "error": job.status == "error",
-                "details": job.error_details,
-                "status_str": job.status
-            }
-
-        return {
-            "progress": 0, 
-            "total": 0, 
-            "code": "translation.idle", 
-            "params": {},
-            "done": True,
-            "error": False
-        }
+            if game_id in self.active_deployers:
+                deployer = self.active_deployers[game_id]
+                if getattr(deployer, "is_deploying", False) or deployer.monitor.is_monitoring:
+                    return {
+                        "progress": 50,
+                        "total": 100,
+                        "code": "translation.realtime_running",
+                        "done": False,
+                        "error": False
+                    }
+                else:
+                    return {
+                        "progress": 100,
+                        "total": 100,
+                        "code": "translation.realtime_finished",
+                        "done": True,
+                        "error": False
+                    }
+                    
+        return {"done": True, "error": False, "code": "translation.not_running"}
 
     def stop_game(self, game_id):
         """Dừng game đang chạy hoặc dừng tiến trình dịch"""
         # Nếu đang dịch, báo cờ cancel
-        if game_id in self.translation_status and not self.translation_status[game_id].get("done"):
-            self.cancel_flags[game_id] = True
-            logger.info(f"Cancelled translation for: {game_id}")
-            return {"status": "success"}
-
-        if game_id in self.active_deployers:
-            deployer = self.active_deployers[game_id]
-            deployer.monitor.stop()
-            del self.active_deployers[game_id]
-            logger.info(f"Stopped game: {game_id}")
+        with self._lock:
+            if game_id in self.translation_status and not self.translation_status[game_id].get("done"):
+                self.cancel_flags[game_id] = True
+                logger.info(f"Cancelled translation for: {game_id}")
+                
+            if game_id in self.active_deployers:
+                deployer = self.active_deployers[game_id]
+                deployer.monitor.stop()
+                del self.active_deployers[game_id]
+                logger.info(f"Stopped game: {game_id}")
         return {"status": "success"}
 
     def sync_game(self, game_id):
@@ -453,42 +459,61 @@ class BackendApi:
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
+        if not profile.output_lang:
+            return {"status": "error", "error": "Target language not configured (output_lang)."}
             
         logger.info(f"Syncing translation data for game: {game_id}")
         
         # 1. Nếu là game Offline (RPG Maker, RenPy) đang dịch dở -> Tái khởi động luồng ngầm
         if profile.engine in ("RPG Maker", "RenPy"):
-            if game_id in self.translation_status and not self.translation_status[game_id].get("done", True):
+            with self._lock:
+                is_running = game_id in self.translation_status and not self.translation_status[game_id].get("done", True)
+                if is_running:
+                    self.cancel_flags[game_id] = True
+            
+            if is_running:
                 logger.info(f"[Smart Sync] Stopping current offline thread for {game_id}...")
-                # Ra hiệu ngừng luồng cũ
-                self.cancel_flags[game_id] = True
                 
                 # Chờ luồng cũ thực sự dừng hẳn (Polling thay vì sleep cứng)
                 for _ in range(50):
-                    if self.translation_status[game_id].get("done", True):
-                        break
+                    with self._lock:
+                        if self.translation_status[game_id].get("done", True):
+                            break
                     time.sleep(0.1)
                 
-                # Đảm bảo luồng cũ đã giải phóng tài nguyên
+                # Check if it actually stopped
+                with self._lock:
+                    is_done = self.translation_status.get(game_id, {}).get("done", True)
+                if not is_done:
+                    return {"status": "error", "error": "Timeout waiting for translation thread to stop."}
+                
+                # Restart it to apply glossary
                 logger.info(f"[Smart Sync] Restarting offline thread for {game_id} to apply new Glossary/Cache...")
-                self.cancel_flags[game_id] = False
-                self.start_game(game_id)
-                return {"status": "success", "message": "Smart re-scan triggered for offline engine."}
+                with self._lock:
+                    self.cancel_flags[game_id] = False
+                res = self.start_game(game_id, auto_launch=True)
+                if res.get("status") == "error":
+                    return res
+                return {"status": "success", "message": "Smart re-scan triggered for offline engine.", "is_running": True}
+            else:
+                return {"status": "success", "message": "Glossary and Cache updated.", "is_running": False}
                 
         # 2. Nếu là game Unity -> Đè file Cache xuống ổ cứng cho BepInEx
         elif profile.engine in ("Unity Mono", "Unity IL2CPP"):
             logger.info(f"[Smart Sync] Writing updated cache to BepInEx for {game_id}...")
             # Todo: Thực hiện xuất file _AutoGeneratedTranslations.txt từ DB nếu game đang mở
             # Lát nữa sẽ nối với GameDeployer
-            return {"status": "success", "message": "Cache injected into Unity Engine."}
+            return {"status": "success", "message": "Cache injected into Unity Engine.", "is_running": False}
         
-        return {"status": "success", "message": "Glossary and Cache synced successfully"}
+        return {"status": "success", "message": "Glossary and Cache synced successfully", "is_running": False}
 
     def play_game(self, game_id):
         """Khởi chạy game đã dịch"""
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
+        if not profile.output_lang:
+            return {"status": "error", "error": "Target language not configured (output_lang)."}
         
         # Verify marker
         game_dir = os.path.dirname(profile.exe_path)
@@ -510,8 +535,24 @@ class BackendApi:
     def delete_game(self, game_id):
         """Xóa game profile (cả file JSON)"""
         try:
-            # Stop game if running or translating
-            self.stop_game(game_id)
+            # Check if running and wait for it to stop
+            with self._lock:
+                is_running = game_id in self.translation_status and not self.translation_status[game_id].get("done", True)
+            
+            if is_running:
+                self.stop_game(game_id)
+                # Wait up to 5 seconds
+                for _ in range(50):
+                    with self._lock:
+                        if self.translation_status.get(game_id, {}).get("done", True):
+                            break
+                    time.sleep(0.1)
+                
+                # Check if it actually stopped
+                with self._lock:
+                    is_done = self.translation_status.get(game_id, {}).get("done", True)
+                if not is_done:
+                    return {"status": "error", "error": "Timeout waiting for translation thread to stop."}
             
             # Xóa bằng ID (tên file mới)
             deleted = self.profile_repo.delete(game_id)
@@ -602,10 +643,13 @@ class BackendApi:
                 cache = TranslationCache()
                 profile = self.profile_repo.get_by_id(game_id)
                 if profile:
+                    if not profile.output_lang:
+                        logger.error("Game profile is missing output_lang, cannot invalidate cache")
+                        return {"status": "success"}  # Still succeed the import
                     for item in parsed_data:
                         src = item.get("source") or item.get("Source") or item.get("source_term")
                         if src:
-                            cache.invalidate_by_term(profile.input_lang, profile.output_lang, src)
+                            cache.invalidate_by_term(profile.input_lang or "auto", profile.output_lang, src)
             except Exception as e:
                 logger.error(f"Failed to invalidate cache after glossary import: {e}")
                 
@@ -617,6 +661,8 @@ class BackendApi:
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
+        if not profile.output_lang:
+            return {"status": "error", "error": "Target language not configured (output_lang)."}
         if hasattr(profile, "glossary") and isinstance(profile.glossary, dict):
             if term in profile.glossary:
                 del profile.glossary[term]
@@ -626,7 +672,7 @@ class BackendApi:
                 try:
                     from atm.core.translation.cache_manager import TranslationCache
                     cache = TranslationCache()
-                    count = cache.invalidate_by_term(profile.input_lang, profile.output_lang, term)
+                    count = cache.invalidate_by_term(profile.input_lang or "auto", profile.output_lang, term)
                     logger.info(f"Invalidated {count} cache entries containing term '{term}'")
                 except Exception as e:
                     logger.error(f"Failed to invalidate cache for term {term}: {e}")
@@ -641,10 +687,8 @@ class BackendApi:
             
         source_lang = profile.input_lang
         target_lang = profile.output_lang
-        if source_lang == "auto":
-            # Nếu là auto, trong cache_manager nó vẫn lưu theo key "auto" hoặc tuỳ translator
-            # Tạm thời lưu chung cho auto
-            pass
+        if not target_lang:
+            return {"status": "error", "error": "Target language not configured (output_lang)."}
             
         from atm.core.translation.cache_manager import TranslationCache
         from atm.core.translation.translation_memory import TranslationMemory
@@ -674,6 +718,8 @@ class BackendApi:
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
+        if not profile.output_lang:
+            return {"status": "error", "error": "Target language not configured (output_lang)."}
         if not isinstance(text, str) or not text.strip():
             return {"status": "error", "error": "Text is required"}
 
@@ -684,7 +730,7 @@ class BackendApi:
         suggestions = TranslationMemory().suggest(
             text,
             source_lang=profile.input_lang or "auto",
-            target_lang=profile.output_lang or "vi",
+            target_lang=profile.output_lang,
             category=category or "unknown",
             threshold=threshold,
         )
@@ -701,6 +747,8 @@ class BackendApi:
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
+        if not profile.output_lang:
+            return {"status": "error", "error": "Target language not configured (output_lang)."}
         if not all(
             isinstance(value, str) and value.strip()
             for value in (source_text, translated_text)
@@ -711,7 +759,8 @@ class BackendApi:
         from atm.core.translation.translation_memory import TranslationMemory
 
         source_lang = profile.input_lang or "auto"
-        target_lang = profile.output_lang or "vi"
+        target_lang = profile.output_lang
+        
         safe_category = category or "unknown"
         # A fuzzy result only reaches TM/cache after a user selected it.
         TranslationMemory().remember(
@@ -802,9 +851,15 @@ class BackendApi:
 
     def clear_game_data(self, game_id):
         """Xóa dữ liệu glossary và lịch sử dịch của game."""
+        with self._lock:
+            if game_id in self.translation_status and not self.translation_status[game_id].get("done", True):
+                return {"status": "error", "error": "Cannot clear data while translation is running. Stop it first."}
+        
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             return {"status": "error", "error": "Game not found"}
+        if not profile.output_lang:
+            return {"status": "error", "error": "Target language not configured (output_lang)."}
             
         profile.glossary = {}  # BUG-C02 fix: must be dict, not list
         self.profile_repo.save(profile)

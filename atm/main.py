@@ -49,13 +49,13 @@ def main() -> None:
     # Mở trình duyệt mặc định
     import time
     url = f"http://127.0.0.1:{port}?t={int(time.time())}"
-    logger.info(f"Mở trình duyệt: {url}")
+    logger.info(f"Opening browser: {url}")
     time.sleep(0.5) # Chờ server sẵn sàng
     webbrowser.open(url)
     
-    print(f"\n[ATM] Giao dien dang chay tai: {url}")
-    print("[ATM] Vui long KHONG dong cua so dong lenh nay trong luc su dung!")
-    print("[ATM] (Dong cua so nay se tat hoan toan ung dung)\n")
+    print(f"\n[ATM] Application UI is running at: {url}")
+    print("[ATM] Please DO NOT close this terminal window while using the app!")
+    print("[ATM] (Closing this window will terminate the application)\n")
     
     lifecycle = ApplicationLifecycle()
     lifecycle.is_idle_callback = api.is_idle

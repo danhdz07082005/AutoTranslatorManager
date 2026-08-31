@@ -38,6 +38,7 @@
       })();
     </script>
     <!-- Scripts loaded with defer (non-blocking, executed in order) -->
+    <script src="/js/core/events.js?v=3" defer></script>
     <script src="/js/core/api.js?v=3" defer></script>
     <script src="/js/core/dom.js?v=3" defer></script>
     <script src="/js/core/i18n.js?v=3" defer></script>
@@ -81,7 +82,7 @@
     </div>
     <div id="info-modal" class="modal-overlay" style="display:none;z-index:10000;">
         <div class="modal-content">
-            <h3 id="info-title" style="margin-bottom: 12px; font-weight: 600;">Thông báo</h3>
+            <h3 id="info-title" style="margin-bottom: 12px; font-weight: 600;" data-i18n="common.info">Thông báo</h3>
             <div id="info-message" style="margin-bottom: 20px; white-space: pre-wrap; font-size: 14px; color: var(--text-secondary); max-height: 400px; overflow-y: auto; text-align: left;"></div>
             <div class="confirm-actions" style="justify-content: flex-end;">
                 <button id="info-ok" class="btn-primary" data-i18n="confirm.ok">OK</button>
@@ -169,10 +170,10 @@
             <div class="workspace-tabs" style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--border-color); margin-bottom: 15px;">
                 <div style="display:flex;">
                     <button class="tab-btn tab-editor active" style="padding: 12px 20px; background: transparent; border: none; border-bottom: 2px solid var(--accent); color: var(--accent); font-weight: 600; cursor: pointer;" data-i18n="workspace.tab_editor">Editor</button>
-                    <button class="tab-btn tab-glossary" style="padding: 12px 20px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;" data-i18n="workspace.tab_glossary">Thuật ngữ (Glossary)</button>
-                    <button class="tab-btn tab-tm" style="padding: 12px 20px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer;" data-i18n="workspace.tab_tm">Bộ nhớ dịch (TM)</button>
-                    <button class="tab-btn tab-audit hidden" style="padding: 12px 20px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-weight:bold; display: none;" data-i18n="workspace.tab_audit"> Coverage Audit</button>
-                    <button class="tab-btn tab-extract hidden" style="padding: 12px 20px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-weight:bold; display: none;" data-i18n="workspace.tab_extract"> Extract Offline</button>
+                    <button class="tab-btn tab-glossary" style="padding: 12px 20px; background: transparent; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer;" data-i18n="workspace.tab_glossary">Thuật ngữ (Glossary)</button>
+                    <button class="tab-btn tab-tm" style="padding: 12px 20px; background: transparent; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer;" data-i18n="workspace.tab_tm">Bộ nhớ dịch (TM)</button>
+                    <button class="tab-btn tab-audit hidden" style="padding: 12px 20px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-weight:600; display: none;" data-i18n="workspace.tab_audit"> Coverage Audit</button>
+                    <button class="tab-btn tab-extract hidden" style="padding: 12px 20px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-weight:600; display: none;" data-i18n="workspace.tab_extract"> Extract Offline</button>
                 </div>
                 <div style="display:flex; align-items:center; padding-right:10px;">
                     <div style="position: relative; display: inline-block;">
@@ -343,7 +344,7 @@
                     </div>
                     <div class="plugin-card" style="flex-direction:column;align-items:stretch;gap:12px;">
                         <div class="plugin-info" style="display:flex;flex-direction:column;width:100%;">
-                            <h3>DeepL AI</h3>
+                            <h3 data-i18n="plugins.deepl">DeepL AI</h3>
                             <p data-i18n="plugins.deepl_desc" style="margin-bottom:8px;">Chất lượng dịch cao. Cần nhập API key.</p>
                             <div><span class="badge installed" data-i18n="plugins.ready">Sẵn sàng</span></div>
                         </div>
@@ -353,7 +354,7 @@
                     </div>
                     <div class="plugin-card">
                         <div class="plugin-info">
-                            <h3>LibreTranslate</h3>
+                            <h3 data-i18n="plugins.libre">LibreTranslate</h3>
                             <p data-i18n="plugins.libre_desc">Mã nguồn mở, tự host được, hoàn toàn miễn phí.</p>
                             <span class="badge" data-i18n="plugins.coming_soon">Sắp có</span>
                         </div>

@@ -56,7 +56,7 @@ function initWorkspace() {
     const exitBtn = document.getElementById('exit-btn');
     if (exitBtn) {
         exitBtn.addEventListener('click', async () => {
-            const msg = window.ATM.i18n ? (window.ATM.i18n.t('menu.exit_confirm') || 'Bạn có chắc chắn muốn thoát ứng dụng?') : 'Bạn có chắc chắn muốn thoát ứng dụng?';
+            const msg = window.ATM.i18n ? (window.ATM.i18n.t('confirm.exit') || 'Bạn có chắc chắn muốn thoát ứng dụng?') : 'Bạn có chắc chắn muốn thoát ứng dụng?';
             const confirmed = await window.ATM.Modals.confirm(msg);
             if (confirmed) {
                 const goodbye = document.getElementById('goodbye-screen');

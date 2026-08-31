@@ -78,7 +78,7 @@ window.ATM.Editor = (function() {
             loadingDiv.style.textAlign = 'center';
             loadingDiv.style.padding = '20px';
             loadingDiv.style.color = 'var(--text-muted)';
-            loadingDiv.textContent = 'Đang tải dữ liệu...';
+            loadingDiv.textContent = window.ATM.i18n ? window.ATM.i18n.t('editor.loading') || 'Loading...' : 'Loading...';
             listEl.appendChild(loadingDiv);
             
             const res = await window.ATM.api.get(`cache/search?q=${encodeURIComponent(currentQuery)}&page=${currentPage}&limit=${currentLimit}`, {
@@ -90,7 +90,11 @@ window.ATM.Editor = (function() {
                 const total = res.data.total || 0;
                 
                 const statsEl = document.getElementById('editor-stats');
-                if (statsEl) statsEl.textContent = `Tổng: ${total} mục`;
+                if (statsEl) {
+                    const fallback = `Total: ${total} items`;
+                    const translated = window.ATM.i18n ? window.ATM.i18n.t('editor.total_items', { total: total }) : fallback;
+                    statsEl.textContent = translated || fallback;
+                }
                 
                 const maxPage = Math.ceil(total / currentLimit) || 1;
                 
@@ -156,7 +160,8 @@ window.ATM.Editor = (function() {
             if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('editor.qa_error'), 'error');
         } finally {
             if (qaBtn) {
-                qaBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Chạy QA Scanner';
+                const btnText = window.ATM.i18n ? window.ATM.i18n.t('editor.run_qa') || 'Run QA Scanner' : 'Run QA Scanner';
+                qaBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> ' + btnText;
                 qaBtn.disabled = false;
             }
         }
@@ -222,7 +227,15 @@ window.ATM.Editor = (function() {
                 qaBox.style.color = 'var(--warning)';
             }
             const msgSpan = document.createElement('div');
-            msgSpan.innerHTML = `<strong>QA ${finding.severity.toUpperCase()}</strong>: ${finding.message} <span class="badge">${finding.confidence}</span>`;
+            const strong = document.createElement('strong');
+            strong.textContent = `QA ${finding.severity.toUpperCase()}`;
+            msgSpan.appendChild(strong);
+            msgSpan.appendChild(document.createTextNode(`: ${finding.message} `));
+            
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.textContent = finding.confidence;
+            msgSpan.appendChild(badge);
             qaBox.appendChild(msgSpan);
             targetCol.appendChild(qaBox);
         } else {
@@ -309,27 +322,23 @@ window.ATM.Editor = (function() {
                     if (newValue === oldValue) return;
                     
                     try {
-                        const res = await window.ATM.api.post('cache/update', {
+                        await window.ATM.api.post('cache/update', {
                             game_id: currentGameId,
                             key: entry.original,
                             value: newValue
                         });
                         
-                        if (res.status === 'success') {
-                            entry.translated = newValue;
-                            if (qaFindings[entry.original]) {
-                                delete qaFindings[entry.original];
-                                updateQADomLocal(entry.original, null);
-                            }
-                        } else {
-                            throw new Error(res.message || window.ATM.i18n.t('toast.server_error'));
+                        entry.translated = newValue;
+                        if (qaFindings[entry.original]) {
+                            delete qaFindings[entry.original];
+                            updateQADomLocal(entry.original, null);
                         }
                     } catch(e) {
                         console.error(e);
                         // Graceful Reversion
                         input.value = oldValue;
                         if (window.ATM.Toast) {
-                            window.ATM.Toast.show(window.ATM.i18n.t('editor.save_error'), true);
+                            window.ATM.Toast.show(e.message || window.ATM.i18n.t('editor.save_error'), true);
                         }
                     }
                 }, 1000);
@@ -386,7 +395,7 @@ window.ATM.Editor = (function() {
                     accBtn.className = 'btn-primary';
                     accBtn.style.padding = '2px 8px';
                     accBtn.style.fontSize = '11px';
-                    accBtn.textContent = 'Accept';
+                    accBtn.textContent = window.ATM.i18n ? window.ATM.i18n.t('editor.accept') || 'Accept' : 'Accept';
                     accBtn.addEventListener('click', () => handleSuggestAccept(entry.original, finding.suggestion));
 
                     suggBox.appendChild(suggText);

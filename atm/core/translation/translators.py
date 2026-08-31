@@ -23,12 +23,12 @@ class BaseTranslator:
     def translate_batch(
         self,
         texts: List[str],
-        target_lang: str = "vi",
-        source_lang: str = "auto",
+        target_lang: str,
+        source_lang: str,
         category: str = "unknown",
         is_cancelled = None,
         progress_callback = None,
-    ) -> List[str]:
+    ) -> List[Optional[str]]:
         if not texts:
             return []
 
@@ -48,11 +48,11 @@ class BaseTranslator:
     def translate_categorized(
         self,
         entries: Iterable[Tuple[str, str]],
-        target_lang: str = "vi",
-        source_lang: str = "auto",
+        target_lang: str,
+        source_lang: str,
         is_cancelled = None,
         progress_callback = None,
-    ) -> List[str]:
+    ) -> List[Optional[str]]:
         ordered_entries = list(entries)
         grouped: dict[str, list[tuple[int, str]]] = defaultdict(list)
         for index, (text, category) in enumerate(ordered_entries):
@@ -85,7 +85,7 @@ class GoogleTranslator(BaseTranslator):
 
     gtx_blocked_until = 0
 
-    def _do_translate_batch(self, texts: List[str], target_lang: str = "vi", source_lang: str = "auto", is_cancelled=None, progress_callback=None, **kwargs) -> List[Optional[str]]:
+    def _do_translate_batch(self, texts: List[str], target_lang: str, source_lang: str, is_cancelled=None, progress_callback=None, **kwargs) -> List[Optional[str]]:
         translated_texts = [None] * len(texts)
         error_event = threading.Event()
 
@@ -237,7 +237,7 @@ class DeepLTranslator(BaseTranslator):
         if api_key.endswith(":fx"):
             self.api_url = "https://api-free.deepl.com/v2/translate"
 
-    def _do_translate_batch(self, texts: List[str], target_lang: str = "VI", source_lang: Optional[str] = None, **kwargs) -> List[str]:
+    def _do_translate_batch(self, texts: List[str], target_lang: str, source_lang: Optional[str] = None, **kwargs) -> List[str]:
         if not self.api_key:
             logger.warning("DeepL API Key is empty. Falling back to None.")
             return [None] * len(texts)

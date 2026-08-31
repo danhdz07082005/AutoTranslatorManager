@@ -25,7 +25,7 @@ class ApplicationLifecycle:
     def _init(self):
         self.state = AppState.RUNNING
         self.active_clients = {}
-        self.grace_period_seconds = 120
+        self.grace_period_seconds = 600
         self.startup_grace_period_seconds = 45
         self.has_ever_connected = False
         self.start_time = time.time()
@@ -84,7 +84,10 @@ class ApplicationLifecycle:
                     if self.has_ever_connected:
                         # Wait 10s for F5 reload before shutting down
                         if now - self.last_active_time > 10:
-                            logger.warning("All UI clients disconnected. Shutting down.")
+                            if hasattr(self, 'is_idle_callback') and callable(self.is_idle_callback):
+                                if not self.is_idle_callback():
+                                    return False
+                            logger.warning("All UI clients disconnected and system is idle. Shutting down.")
                             self.state = AppState.SHUTDOWN_REQUESTED
                             return True
                     else:

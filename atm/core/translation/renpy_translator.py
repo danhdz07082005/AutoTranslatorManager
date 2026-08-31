@@ -116,7 +116,9 @@ class RenPyTranslator:
 
         translator = self._get_translator(profile)
         source_lang = getattr(profile, "input_lang", "auto") or "auto"
-        target_lang = getattr(profile, "output_lang", "vi") or "vi"
+        target_lang = getattr(profile, "output_lang", None)
+        if not target_lang:
+            raise ValueError("output_lang must be provided")
         translated_values = translator.translate_batch(
             untranslated, target_lang=target_lang, source_lang=source_lang
         )
@@ -200,7 +202,9 @@ class RenPyTranslator:
                 progress_callback(1, 1, message)
             return False
 
-        language = getattr(profile, "output_lang", "vi") or "vi"
+        language = getattr(profile, "output_lang", None)
+        if not language:
+            raise ValueError("output_lang must be provided")
         try:
             generator = self._make_generator(project_path, language)
         except ValueError as error:

@@ -22,6 +22,76 @@ window.ATM.core = window.ATM.core || {};
             'status.failed': 'Lỗi dịch thuật',
             'status.interrupted': 'Bị gián đoạn',
 
+            'editor.loading': 'Đang tải dữ liệu...',
+            'editor.accept': 'Chấp nhận',
+            'editor.source_lang': 'Ngôn ngữ Gốc (Source)',
+            'editor.target_lang': 'Bản Dịch (Target)',
+            'editor.stats': 'Thống kê',
+            'editor.prev_page': 'Trang trước',
+            'editor.next_page': 'Trang sau',
+            
+            'common.info': 'Thông báo',
+            'workspace.sync_btn_title': 'Đồng bộ lại dữ liệu dịch',
+            'workspace.status_ready': 'Sẵn sàng',
+            'workspace.refreshing': 'Đang đồng bộ dữ liệu...',
+            
+            'confirm.sync_translation': 'Đồng bộ dữ liệu dịch?',
+            'workspace.sync_success': 'Đã đồng bộ dữ liệu dịch',
+            'error.sync_failed': 'Đồng bộ dữ liệu thất bại',
+            'status.paused': 'Tạm dừng',
+            'toast.settings_error': 'Lỗi lưu cấu hình',
+            'toast.initializing': 'Đang khởi tạo...',
+            'data.game_data_placeholder': 'Dữ liệu game...',
+            'plugins.deepl': 'DeepL API',
+            'plugins.libre': 'LibreTranslate',
+            'editor.total_items': 'Tổng: {total} mục',
+            'tm.no_results': 'Không tìm thấy kết quả',
+
+            'lang.auto': 'Tự động phát hiện',
+            'lang.ja': 'Tiếng Nhật',
+            'lang.en': 'Tiếng Anh',
+            'lang.zh': 'Tiếng Trung (Giản thể)',
+            'lang.zh-TW': 'Tiếng Trung (Phồn thể)',
+            'lang.ko': 'Tiếng Hàn',
+            'lang.vi': 'Tiếng Việt',
+            'lang.th': 'Tiếng Thái',
+            'lang.id': 'Tiếng Indonesia',
+            'lang.ms': 'Tiếng Mã Lai',
+            'lang.google': 'Google Translate',
+            'lang.deepl': 'DeepL API',
+
+            'toast.add_game_success': 'Thêm game thành công!',
+            'toast.add_game_error': 'Lỗi thêm game',
+            'toast.delete_success': 'Đã xóa game',
+            'toast.play_failed': 'Lỗi khởi chạy game. Vui lòng thử lại!',
+            'toast.start_failed': 'Lỗi khởi động',
+            'card.start': 'Bắt đầu dịch',
+            'card.stop': 'Dừng',
+            'card.resume': 'Tiếp tục (Lỗi/Khởi động lại)',
+            'card.play': 'Chơi Game',
+            'workspace.status_ready': 'Sẵn sàng',
+            'dashboard.empty_title': 'Không tìm thấy game nào',
+            'dashboard.empty_desc': 'Bấm "+ Thêm Game" để bắt đầu.',
+            'data.loading': 'Đang tải dữ liệu...',
+            'editor.qa_running': 'Đang quét...',
+            'editor.qa_found': 'Phát hiện {count} lỗi QA!',
+            'editor.qa_clean': 'Tuyệt vời! Không phát hiện lỗi QA nào.',
+            'editor.qa_error': 'Lỗi khi chạy QA',
+            'editor.apply_success': 'Đã áp dụng gợi ý',
+            'editor.apply_error': 'Lỗi lưu gợi ý',
+            'editor.empty': 'Không có dữ liệu.',
+            'editor.save_error': 'Không thể lưu bản dịch. Đã khôi phục lại.',
+            'glossary.add_success': 'Đã thêm từ',
+            'glossary.add_error': 'Lỗi thêm từ',
+            'glossary.export_success': 'Đã tải xuống file CSV',
+            'glossary.export_error': 'Lỗi khi xuất Glossary',
+            'glossary.import_confirm': 'Preview Import:\n- {new} Mới\n- {conflict} Xung đột\n- {duplicate} Trùng lặp\n- {invalid} Không hợp lệ.\n\nBạn có muốn Ghi đè (Merge) không?',
+            'glossary.import_success': 'Đã import Glossary thành công',
+            'glossary.import_error': 'Lỗi Import',
+            'plugins.deepl_configured': 'Đã cấu hình',
+            'plugins.deepl_placeholder': 'Nhập API Key (tùy chọn)',
+            'card.delete_confirm': 'Bạn chắc chắn muốn xóa game này?',
+
             // === MENU ===
             "menu.library": "Thư viện",
             "menu.plugins": "Bổ trợ",
@@ -171,65 +241,6 @@ window.ATM.core = window.ATM.core || {};
             "data.game_data_title": "Dữ liệu theo Game (Game Data)",
             "data.clear_all_confirm": "Bạn có chắc chắn muốn xóa toàn bộ Cache?",
             "data.clear_tm_confirm": "Bạn có chắc chắn muốn xóa toàn bộ Translation Memory?",
-            "toast.add_game_success": "Đã thêm game thành công!",
-            "toast.add_game_error": "Lỗi thêm game",
-            "toast.delete_success": "Đã xóa game",
-            "toast.play_failed": "Không thể khởi chạy game. Vui lòng thử lại!",
-            "toast.start_failed": "Lỗi khởi chạy",
-            "card.start": "Bắt đầu dịch",
-            "card.stop": "Dừng",
-            "card.resume": "Tiếp tục (Lỗi/Khởi động lại)",
-            "dashboard.empty_title": "Chưa có game nào",
-            "dashboard.empty_desc": "Bấm '+ Thêm Game' để bắt đầu.",
-            "data.loading": "Đang tải dữ liệu...",
-            "editor.qa_running": "Đang quét...",
-            "editor.qa_found": "Phát hiện {count} lỗi QA!",
-            "editor.qa_clean": "Tuyệt vời! Không phát hiện lỗi QA nào.",
-            "editor.qa_error": "Lỗi khi chạy QA",
-            "editor.apply_success": "Đã áp dụng Suggestion",
-            "editor.apply_error": "Lỗi lưu Suggestion",
-            "editor.empty": "Không có dữ liệu.",
-            "editor.save_error": "Không thể lưu bản dịch. Đã khôi phục lại.",
-            "glossary.add_success": "Đã thêm từ",
-            "glossary.add_error": "Lỗi thêm từ",
-            "glossary.export_success": "Đã tải xuống file CSV",
-            "glossary.export_error": "Lỗi khi xuất Glossary",
-            "glossary.import_confirm": "Preview Import:\n- {new} Mới\n- {conflict} Xung đột\n- {duplicate} Trùng lặp\n- {invalid} Không hợp lệ.\n\nBạn có muốn Ghi đè (Merge) không?",
-            "glossary.import_success": "Đã import Glossary thành công",
-            "glossary.import_error": "Lỗi Import",
-            "plugins.deepl_configured": "Đã cấu hình",
-            "plugins.deepl_placeholder": "Nhập API Key (tùy chọn)",
-            "card.delete_confirm": "Bạn chắc chắn muốn xóa game này?",
-            "toast.add_game_success": "Game added successfully!",
-            "toast.add_game_error": "Error adding game",
-            "toast.delete_success": "Game deleted",
-            "toast.play_failed": "Failed to launch game. Please try again!",
-            "toast.start_failed": "Failed to start",
-            "card.start": "Start Translation",
-            "card.stop": "Stop",
-            "card.resume": "Resume (Error/Restart)",
-            "dashboard.empty_title": "No games found",
-            "dashboard.empty_desc": "Click '+ Add Game' to get started.",
-            "data.loading": "Loading data...",
-            "editor.qa_running": "Scanning...",
-            "editor.qa_found": "Found {count} QA errors!",
-            "editor.qa_clean": "Great! No QA errors found.",
-            "editor.qa_error": "Error running QA",
-            "editor.apply_success": "Suggestion applied",
-            "editor.apply_error": "Error saving Suggestion",
-            "editor.empty": "No data.",
-            "editor.save_error": "Failed to save translation. Reverted.",
-            "glossary.add_success": "Word added",
-            "glossary.add_error": "Error adding word",
-            "glossary.export_success": "CSV file downloaded",
-            "glossary.export_error": "Error exporting Glossary",
-            "glossary.import_confirm": "Import Preview:\n- {new} New\n- {conflict} Conflicts\n- {duplicate} Duplicates\n- {invalid} Invalid.\n\nDo you want to Merge?",
-            "glossary.import_success": "Glossary imported successfully",
-            "glossary.import_error": "Import error",
-            "plugins.deepl_configured": "Configured",
-            "plugins.deepl_placeholder": "Enter API Key (optional)",
-            "card.delete_confirm": "Are you sure you want to delete this game?",
-
 
 
             // === MISC ===
@@ -253,6 +264,44 @@ window.ATM.core = window.ATM.core || {};
             'status.completed': 'Completed',
             'status.failed': 'Translation Failed',
             'status.interrupted': 'Interrupted',
+
+            'editor.loading': 'Loading data...',
+            'editor.accept': 'Accept',
+            'editor.source_lang': 'Source Language',
+            'editor.target_lang': 'Target Language',
+            'editor.stats': 'Statistics',
+            'editor.prev_page': 'Prev Page',
+            'editor.next_page': 'Next Page',
+            
+            'common.info': 'Information',
+            'workspace.sync_btn_title': 'Sync translation data',
+            'workspace.status_ready': 'Ready',
+            'workspace.refreshing': 'Syncing data...',
+
+            'confirm.sync_translation': 'Sync translation data?',
+            'workspace.sync_success': 'Translation data synced',
+            'error.sync_failed': 'Sync failed',
+            'status.paused': 'Paused',
+            'toast.settings_error': 'Error saving settings',
+            'toast.initializing': 'Initializing...',
+            'data.game_data_placeholder': 'Game data...',
+            'plugins.deepl': 'DeepL API',
+            'plugins.libre': 'LibreTranslate',
+            'editor.total_items': 'Total: {total} items',
+            'tm.no_results': 'No results found',
+
+            'lang.auto': 'Auto Detect',
+            'lang.ja': 'Japanese',
+            'lang.en': 'English',
+            'lang.zh': 'Chinese (Simplified)',
+            'lang.zh-TW': 'Chinese (Traditional)',
+            'lang.ko': 'Korean',
+            'lang.vi': 'Vietnamese',
+            'lang.th': 'Thai',
+            'lang.id': 'Indonesian',
+            'lang.ms': 'Malay',
+            'lang.google': 'Google Translate',
+            'lang.deepl': 'DeepL API',
 
             // === MENU ===
             "menu.library": "Library",
@@ -302,6 +351,8 @@ window.ATM.core = window.ATM.core || {};
             "card.stop": "Stop Game",
             "card.stopping": "Stopping...",
             "card.initializing": "Initializing...",
+            "card.play": "Play Game",
+            "workspace.status_ready": "Ready",
             "card.translating": "translating",
             "card.glossary_tooltip": "Custom Glossary",
             "card.editor_tooltip": "Text Editor",
@@ -403,35 +454,7 @@ window.ATM.core = window.ATM.core || {};
             "data.game_data_title": "Game Data",
             "data.clear_all_confirm": "Are you sure you want to clear all Cache?",
             "data.clear_tm_confirm": "Are you sure you want to clear all Translation Memory?",
-            "toast.add_game_success": "Game added successfully!",
-            "toast.add_game_error": "Error adding game",
-            "toast.delete_success": "Game deleted",
-            "toast.play_failed": "Failed to launch game. Please try again!",
-            "toast.start_failed": "Failed to start",
-            "card.start": "Start Translation",
-            "card.stop": "Stop",
-            "card.resume": "Resume (Error/Restart)",
-            "dashboard.empty_title": "No games found",
-            "dashboard.empty_desc": "Click '+ Add Game' to get started.",
-            "data.loading": "Loading data...",
-            "editor.qa_running": "Scanning...",
-            "editor.qa_found": "Found {count} QA errors!",
-            "editor.qa_clean": "Great! No QA errors found.",
-            "editor.qa_error": "Error running QA",
-            "editor.apply_success": "Suggestion applied",
-            "editor.apply_error": "Error saving Suggestion",
-            "editor.empty": "No data.",
-            "editor.save_error": "Failed to save translation. Reverted.",
-            "glossary.add_success": "Word added",
-            "glossary.add_error": "Error adding word",
-            "glossary.export_success": "CSV file downloaded",
-            "glossary.export_error": "Error exporting Glossary",
-            "glossary.import_confirm": "Import Preview:\n- {new} New\n- {conflict} Conflicts\n- {duplicate} Duplicates\n- {invalid} Invalid.\n\nDo you want to Merge?",
-            "glossary.import_success": "Glossary imported successfully",
-            "glossary.import_error": "Import error",
-            "plugins.deepl_configured": "Configured",
-            "plugins.deepl_placeholder": "Enter API Key (optional)",
-            "card.delete_confirm": "Are you sure you want to delete this game?",
+
 
 
             // === MISC ===
@@ -487,7 +510,25 @@ window.ATM.core = window.ATM.core || {};
                     const key = el.getAttribute('data-i18n');
                     if (key) {
                         const val = this.t(key);
-                        if (val !== undefined) el.textContent = val;
+                        if (val !== undefined) {
+                            // Find the first text node and update it, preserving HTML elements like SVG
+                            let textNodeFound = false;
+                            for (let i = 0; i < el.childNodes.length; i++) {
+                                if (el.childNodes[i].nodeType === Node.TEXT_NODE && el.childNodes[i].nodeValue.trim() !== '') {
+                                    el.childNodes[i].nodeValue = val;
+                                    textNodeFound = true;
+                                    break;
+                                }
+                            }
+                            if (!textNodeFound) {
+                                // If no non-empty text node found, either append one or set textContent if empty
+                                if (el.childNodes.length === 0) {
+                                    el.textContent = val;
+                                } else {
+                                    el.appendChild(document.createTextNode(' ' + val));
+                                }
+                            }
+                        }
                     }
                 });
                 

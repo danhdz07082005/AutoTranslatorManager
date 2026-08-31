@@ -88,9 +88,9 @@ window.ATM.Settings = (function() {
                 const deepl = document.getElementById('deepl-api-key');
                 if (deepl) {
                     if (s.deepl_api_key_configured) {
-                        deepl.placeholder = window.ATM.i18n.t('plugins.deepl_configured');
+                        deepl.placeholder = (window.ATM.i18n && window.ATM.i18n.t('plugins.deepl_configured')) || 'API Configured';
                     } else {
-                        deepl.placeholder = window.ATM.i18n.t('plugins.deepl_placeholder');
+                        deepl.placeholder = (window.ATM.i18n && window.ATM.i18n.t('plugins.deepl_placeholder')) || 'Enter DeepL API Key';
                     }
                     deepl.value = "";
                 }

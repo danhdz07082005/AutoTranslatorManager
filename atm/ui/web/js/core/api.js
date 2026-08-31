@@ -42,12 +42,14 @@ window.ATM.store = {
         const id = setTimeout(() => controller.abort(new Error("Timeout")), timeout);
 
         let finalSignal = controller.signal;
+        let composite = null;
+        let abort = null;
         if (options.signal) {
-            if (AbortSignal.any) {
-                finalSignal = AbortSignal.any([controller.signal, options.signal]);
+            if (options.signal.aborted) {
+                controller.abort();
             } else {
-                const composite = new AbortController();
-                const abort = () => composite.abort();
+                composite = new AbortController();
+                abort = () => composite.abort();
                 controller.signal.addEventListener('abort', abort);
                 options.signal.addEventListener('abort', abort);
                 if (controller.signal.aborted || options.signal.aborted) abort();
@@ -55,13 +57,19 @@ window.ATM.store = {
             }
         }
 
-        const response = await fetch(resource, {
-            ...options,
-            signal: finalSignal
-        });
-        
-        clearTimeout(id);
-        return response;
+        try {
+            const response = await fetch(resource, {
+                ...options,
+                signal: finalSignal
+            });
+            clearTimeout(id);
+            return response;
+        } finally {
+            if (abort && options.signal) {
+                options.signal.removeEventListener('abort', abort);
+                controller.signal.removeEventListener('abort', abort);
+            }
+        }
     }
 
     window.ATM.api = {

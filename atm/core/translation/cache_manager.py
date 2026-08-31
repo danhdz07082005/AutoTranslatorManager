@@ -19,17 +19,35 @@ class TranslationCache:
     LEGACY_CATEGORY = "default"
     MANUAL_CATEGORY = "manual"
     
+    _instance = None
+    _init_lock = threading.Lock()
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            with cls._init_lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self, data_dir: str = "data"):
-        self.data_dir = data_dir
-        os.makedirs(data_dir, exist_ok=True)
-        
-        self.db_path = os.path.join(data_dir, "translation_cache.db")
-        self.legacy_json_path = os.path.join(data_dir, "translation_cache.json")
-        self.repo = SQLiteTranslationCache(self.db_path)
-        self._write_lock = threading.Lock()
-        
-        self._migrate_if_needed()
-        self._start_background_prune()
+        if getattr(self, "_initialized", False):
+            return
+        with self._init_lock:
+            if getattr(self, "_initialized", False):
+                return
+            self.data_dir = data_dir
+            os.makedirs(data_dir, exist_ok=True)
+            
+            self.db_path = os.path.join(data_dir, "translation_cache.db")
+            self.legacy_json_path = os.path.join(data_dir, "translation_cache.json")
+            self.repo = SQLiteTranslationCache(self.db_path)
+            self._write_lock = threading.Lock()
+            
+            self._migrate_if_needed()
+            self._start_background_prune()
+            
+            self._initialized = True
         
     def _start_background_prune(self):
         """Run pruning in a background thread to avoid blocking startup."""
@@ -186,4 +204,6 @@ class TranslationCache:
 
     def invalidate_by_term(self, source_lang: str, target_lang: str, term: str) -> int:
         """Invalidate cache entries containing a specific term."""
+        if not source_lang or not target_lang:
+            raise ValueError("source_lang and target_lang are required for cache invalidation")
         return self.repo.invalidate_by_term(source_lang, target_lang, term)
