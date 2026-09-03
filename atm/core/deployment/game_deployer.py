@@ -47,7 +47,7 @@ class GameDeployer:
                     logger.error(f"Failed to copy payload: {copy_res.error}")
                     cleanup_items(self._deployed_items)
                     self._deployed_items = []
-                    self.is_running = False
+                    self.is_deploying = False
                     if self.monitor:
                         self.monitor.is_monitoring = False
                     return False

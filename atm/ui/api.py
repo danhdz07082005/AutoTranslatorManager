@@ -11,8 +11,6 @@ from atm.core.detectors.game_detector import GameDetector
 from atm.utils.logger import get_logger
 from atm.core.translation.translators import RateLimitError
 from atm.core.jobs.manager import JobManager
-import atm.core.engines.bakin
-
 logger = get_logger(__name__, "launcher.log")
 
 # Danh sách ngôn ngữ hỗ trợ
@@ -683,21 +681,6 @@ class BackendApi:
             logger.error(f"Delete error: {e}")
             return {"status": "error", "error": str(e)}
 
-    def get_cache_entries(self):
-        """[DEPRECATED] Lấy danh sách cache để hiển thị lên Grid Editor"""
-        from atm.core.translation.cache_manager import TranslationCache
-        cache = TranslationCache()
-        data = {}
-        for _source, _target, _category, original, translated in cache.iter_entries():
-            data[original] = translated
-        return {"status": "success", "data": data}
-
-    def search_cache(self, q: str, page: int, limit: int):
-        """[DEPRECATED] Tìm kiếm trong Cache"""
-        from atm.core.translation.cache_manager import TranslationCache
-        cache = TranslationCache()
-        result = cache.search(q, page, limit)
-        return {"status": "success", "data": result}
         
     def _get_game_lines_repo(self):
         from atm.core.translation.cache_manager import TranslationCache

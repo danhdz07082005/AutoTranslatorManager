@@ -3,6 +3,7 @@ window.ATM = window.ATM || {};
 window.ATM.Theme = (function() {
     const applyTheme = (isDark) => {
         document.documentElement.classList.toggle('theme-dark', isDark);
+        document.documentElement.style.backgroundColor = isDark ? '#0F172A' : '#F8F9FA';
         const toggleInput = document.getElementById('theme-toggle');
         if (toggleInput) toggleInput.checked = isDark;
     };

@@ -29,3 +29,8 @@ class EngineRegistry:
         if aud: return aud()
         raise ValueError(f"No auditor registered for {engine_name}")
 
+# Load built-in engines
+try:
+    import atm.core.engines.bakin
+except ImportError:
+    pass

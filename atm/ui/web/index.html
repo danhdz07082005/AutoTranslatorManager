@@ -18,7 +18,12 @@
         } catch (e) {
             console.error("Local storage atm_settings is malformed", e);
         }
-        if (settings.dark_mode !== false) document.documentElement.classList.add('theme-dark');
+        if (settings.dark_mode !== false) {
+            document.documentElement.classList.add('theme-dark');
+            document.documentElement.style.backgroundColor = '#0F172A'; // Dark mode bg
+        } else {
+            document.documentElement.style.backgroundColor = '#F8F9FA'; // Light mode bg
+        }
         
         window.onerror = function(msg, url, line, col, error) {
             var banner = document.getElementById('error-banner');

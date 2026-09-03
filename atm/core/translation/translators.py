@@ -1,7 +1,6 @@
 import urllib.request
 import urllib.parse
 import json
-import concurrent.futures
 import time
 import random
 import re

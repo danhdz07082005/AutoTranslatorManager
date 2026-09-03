@@ -71,8 +71,6 @@ class ATMHandler(BaseHTTPRequestHandler):
                 self._json_response(self.api.get_job_status(job_id))
             else:
                 self._json_response({"error": "Invalid job ID"}, 400)
-        elif parsed_path == '/api/cache/get':
-            self._json_response(self.api.get_cache_entries())
         elif self.path.startswith('/api/translation-memory/suggest'):
             query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             self._json_response(self.api.get_translation_memory_suggestions(
@@ -82,12 +80,6 @@ class ATMHandler(BaseHTTPRequestHandler):
             ))
         elif parsed_path == '/api/data/stats':
             self._json_response(self.api.get_data_stats())
-        elif self.path.startswith('/api/cache/search'):
-            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-            q = query.get('q', [''])[0]
-            page = int(query.get('page', ['1'])[0])
-            limit = int(query.get('limit', ['50'])[0])
-            self._json_response(self.api.search_cache(q, page, limit))
         elif self.path.startswith('/api/engines/coverage'):
             query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             game_id = query.get('game_id', [''])[0]
@@ -130,6 +122,11 @@ class ATMHandler(BaseHTTPRequestHandler):
             client_id = query.get('client_id', ['unknown'])[0]
             ApplicationLifecycle().disconnect_client(client_id)
             self._json_response({"status": "disconnected"})
+            return
+            
+        elif route_path == '/api/shutdown':
+            ApplicationLifecycle().request_shutdown()
+            self._json_response({"status": "shutting_down"})
             return
 
         if route_path == '/api/games/add':
