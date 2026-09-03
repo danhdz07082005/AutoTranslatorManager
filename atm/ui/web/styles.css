@@ -1079,3 +1079,29 @@ input:checked + .slider::before {
     vertical-align: middle;
     animation: heartbeat 1.2s infinite;
 }
+  
+@keyframes heartbeat-neon-green {  
+  0% { box-shadow: 0 0 5px #10b981, 0 0 10px #10b981; }  
+  50% { box-shadow: 0 0 15px #10b981, 0 0 30px #10b981; }  
+  100% { box-shadow: 0 0 5px #10b981, 0 0 10px #10b981; }  
+}  
+@keyframes heartbeat-neon-red {  
+  0% { box-shadow: 0 0 5px #ef4444, 0 0 10px #ef4444; }  
+  50% { box-shadow: 0 0 15px #ef4444, 0 0 30px #ef4444; }  
+  100% { box-shadow: 0 0 5px #ef4444, 0 0 10px #ef4444; }  
+}  
+@keyframes heartbeat-neon-cyan {  
+  0% { box-shadow: 0 0 5px #06b6d4, 0 0 10px #06b6d4; }  
+  50% { box-shadow: 0 0 15px #06b6d4, 0 0 30px #06b6d4; }  
+  100% { box-shadow: 0 0 5px #06b6d4, 0 0 10px #06b6d4; }  
+}  
+@keyframes heartbeat-neon-orange {  
+  0% { box-shadow: 0 0 5px #f97316, 0 0 10px #f97316; }  
+  50% { box-shadow: 0 0 15px #f97316, 0 0 30px #f97316; }  
+  100% { box-shadow: 0 0 5px #f97316, 0 0 10px #f97316; }  
+}  
+.heartbeat-neon-green { animation: heartbeat-neon-green 1.5s infinite; border-color: #10b981 !important; color: #10b981 !important; }  
+.heartbeat-neon-red { animation: heartbeat-neon-red 1.5s infinite; border-color: #ef4444 !important; color: #ef4444 !important; }  
+.heartbeat-neon-cyan { animation: heartbeat-neon-cyan 1.5s infinite; border-color: #06b6d4 !important; color: #06b6d4 !important; }  
+.heartbeat-neon-orange { animation: heartbeat-neon-orange 1.5s infinite; background-color: #f97316 !important; } 
+body, #hello-screen { transition: background-color 0.3s ease, color 0.3s ease; }

@@ -28,7 +28,7 @@ window.ATM.Theme = (function() {
                     
                     // Sync với Backend (Non-blocking)
                     if (window.ATM.api) {
-                        window.ATM.api.post('settings', { dark_mode: darkEnabled }).catch(() => {});
+                        window.ATM.api.post('settings', { dark_mode: darkEnabled }, { keepalive: true }).catch(() => {});
                     }
                 });
             }

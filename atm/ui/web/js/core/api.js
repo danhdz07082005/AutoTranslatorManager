@@ -86,7 +86,7 @@ window.ATM.store = {
                 }
                 const data = await response.json();
                 if (data.status === 'error') {
-                    const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.server_error') : "Lỗi xử lý từ máy chủ";
+                    const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.server_error') : '';
                     throw new BackendError(data.error || fallback, response.status);
                 }
                 return data;
@@ -116,7 +116,7 @@ window.ATM.store = {
                 }
                 const resData = await response.json();
                 if (resData.status === 'error') {
-                    const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.server_error') : "Lỗi xử lý từ máy chủ";
+                    const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.server_error') : '';
                     throw new BackendError(resData.error || fallback, response.status);
                 }
                 return resData;

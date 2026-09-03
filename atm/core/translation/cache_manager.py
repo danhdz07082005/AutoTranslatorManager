@@ -207,3 +207,15 @@ class TranslationCache:
         if not source_lang or not target_lang:
             raise ValueError("source_lang and target_lang are required for cache invalidation")
         return self.repo.invalidate_by_term(source_lang, target_lang, term)
+
+    def batch_invalidate_by_terms(self, source_lang: str, target_lang: str, terms: list) -> int:
+        """Batch-invalidate cache for a list of terms in a SINGLE SQLite transaction.
+        
+        Replaces O(N) sequential calls to invalidate_by_term() with a single transaction,
+        which is critical for large glossary imports (10,000+ terms).
+        """
+        if not source_lang or not target_lang:
+            raise ValueError("source_lang and target_lang are required for cache invalidation")
+        if not terms:
+            return 0
+        return self.repo.batch_invalidate_by_terms(source_lang, target_lang, terms)

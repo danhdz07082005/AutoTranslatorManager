@@ -48,13 +48,16 @@ class BackendApi:
         self.cancel_flags = {}  # game_id -> bool
         self._lock = threading.Lock()
         self.job_manager = JobManager(max_workers=4)
+        # In-memory fingerprint cache: {game_id: (fingerprint_str, computed_at_timestamp)}
+        # Avoids O(N) disk I/O on every get_games() call. Invalidated when a game completes translation.
+        self._fingerprint_cache = {}
         # Recover zombie jobs from before last restart
         self._recover_jobs()
 
     def is_idle(self) -> bool:
         """Kiểm tra xem hệ thống có đang rảnh rỗi không (không có game nào đang dịch/chạy nền)."""
         with self._lock:
-            for job in self.job_manager.jobs.values():
+            for job in list(self.job_manager.jobs.values()):
                 if job.status in ("running", "queued"):
                     return False
             for status in self.translation_status.values():
@@ -260,7 +263,15 @@ class BackendApi:
         
         # Block multiple starts
         with self._lock:
+            # Clean up dead deployers first
+            if game_id in self.active_deployers:
+                dep = self.active_deployers[game_id]
+                if not getattr(dep, "is_deploying", False) and not dep.monitor.is_monitoring:
+                    del self.active_deployers[game_id]
+                    
             if game_id in self.translation_status and not self.translation_status[game_id].get("done", True):
+                return {"status": "translating", "message": "Already translating"}
+            if game_id in self.active_deployers:
                 return {"status": "translating", "message": "Already translating"}
 
         if profile.engine in ("RPG Maker", "RenPy"):
@@ -330,6 +341,9 @@ class BackendApi:
                             self.translation_status[game_id]["code"] = "translation.success"
                             self.translation_status[game_id]["params"] = {}
                         
+                        # Invalidate the fingerprint cache so get_games() re-computes it fresh
+                        self._invalidate_fingerprint_cache(game_id)
+                        
                         # Thêm dấu ấn (Watermark)
                         import json
                         import datetime
@@ -394,10 +408,18 @@ class BackendApi:
             t.start()
             return {"status": "translating"}
             
-        if profile.engine == "Unity Mono":
-            payload_dir = os.path.join(base_dir, "atm", "resources", "payloads", "bepinex_mono")
-        elif profile.engine == "Unity IL2CPP":
-            payload_dir = os.path.join(base_dir, "atm", "resources", "payloads", "bepinex_il2cpp")
+        if profile.engine in ("Unity Mono", "Unity IL2CPP"):
+            if not all(ord(c) < 128 for c in profile.exe_path):
+                return {
+                    "status": "unicode_error", 
+                    "error": "UNITY_UNICODE_PATH",
+                    "message": "Đường dẫn chứa ký tự đặc biệt."
+                }
+                
+            if profile.engine == "Unity Mono":
+                payload_dir = os.path.join(base_dir, "atm", "resources", "payloads", "bepinex_mono")
+            elif profile.engine == "Unity IL2CPP":
+                payload_dir = os.path.join(base_dir, "atm", "resources", "payloads", "bepinex_il2cpp")
         else:
             return {"status": "error", "error": "Unsupported engine: " + profile.engine}
 
@@ -407,10 +429,88 @@ class BackendApi:
         with self._lock:
             self.active_deployers[game_id] = deployer
         
-        # Deploy và Launch (chạy background)
-        t = threading.Thread(target=deployer.deploy_and_launch, args=(profile, payload_dir), daemon=True)
+        # Deploy và Launch (chạy background) - wrapped so crashes don't ghost the game state
+        def _run_unity_deploy():
+            try:
+                deployer.deploy_and_launch(profile, payload_dir)
+            except Exception as e:
+                logger.error(f"Unity deployer crashed for {game_id}: {e}", exc_info=True)
+            finally:
+                # Always clean up, even on crash - prevents permanent TRANSLATING ghost state
+                with self._lock:
+                    self.active_deployers.pop(game_id, None)
+                self._invalidate_fingerprint_cache(game_id)
+
+        t = threading.Thread(target=_run_unity_deploy, daemon=True)
         t.start()
         return {"status": "success"}
+
+    def fix_unicode_path(self, game_id: str):
+        profile = self.profile_repo.get_by_id(game_id)
+        if not profile:
+            return {"status": "error", "error": "Game not found"}
+            
+        import re
+        import uuid
+        def slugify(text):
+            try:
+                from unidecode import unidecode
+                text = unidecode(text)
+            except ImportError:
+                pass
+            text = re.sub(r'[^a-zA-Z0-9_\-\s]', '', text).strip().replace(' ', '_')
+            if not text: return "Game"
+            return text
+            
+        old_exe = profile.exe_path
+        old_dir = os.path.dirname(old_exe)
+        old_parent = os.path.dirname(old_dir)
+        old_exe_name = os.path.basename(old_exe)
+        
+        # 1. Rename folder
+        new_dir_name = slugify(os.path.basename(old_dir))
+        if new_dir_name == "Game" or new_dir_name == "":
+            new_dir_name = f"Game_{game_id[:8]}"
+            
+        new_dir = os.path.join(old_parent, new_dir_name)
+        if os.path.exists(new_dir) and old_dir != new_dir:
+            new_dir_name = f"{new_dir_name}_{uuid.uuid4().hex[:6]}"
+            new_dir = os.path.join(old_parent, new_dir_name)
+            
+        if old_dir != new_dir:
+            try:
+                os.rename(old_dir, new_dir)
+            except Exception as e:
+                return {"status": "error", "error": f"Cannot rename folder: {e}"}
+        else:
+            new_dir = old_dir
+            
+        # 2. Rename Exe and Data
+        new_exe_name = slugify(old_exe_name.replace(".exe", "")) + ".exe"
+        if new_exe_name == ".exe":
+            new_exe_name = f"Game_{game_id[:8]}.exe"
+            
+        new_exe = os.path.join(new_dir, new_exe_name)
+        old_data_dir = os.path.join(new_dir, old_exe_name.replace(".exe", "_Data"))
+        new_data_dir = os.path.join(new_dir, new_exe_name.replace(".exe", "_Data"))
+        
+        try:
+            if os.path.join(new_dir, old_exe_name) != new_exe:
+                os.rename(os.path.join(new_dir, old_exe_name), new_exe)
+        except Exception as e:
+            return {"status": "error", "error": f"Cannot rename exe: {e}"}
+            
+        try:
+            if os.path.exists(old_data_dir) and old_data_dir != new_data_dir:
+                os.rename(old_data_dir, new_data_dir)
+        except Exception as e:
+            return {"status": "error", "error": f"Cannot rename Data folder: {e}"}
+            
+        profile.exe_path = new_exe
+        profile.game_name = new_exe_name.replace(".exe", "")
+        self.profile_repo.save(profile)
+        
+        return {"status": "success", "new_path": new_exe}
 
     def get_translation_status(self, game_id):
         """Trả về tiến độ dịch offline"""
@@ -429,6 +529,8 @@ class BackendApi:
                         "error": False
                     }
                 else:
+                    # Clean up dead deployer
+                    del self.active_deployers[game_id]
                     return {
                         "progress": 100,
                         "total": 100,
@@ -537,25 +639,26 @@ class BackendApi:
         try:
             # Check if running and wait for it to stop
             with self._lock:
-                is_running = game_id in self.translation_status and not self.translation_status[game_id].get("done", True)
-            
-            if is_running:
-                self.stop_game(game_id)
-                # Wait up to 5 seconds
-                for _ in range(50):
-                    with self._lock:
-                        if self.translation_status.get(game_id, {}).get("done", True):
-                            break
-                    time.sleep(0.1)
+                # Clean up dead deployers first
+                if game_id in self.active_deployers:
+                    dep = self.active_deployers[game_id]
+                    if not getattr(dep, "is_deploying", False) and not dep.monitor.is_monitoring:
+                        del self.active_deployers[game_id]
                 
-                # Check if it actually stopped
-                with self._lock:
-                    is_done = self.translation_status.get(game_id, {}).get("done", True)
-                if not is_done:
-                    return {"status": "error", "error": "Timeout waiting for translation thread to stop."}
+                is_running_offline = game_id in self.translation_status and not self.translation_status[game_id].get("done", True)
+                is_running_unity = game_id in self.active_deployers
+            
+            if is_running_offline or is_running_unity:
+                return {"status": "error", "error": "Game is currently running or translating. Please stop it before deleting."}
             
             # Xóa bằng ID (tên file mới)
             deleted = self.profile_repo.delete(game_id)
+            
+            # Xóa dữ liệu dịch trong database game_lines để dọn dẹp dung lượng
+            try:
+                self.clear_game_lines(game_id, keep_count=0)
+            except Exception as e:
+                logger.error(f"Error clearing game lines on delete: {e}")
 
             # Dọn cả file profile cũ (tên theo game_name) nếu còn sót
             base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -581,22 +684,97 @@ class BackendApi:
             return {"status": "error", "error": str(e)}
 
     def get_cache_entries(self):
-        """Lấy danh sách cache để hiển thị lên Grid Editor"""
+        """[DEPRECATED] Lấy danh sách cache để hiển thị lên Grid Editor"""
         from atm.core.translation.cache_manager import TranslationCache
         cache = TranslationCache()
         data = {}
-        # The editor currently displays one value per source string. Core
-        # storage still retains the context category for every entry.
         for _source, _target, _category, original, translated in cache.iter_entries():
             data[original] = translated
         return {"status": "success", "data": data}
 
     def search_cache(self, q: str, page: int, limit: int):
-        """Tìm kiếm trong Cache sử dụng Snapshot in-memory với pagination deterministic."""
+        """[DEPRECATED] Tìm kiếm trong Cache"""
         from atm.core.translation.cache_manager import TranslationCache
         cache = TranslationCache()
         result = cache.search(q, page, limit)
         return {"status": "success", "data": result}
+        
+    def _get_game_lines_repo(self):
+        from atm.core.translation.cache_manager import TranslationCache
+        from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+        db_path = TranslationCache().db_path
+        return SQLiteGameLinesRepository(db_path)
+
+    def get_game_translations(self, game_id: str, page: int = 1, limit: int = 50, query: str = None):
+        """V2: Lấy danh sách cache CHỈ cho một game cụ thể (Database Isolation)"""
+        try:
+            repo = self._get_game_lines_repo()
+            result = repo.list_by_game(game_id, page, limit, query)
+            return {"status": "success", "data": result}
+        except Exception as e:
+            logger.error(f"Failed to get game translations: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def update_game_translation(self, game_id: str, item_id: int, translated: str, expected_version: int):
+        """V2: Cập nhật 1 dòng và chống đụng độ (Optimistic Concurrency)"""
+        try:
+            repo = self._get_game_lines_repo()
+            # Fetch original text first to prevent race condition if deleted right after update
+            item = repo.get_by_id(item_id)
+            if not item or item.get("game_id") != game_id:
+                return {"status": "error", "error": "Item not found or game mismatch.", "code": 404}
+                
+            success = repo.update(item_id, game_id, translated, expected_version)
+            if success:
+                # Add to TM
+                profile = self.profile_repo.get_by_id(game_id)
+                if profile and profile.output_lang:
+                    from atm.core.translation.translation_memory import TranslationMemory
+                    tm = TranslationMemory()
+                    tm.remember(profile.input_lang or "auto", profile.output_lang, item["original"], translated)
+                return {"status": "success"}
+            else:
+                return {"status": "error", "error": "Conflict (Version mismatch).", "code": 409}
+        except Exception as e:
+            logger.error(f"Failed to update translation: {e}")
+            return {"status": "error", "error": str(e)}
+
+    def batch_update_game_translations(self, game_id: str, items: list):
+        """V2: Cập nhật hàng loạt (Batch Editing)"""
+        try:
+            if not isinstance(items, list):
+                return {"status": "error", "error": "Items must be a list."}
+                
+            repo = self._get_game_lines_repo()
+            # Safely extract keys, defaulting version to 1 if missing
+            batch_data = []
+            for i in items:
+                if "id" not in i or "translated" not in i:
+                    return {"status": "error", "error": "Missing id or translated field."}
+                try:
+                    _id = int(i["id"])
+                    _translated = str(i["translated"])
+                    _version = int(i.get("version") or 1)
+                    batch_data.append((_id, _translated, _version))
+                except (ValueError, TypeError):
+                    return {"status": "error", "error": "Invalid data types for id or version."}
+                
+            result = repo.batch_update(game_id, batch_data)
+            
+            # Sync to TM for successful ones
+            if result.get("saved"):
+                profile = self.profile_repo.get_by_id(game_id)
+                if profile and profile.output_lang:
+                    from atm.core.translation.translation_memory import TranslationMemory
+                    tm = TranslationMemory()
+                    sl, tl = profile.input_lang or "auto", profile.output_lang
+                    for saved_item in result["saved"]:
+                        tm.remember(sl, tl, saved_item["original"], saved_item["translated"])
+                                
+            return {"status": "success", "data": result}
+        except Exception as e:
+            logger.error(f"Failed to batch update translations: {e}")
+            return {"status": "error", "error": str(e)}
 
     def review_qa(self, entries):
         """Quét lỗi QA trên một batch entries"""
@@ -637,7 +815,7 @@ class BackendApi:
             manager = GlossaryManager(self.profile_repo)
             manager.apply_import(game_id, parsed_data, strategy)
             
-            # Invalidate cache for new terms
+            # Batch-invalidate cache for all imported terms in ONE transaction (O(1) instead of O(N))
             try:
                 from atm.core.translation.cache_manager import TranslationCache
                 cache = TranslationCache()
@@ -646,10 +824,16 @@ class BackendApi:
                     if not profile.output_lang:
                         logger.error("Game profile is missing output_lang, cannot invalidate cache")
                         return {"status": "success"}  # Still succeed the import
-                    for item in parsed_data:
-                        src = item.get("source") or item.get("Source") or item.get("source_term")
-                        if src:
-                            cache.invalidate_by_term(profile.input_lang or "auto", profile.output_lang, src)
+                    terms = [
+                        item.get("source") or item.get("Source") or item.get("source_term")
+                        for item in parsed_data
+                    ]
+                    terms = [t for t in terms if t]  # Filter out None/empty
+                    if terms:
+                        deleted = cache.batch_invalidate_by_terms(
+                            profile.input_lang or "auto", profile.output_lang, terms
+                        )
+                        logger.info(f"Batch-invalidated {deleted} cache entries for {len(terms)} glossary terms.")
             except Exception as e:
                 logger.error(f"Failed to invalidate cache after glossary import: {e}")
                 
@@ -807,16 +991,37 @@ class BackendApi:
             
         # Thống kê per-game
         games_stats = []
+        try:
+            from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+            from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+            game_lines_repo = SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
+            game_lines_stats = { item["game_id"]: item["count"] for item in game_lines_repo.get_stats_by_game() }
+        except Exception:
+            game_lines_stats = {}
+
         profiles = self.profile_repo.get_all()
+        known_game_ids = set()
         for p in profiles:
+            known_game_ids.add(p.id)
+            count = game_lines_stats.get(p.id, 0)
             games_stats.append({
                 "id": p.id,
                 "name": p.game_name,
                 "engine": p.engine,
-                "cache_hits": 0,  # Có thể tính sau
-                "tm_entries": 0,
-                "glossary_terms": len(p.glossary) if p.glossary else 0
+                "folder": os.path.basename(os.path.dirname(p.exe_path)) if p.exe_path else "Unknown",
+                "entries": count
             })
+            
+        # Add orphaned game lines (games deleted from library but data remains)
+        for g_id, count in game_lines_stats.items():
+            if g_id not in known_game_ids and count > 0:
+                games_stats.append({
+                    "id": g_id,
+                    "name": "Deleted Game (Orphaned Data)",
+                    "engine": "Unknown",
+                    "folder": g_id,
+                    "entries": count
+                })
             
         return {
             "status": "success",
@@ -848,6 +1053,18 @@ class BackendApi:
             memory._save_unlocked()
         logger.info("Cleared global translation memory.")
         return {"status": "success"}
+
+    def clear_game_lines(self, game_id, keep_count=0):
+        """Xóa dữ liệu game_lines cho một game cụ thể."""
+        try:
+            from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+            from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+            game_lines_repo = SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
+            game_lines_repo.clear_by_game(game_id, keep_count)
+            logger.info(f"Cleared game lines for {game_id}. Kept: {keep_count}")
+            return {"status": "success"}
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
 
     def clear_game_data(self, game_id):
         """Xóa dữ liệu glossary và lịch sử dịch của game."""
@@ -895,7 +1112,35 @@ class BackendApi:
         return {"status": "success"}
 
     def _calculate_fingerprint(self, profile):
-        """Tính toán vân tay của game bằng hash (size, mtime) của các file cốt tủy"""
+        """Tính toán vân tay của game bằng hash (size, mtime) của các file cốt tủy.
+        
+        Uses an in-memory cache with a 5-minute TTL to avoid O(N) disk I/O on every
+        get_games() call. Cache is invalidated when a game completes translation.
+        """
+        cache_key = profile.id
+        now = time.time()
+        
+        # Check cache first (TTL = 5 minutes)
+        with self._lock:
+            if cache_key in self._fingerprint_cache:
+                cached_fp, cached_at = self._fingerprint_cache[cache_key]
+                if now - cached_at < 300:  # 5 min TTL
+                    return cached_fp
+
+        # Compute fingerprint
+        fp = self._compute_fingerprint_raw(profile)
+        
+        with self._lock:
+            self._fingerprint_cache[cache_key] = (fp, now)
+        return fp
+
+    def _invalidate_fingerprint_cache(self, game_id: str):
+        """Invalidate the fingerprint cache for a specific game (call after translation completes)."""
+        with self._lock:
+            self._fingerprint_cache.pop(game_id, None)
+
+    def _compute_fingerprint_raw(self, profile):
+        """Internal: perform actual disk I/O to compute fingerprint. Do not call directly."""
         try:
             import hashlib
             game_dir = os.path.dirname(profile.exe_path)
@@ -952,6 +1197,7 @@ class BackendApi:
             logger.error(f"Error calculating fingerprint: {e}")
             return "sha256:error"
 
+
     # ============ Universal Engine API ============
     def get_coverage(self, game_id: str):
         profile = self.profile_repo.get_by_id(game_id)
@@ -978,6 +1224,23 @@ class BackendApi:
         def _extract_worker(job, cancel_token, g_id):
             extractor = EngineRegistry.get_extractor(profile.engine, os.path.dirname(profile.exe_path))
             entries = extractor.extract(job_tracker=job)
+            
+            # Insert extracted entries into game_lines
+            if entries:
+                from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+                from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+                repo = SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
+                for entry in entries:
+                    if cancel_token and cancel_token.is_set():
+                        break
+                    repo.insert_or_ignore(
+                        game_id=g_id,
+                        original=entry.original,
+                        translated=entry.original, # Initial translation is the original text
+                        category=entry.category,
+                        source_file=entry.source_file,
+                        source_path=entry.source_path
+                    )
             
         return self.job_manager.submit_job("extract", game_id, _extract_worker, g_id=game_id)
 
@@ -1010,3 +1273,4 @@ class BackendApi:
 
 
 
+ 

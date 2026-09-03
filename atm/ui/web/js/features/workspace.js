@@ -67,7 +67,7 @@ window.ATM.features = window.ATM.features || {};
         const btnRefresh = clone.querySelector('.btn-refresh-workspace');
         if (btnRefresh) {
             if (localStorage.getItem('atm_needs_sync_' + game.id) === 'true') {
-                btnRefresh.classList.add('btn-needs-sync');
+                btnRefresh.classList.add('heartbeat-neon-red');
             }
             btnRefresh.addEventListener('click', () => {
                 if (!currentGame) return;
@@ -86,7 +86,7 @@ window.ATM.features = window.ATM.features || {};
 
                 function doSync() {
                     if (!currentGame) return;
-                    btnRefresh.classList.remove('btn-needs-sync');
+                    btnRefresh.classList.remove('heartbeat-neon-red');
                     const gameId = currentGame.id;
                     localStorage.removeItem('atm_needs_sync_' + gameId);
                     const statusText = document.getElementById(`workspace-status-text-${gameId}`);
@@ -137,12 +137,14 @@ window.ATM.features = window.ATM.features || {};
         const tabExtract = clone.querySelector('.tab-extract');
         
         if (tabGlossary) {
-            tabGlossary.addEventListener('click', () => {
+            tabGlossary.addEventListener('click', async () => {
+                if (window.ATM.Editor && window.ATM.Editor.confirmDiscard && !(await window.ATM.Editor.confirmDiscard())) return;
                 if(window.ATM.Glossary) window.ATM.Glossary.open(game.id);
             });
         }
         if (tabTm) {
-            tabTm.addEventListener('click', () => {
+            tabTm.addEventListener('click', async () => {
+                if (window.ATM.Editor && window.ATM.Editor.confirmDiscard && !(await window.ATM.Editor.confirmDiscard())) return;
                 if(window.ATM.Modals) window.ATM.Modals.open('translation-memory-modal');
             });
         }
@@ -150,11 +152,17 @@ window.ATM.features = window.ATM.features || {};
         if (['Bakin'].includes(game.engine)) {
             if (tabAudit) {
                 tabAudit.style.display = 'block';
-                tabAudit.addEventListener('click', () => window.ATM.Workspace.auditCoverage(game.id, game.engine));
+                tabAudit.addEventListener('click', async () => {
+                    if (window.ATM.Editor && window.ATM.Editor.confirmDiscard && !(await window.ATM.Editor.confirmDiscard())) return;
+                    window.ATM.Workspace.auditCoverage(game.id, game.engine);
+                });
             }
             if (tabExtract) {
                 tabExtract.style.display = 'block';
-                tabExtract.addEventListener('click', () => window.ATM.Workspace.runExtractJob(game.id));
+                tabExtract.addEventListener('click', async () => {
+                    if (window.ATM.Editor && window.ATM.Editor.confirmDiscard && !(await window.ATM.Editor.confirmDiscard())) return;
+                    window.ATM.Workspace.runExtractJob(game.id);
+                });
             }
         }
         
@@ -173,7 +181,7 @@ window.ATM.features = window.ATM.features || {};
         
         const card = document.getElementById(`card-${game.id}`);
         const initPct = (card && card.dataset.percent) ? parseFloat(card.dataset.percent) : 0;
-        const initState = (card && card.dataset.state) ? card.dataset.state : (game.runtime_state || 'READY');
+        const initState = (card && card.dataset.state) ? card.dataset.state : (game.runtime_state || '');
         updateProgress(game.id, initState, initPct);
         
         startEditor(game.id);
@@ -194,7 +202,7 @@ window.ATM.features = window.ATM.features || {};
         
         if (statusText && percentText) {
             percentText.textContent = `${displayPercent.toFixed(1)}%`;
-            if (state === 'TRANSLATING') {
+            if (state === '') {
                 statusText.setAttribute('data-i18n', 'status.running');
                 statusText.textContent = (i18n ? i18n.t('status.running') : 'Translating...');
                 statusText.style.color = 'var(--accent)';
@@ -204,7 +212,7 @@ window.ATM.features = window.ATM.features || {};
                 statusText.textContent = (i18n ? i18n.t('status.completed') : 'Completed');
                 statusText.style.color = 'var(--success)';
                 percentText.style.color = 'var(--success)';
-            } else if (state === 'INTERRUPTED' || state === 'PAUSED') {
+            } else if (state === 'INTERRUPTED' || state === '') {
                 statusText.setAttribute('data-i18n', 'status.interrupted');
                 statusText.textContent = (i18n ? i18n.t('status.interrupted') : 'Interrupted');
                 statusText.style.color = 'var(--warning)';
@@ -218,7 +226,7 @@ window.ATM.features = window.ATM.features || {};
         }
         if (progressBar) {
             progressBar.style.width = `${displayPercent}%`;
-            progressBar.style.backgroundColor = state === 'TRANSLATING' ? 'var(--accent)' : (state === 'COMPLETE' ? 'var(--success)' : 'var(--text-muted)');
+            progressBar.style.backgroundColor = state === '' ? 'var(--accent)' : (state === 'COMPLETE' ? 'var(--success)' : 'var(--text-muted)');
         }
     }
 
@@ -251,7 +259,10 @@ window.ATM.features = window.ATM.features || {};
         if (container) container.replaceChildren(); // Clean up memory
     }
 
-    function leave() {
+    async function leave() {
+        if (window.ATM.Editor && window.ATM.Editor.confirmDiscard) {
+            if (!(await window.ATM.Editor.confirmDiscard())) return;
+        }
         cleanup();
         if (window.ATM.Editor) window.ATM.Editor.close();
         if (window.ATM.ProgressManager) window.ATM.ProgressManager.stop('extract_job');
@@ -279,7 +290,15 @@ window.ATM.features = window.ATM.features || {};
             }
             if (payload && payload.gameId && currentGame && payload.gameId !== currentGame.id) return;
             const btn = document.querySelector('.btn-refresh-workspace');
-            if (btn) btn.classList.add('btn-needs-sync');
+            if (btn) btn.classList.add('heartbeat-neon-red');
+        });
+        
+        window.ATM.events.subscribe('cache:updated', (payload) => {
+            if (currentGame) {
+                localStorage.setItem('atm_needs_sync_' + currentGame.id, 'true');
+            }
+            const btn = document.querySelector('.btn-refresh-workspace');
+            if (btn) btn.classList.add('heartbeat-neon-red');
         });
         // We defer attaching the flag to window.ATM.Workspace below
     }

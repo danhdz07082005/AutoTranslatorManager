@@ -2,6 +2,7 @@ import sqlite3
 import os
 import threading
 import time
+import contextlib
 from typing import Dict, Optional, List
 from contextlib import contextmanager
 
@@ -14,28 +15,28 @@ class SQLiteTranslationCache:
     
     def __init__(self, db_path: str):
         self.db_path = db_path
-        self._local = threading.local()
         self._init_db()
 
-    @property
-    def conn(self) -> sqlite3.Connection:
-        if not hasattr(self._local, "conn"):
-            c = sqlite3.connect(self.db_path, timeout=30.0, check_same_thread=False)
-            c.execute("PRAGMA journal_mode=WAL;")
-            c.execute("PRAGMA synchronous=NORMAL;")
-            c.execute("PRAGMA busy_timeout=30000;")
-            self._local.conn = c
-        return self._local.conn
+    def _get_connection(self) -> sqlite3.Connection:
+        c = sqlite3.connect(self.db_path, timeout=30.0, check_same_thread=False, isolation_level=None)
+        c.execute("PRAGMA auto_vacuum=FULL;")
+        c.execute("PRAGMA journal_mode=WAL;")
+        c.execute("PRAGMA synchronous=NORMAL;")
+        c.execute("PRAGMA busy_timeout=30000;")
+        return c
 
-    @contextmanager
+    @contextlib.contextmanager
     def transaction(self):
-        conn = self.conn
+        conn = self._get_connection()
         try:
-            with conn:
-                yield conn
-        except Exception as e:
-            logger.error(f"Transaction failed: {e}", exc_info=True)
+            conn.execute("BEGIN IMMEDIATE")
+            yield conn
+            conn.execute("COMMIT")
+        except Exception:
+            conn.execute("ROLLBACK")
             raise
+        finally:
+            conn.close()
 
     def _init_db(self):
         with self.transaction() as conn:
@@ -48,34 +49,40 @@ class SQLiteTranslationCache:
                     translated TEXT NOT NULL,
                     created_at REAL NOT NULL,
                     last_accessed_at REAL NOT NULL,
+                    hit_count INTEGER NOT NULL DEFAULT 1,
                     PRIMARY KEY (source_lang, target_lang, category, original)
                 )
             ''')
-            conn.execute('''
-                CREATE INDEX IF NOT EXISTS idx_last_accessed 
-                ON cache(last_accessed_at)
-            ''')
+            # Thêm index cho last_accessed_at để dọn dẹp nhanh hơn
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_cache_accessed ON cache(last_accessed_at)")
 
     def get(self, source_lang: str, target_lang: str, category: str, original: str, debounce_seconds: float = 300.0) -> Optional[str]:
         # Avoid explicit transaction block for SELECT to prevent SQLite from creating 
         # a new journal/lock for every single read operation in a tight loop.
-        cursor = self.conn.execute('''
-            SELECT translated, last_accessed_at FROM cache 
-            WHERE source_lang = ? AND target_lang = ? AND category = ? AND original = ?
-        ''', (source_lang, target_lang, category, original))
-        row = cursor.fetchone()
-        
-        if row:
-            translated, last_accessed_at = row
-            now = time.time()
-            if now - last_accessed_at > debounce_seconds:
-                with self.transaction() as conn:
-                    conn.execute('''
-                        UPDATE cache SET last_accessed_at = ? 
-                        WHERE source_lang = ? AND target_lang = ? AND category = ? AND original = ?
-                    ''', (now, source_lang, target_lang, category, original))
-            return translated
-        return None
+        with contextlib.closing(self._get_connection()) as conn:
+            cursor = conn.execute("""
+                SELECT translated, last_accessed_at, hit_count 
+                FROM cache 
+                WHERE source_lang = ? AND target_lang = ? AND category = ? AND original = ?
+            """, (source_lang, target_lang, category, original))
+            
+            row = cursor.fetchone()
+            if row:
+                translated, last_accessed_at, hit_count = row
+                now = time.time()
+                # Ch? c?p nh?t l?i n?u th?i gian truy c?p vu?t qu? th?i gian debounce
+                if now - last_accessed_at > debounce_seconds:
+                    # Update without locking the main thread with a transaction
+                    try:
+                        conn.execute("""
+                            UPDATE cache SET last_accessed_at = ?, hit_count = ?
+                            WHERE source_lang = ? AND target_lang = ? AND category = ? AND original = ?
+                        """, (now, hit_count + 1, source_lang, target_lang, category, original))
+                    except sqlite3.OperationalError:
+                        pass # Ignore lock errors on hit_count updates to avoid crashing reads
+                
+                return translated
+            return None
 
     def set(self, source_lang: str, target_lang: str, category: str, original: str, translated: str):
         now = time.time()
@@ -132,13 +139,8 @@ class SQLiteTranslationCache:
                     )
                 ''', (keep_count,))
         
-        # Force WAL checkpoint to allow VACUUM to shrink the file effectively
-        with self.transaction() as conn:
-            conn.execute("PRAGMA wal_checkpoint(TRUNCATE);")
-
-        # Run VACUUM outside the transaction block to reclaim disk space
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute("VACUUM")
+        # Auto-vacuum is enabled on the DB, so we don't need manual VACUUM here anymore.
+        pass
 
     def run_integrity_check(self) -> bool:
         with self.transaction() as conn:
@@ -155,3 +157,21 @@ class SQLiteTranslationCache:
                 WHERE source_lang = ? AND target_lang = ? AND original LIKE ?
             """, (source_lang, target_lang, f'%{term}%'))
             return cursor.rowcount
+
+    def batch_invalidate_by_terms(self, source_lang: str, target_lang: str, terms: list) -> int:
+        """Batch-delete cache entries containing ANY of the given terms in a SINGLE transaction.
+        
+        This is O(1) transactions instead of O(N) transactions like calling invalidate_by_term
+        in a loop - critical for large glossary imports (10,000+ terms).
+        """
+        if not terms:
+            return 0
+        total_deleted = 0
+        with self.transaction() as conn:
+            for term in terms:
+                cursor = conn.execute("""
+                    DELETE FROM cache
+                    WHERE source_lang = ? AND target_lang = ? AND original LIKE ?
+                """, (source_lang, target_lang, f'%{term}%'))
+                total_deleted += cursor.rowcount
+        return total_deleted

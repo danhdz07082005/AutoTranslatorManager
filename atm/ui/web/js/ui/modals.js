@@ -116,7 +116,7 @@ window.ATM.Modals = (function() {
                     return;
                 }
 
-                titleEl.textContent = title || (window.ATM.i18n ? window.ATM.i18n.t('common.info') : 'Thông báo');
+                titleEl.textContent = title || (window.ATM.i18n ? window.ATM.i18n.t('common.info') : '');
                 msgEl.textContent = message;
 
                 const cleanup = () => {

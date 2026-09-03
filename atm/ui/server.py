@@ -122,43 +122,49 @@ class ATMHandler(BaseHTTPRequestHandler):
             return
 
         body = self._read_body()
+        parsed_path = urllib.parse.urlparse(self.path)
+        route_path = parsed_path.path
 
-        if self.path.startswith('/api/ping/disconnect'):
-            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        if route_path == '/api/ping/disconnect':
+            query = urllib.parse.parse_qs(parsed_path.query)
             client_id = query.get('client_id', ['unknown'])[0]
             ApplicationLifecycle().disconnect_client(client_id)
             self._json_response({"status": "disconnected"})
             return
 
-        if self.path == '/api/games/add':
+        if route_path == '/api/games/add':
             result = self.api.add_game()
             self._json_response(result or {"status": "cancelled"})
 
-        elif self.path == '/api/games/start':
+        elif route_path == '/api/games/start':
             result = self.api.start_game(body.get('game_id', ''))
             self._json_response(result)
 
-        elif self.path == '/api/games/stop':
+        elif route_path == '/api/games/stop':
             result = self.api.stop_game(body.get('game_id', ''))
             self._json_response(result)
             
-        elif self.path == '/api/games/sync':
+        elif route_path == '/api/games/fix-path':
+            result = self.api.fix_unicode_path(body.get('game_id', ''))
+            self._json_response(result)
+            
+        elif route_path == '/api/games/sync':
             result = self.api.sync_game(body.get('game_id', ''))
             self._json_response(result)
 
-        elif self.path == '/api/games/delete':
+        elif route_path == '/api/games/delete':
             result = self.api.delete_game(body.get('game_id', ''))
             self._json_response(result)
 
-        elif self.path == '/api/games/play':
+        elif route_path == '/api/games/play':
             result = self.api.play_game(body.get('game_id', ''))
             self._json_response(result)
 
-        elif self.path == '/api/cache/qa-review':
+        elif route_path == '/api/cache/qa-review':
             result = self.api.review_qa(body.get('entries', []))
             self._json_response(result)
 
-        elif self.path == '/api/glossary/preview':
+        elif route_path == '/api/glossary/preview':
             result = self.api.preview_glossary_import(
                 body.get('game_id', ''),
                 body.get('content', ''),
@@ -166,7 +172,7 @@ class ATMHandler(BaseHTTPRequestHandler):
             )
             self._json_response(result)
 
-        elif self.path == '/api/glossary/apply':
+        elif route_path == '/api/glossary/apply':
             result = self.api.apply_glossary_import(
                 body.get('game_id', ''),
                 body.get('parsed_data', []),
@@ -174,14 +180,14 @@ class ATMHandler(BaseHTTPRequestHandler):
             )
             self._json_response(result)
 
-        elif self.path == '/api/glossary/delete':
+        elif route_path == '/api/glossary/delete':
             result = self.api.delete_glossary_term(
                 body.get('game_id', ''),
                 body.get('term', '')
             )
             self._json_response(result)
 
-        elif self.path == '/api/tm/update':
+        elif route_path == '/api/tm/update':
             result = self.api.update_cache_entry(
                 body.get('game_id', ''),
                 body.get('key', ''),
@@ -189,7 +195,7 @@ class ATMHandler(BaseHTTPRequestHandler):
             )
             self._json_response(result)
             
-        elif self.path == '/api/cache/update':
+        elif route_path == '/api/cache/update':
             result = self.api.update_cache_entry(
                 body.get('game_id', ''),
                 body.get('key', ''),
@@ -197,7 +203,7 @@ class ATMHandler(BaseHTTPRequestHandler):
             )
             self._json_response(result)
 
-        elif self.path == '/api/translation-memory/confirm':
+        elif route_path == '/api/translation-memory/confirm':
             result = self.api.confirm_translation_memory_suggestion(
                 body.get('game_id', ''),
                 body.get('source_text', ''),
@@ -206,11 +212,11 @@ class ATMHandler(BaseHTTPRequestHandler):
             )
             self._json_response(result)
 
-        elif self.path == '/api/settings':
+        elif route_path == '/api/settings':
             result = self.api.update_settings(**body)
             self._json_response(result)
 
-        elif self.path == '/api/games/update-settings':
+        elif route_path == '/api/games/update-settings':
             result = self.api.update_game_settings(
                 body.get('game_id', ''),
                 body.get('input_lang', None),
@@ -222,18 +228,20 @@ class ATMHandler(BaseHTTPRequestHandler):
 
 
 
-        elif self.path == '/api/data/clear':
+        elif route_path == '/api/data/clear':
             clear_type = body.get('type')
             if clear_type == 'cache':
                 keep_count = body.get('keep', 5000)
                 result = self.api.clear_global_cache(keep_count)
             elif clear_type == 'tm':
                 result = self.api.clear_global_memory()
+            elif clear_type == 'game_lines':
+                result = self.api.clear_game_lines(body.get('game_id'), body.get('keep', 0))
             else:
                 result = {"status": "error", "error": "Invalid type"}
             self._json_response(result)
 
-        elif self.path == '/api/data/open_folder':
+        elif route_path == '/api/data/open_folder':
             result = self.api.open_data_folder()
             self._json_response(result)
 

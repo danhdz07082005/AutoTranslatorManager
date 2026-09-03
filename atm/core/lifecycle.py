@@ -15,11 +15,14 @@ class ApplicationLifecycle:
     """Quản lý trạng thái và chu kỳ sống của ứng dụng (Graceful Shutdown & Heartbeat)."""
     
     _instance = None
+    _init_lock = threading.Lock()
     
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
-            cls._instance = super(ApplicationLifecycle, cls).__new__(cls)
-            cls._instance._init()
+            with cls._init_lock:
+                if not cls._instance:
+                    cls._instance = super(ApplicationLifecycle, cls).__new__(cls)
+                    cls._instance._init()
         return cls._instance
 
     def _init(self):
@@ -82,8 +85,8 @@ class ApplicationLifecycle:
                 # Check for orphaned state
                 if len(self.active_clients) == 0:
                     if self.has_ever_connected:
-                        # Wait 10s for F5 reload before shutting down
-                        if now - self.last_active_time > 10:
+                        # Wait 300s (5m) for F5 reload/freezing before shutting down
+                        if now - self.last_active_time > 300:
                             if hasattr(self, 'is_idle_callback') and callable(self.is_idle_callback):
                                 if not self.is_idle_callback():
                                     return False

@@ -9,7 +9,8 @@ window.ATM.Settings = (function() {
             const langSel = document.getElementById('ui-lang-select');
 
             const saveSettings = () => {
-                const isDark = toggle ? toggle.checked : true;
+                const themeToggle = document.getElementById('theme-toggle');
+                const isDark = themeToggle ? themeToggle.checked : true;
                 const payload = {
                     dark_mode: isDark,
                     translation_memory_threshold: tmEl ? Number(tmEl.value) : 0.85,
@@ -27,9 +28,9 @@ window.ATM.Settings = (function() {
                     if (langSel && langSel.value !== window.ATM.i18n.getLang()) {
                         window.ATM.i18n.setLang(langSel.value);
                     }
-                    if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.settings_saved') || 'Đã lưu cài đặt');
+                    if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.settings_saved') || '');
                 }).catch(() => {
-                    if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.settings_error') || 'Lỗi lưu cài đặt', true);
+                    if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.settings_error') || '', true);
                 });
             };
 
@@ -88,9 +89,9 @@ window.ATM.Settings = (function() {
                 const deepl = document.getElementById('deepl-api-key');
                 if (deepl) {
                     if (s.deepl_api_key_configured) {
-                        deepl.placeholder = (window.ATM.i18n && window.ATM.i18n.t('plugins.deepl_configured')) || 'API Configured';
+                        deepl.placeholder = (window.ATM.i18n && window.ATM.i18n.t('plugins.deepl_configured')) || '';
                     } else {
-                        deepl.placeholder = (window.ATM.i18n && window.ATM.i18n.t('plugins.deepl_placeholder')) || 'Enter DeepL API Key';
+                        deepl.placeholder = (window.ATM.i18n && window.ATM.i18n.t('plugins.deepl_placeholder')) || '';
                     }
                     deepl.value = "";
                 }
