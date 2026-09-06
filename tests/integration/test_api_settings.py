@@ -1,6 +1,8 @@
 from atm.ui.api import BackendApi
 
-def test_get_settings_hides_deepl_key(temp_profiles_dir):
+def test_get_settings_hides_deepl_key(tmp_path, monkeypatch):
+    test_config = tmp_path / "config.json"
+    monkeypatch.setattr("atm.storage.repositories.settings_repository.CONFIG_PATH", str(test_config))
     api = BackendApi()
     
     api.update_settings(deepl_api_key="secret_key_123", dark_mode=True)

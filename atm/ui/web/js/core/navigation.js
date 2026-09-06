@@ -37,6 +37,12 @@ window.ATM.core = window.ATM.core || {};
             if (window.ATM.Workspace && typeof window.ATM.Workspace.cleanup === 'function') {
                 window.ATM.Workspace.cleanup();
             }
+            if (window.ATM.Games && typeof window.ATM.Games.refreshAllCardsSyncState === 'function') {
+                window.ATM.Games.refreshAllCardsSyncState();
+            }
+            if (window.ATM.i18n && typeof window.ATM.i18n.updateDOM === 'function') {
+                window.ATM.i18n.updateDOM();
+            }
         },
         
         showWorkspace: function(gameId) {

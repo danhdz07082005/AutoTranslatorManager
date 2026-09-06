@@ -9,6 +9,7 @@ under ``game/tl/<language>``.
 from __future__ import annotations
 
 from pathlib import Path
+import os
 from typing import Callable, Mapping, Sequence
 
 from atm.config.schema import GameProfile
@@ -18,7 +19,7 @@ from atm.core.translation.renpy_tl_generator import (
     TranslationTemplateEntry,
     DialogueEntry,
 )
-from atm.core.translation.pipeline import TranslatableString, TranslationPipeline, TranslationOrigin
+from atm.core.translation.pipeline import TranslatableString, TranslationPipeline
 from atm.core.translation.translation_memory import TranslationMemory
 from atm.core.translation.translators import BaseTranslator, GoogleTranslator, DeepLTranslator
 from atm.storage.repositories.settings_repository import SettingsRepository
@@ -283,6 +284,7 @@ class RenPyTranslator:
             )
 
         # ── Run translation pipeline ────────────────────────────────────
+        rate_limited_error = None
         try:
             translator = self._get_translator(profile)
             string_translations: dict[str, str] = {}
@@ -317,28 +319,52 @@ class RenPyTranslator:
                 progress_callback=progress_callback,
             )
             if getattr(result, "rate_limited", False):
-                raise RateLimitError("Pipeline rate limited during Ren'Py translation")
-        except RateLimitError as rate_limit_err:
-            logger.warning("Rate limit hit. Writing partial translations...")
-            generator.write_translations(string_translations)
-            generator.write_dialogue_translations(dialogue_translations)
-            self._inject_language_config(game_path, language)
-            if progress_callback:
-                progress_callback(0, total, "translation.rate_limited", {"error": str(rate_limit_err)})
-            raise
+                rate_limited_error = RateLimitError("Pipeline rate limited during Ren'Py translation")
+                logger.warning("Rate limit hit during Ren'Py translation. Writing partial results...")
         except Exception as error:
             logger.exception("Ren'Py template translation failed: %s", error)
             if progress_callback:
                 progress_callback(total, total, f"Lỗi dịch Ren'Py: {error}")
             return False
 
-        if self._is_cancelled(is_cancelled):
-            return False
+        is_aborted = self._is_cancelled(is_cancelled)
+        if is_aborted:
+            logger.info("Translation cancelled by user. Writing partial progress to Workspace...")
 
         # ── Write back both types ───────────────────────────────────────
         updated_strings = generator.write_translations(string_translations)
         updated_dialogue = generator.write_dialogue_translations(dialogue_translations)
         updated_total = updated_strings + updated_dialogue
+
+        # Push translated lines to SQLiteGameLinesRepository for the Workspace Editor
+        try:
+            from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+            from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+            repo = SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
+            
+            db_items = []
+            
+            def add_to_db(orig, trans, _type):
+                if trans:
+                    db_items.append({
+                        "original": orig,
+                        "translated": trans,
+                        "category": _type,
+                        "source_file": "",
+                        "source_path": ""
+                    })
+
+            for orig, trans in string_translations.items():
+                add_to_db(orig, trans, "string_pair")
+                
+            for orig, trans in dialogue_translations.items():
+                add_to_db(orig, trans, "dialogue")
+                
+            if db_items:
+                repo.batch_insert(profile.id, db_items)
+                logger.info(f"Pushed {len(db_items)} translated lines to Game DB.")
+        except Exception as e:
+            logger.error(f"Failed to push translated lines to Game DB: {e}")
 
         # ── Inject language config so the game actually uses the translation
         self._inject_language_config(game_path, language)
@@ -350,7 +376,17 @@ class RenPyTranslator:
         )
         logger.info(message)
         if progress_callback:
-            progress_callback(total, total, message)
+            if rate_limited_error:
+                progress_callback(0, total, "translation.rate_limited", {"error": str(rate_limited_error)})
+            else:
+                progress_callback(total, total, message)
+
+        if rate_limited_error:
+            raise rate_limited_error
+            
+        if is_aborted:
+            return False
+            
         return True
 
     @staticmethod

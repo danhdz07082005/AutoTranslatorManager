@@ -81,8 +81,9 @@ temp.*
 # Frontend
 node_modules/
 !atm/ui/web/dist/
- 
-data/
+
+# Application Runtime Data & Databases
+/data/
 *.db
 *.db-wal
 *.db-shm
@@ -94,7 +95,17 @@ data/
 AGENTS.md
 CLAUDE.md
 
-# User requested ignore
-scratch/
-plugins/
-logs/
+# Root Local Workspaces & Logs (Anchored to avoid blocking atm/plugins)
+/scratch/
+/plugins/
+/logs/
+
+# Operating System & Temporary Artifacts
+*.bak
+*.tmp
+*.orig
+*.spec
+Thumbs.db
+desktop.ini
+.DS_Store
+

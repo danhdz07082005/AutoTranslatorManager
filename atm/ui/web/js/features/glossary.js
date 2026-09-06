@@ -21,10 +21,28 @@ window.ATM.Glossary = (function() {
                     row.style.borderBottom = '1px solid var(--border-color)';
                     
                     const textSpan = document.createElement('span');
-                    textSpan.innerHTML = `<span>${item.source}</span><svg style="margin: 0 10px; color: var(--text-muted);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg><span>${item.target}</span>`;
                     textSpan.style.color = 'var(--text-primary)';
                     textSpan.style.display = 'flex';
                     textSpan.style.alignItems = 'center';
+                    
+                    const srcSpan = document.createElement('span');
+                    srcSpan.textContent = item.source;
+                    const tgtSpan = document.createElement('span');
+                    tgtSpan.textContent = item.target;
+                    
+                    const arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    arrowSvg.setAttribute('style', 'margin: 0 10px; color: var(--text-muted);');
+                    arrowSvg.setAttribute('width', '14');
+                    arrowSvg.setAttribute('height', '14');
+                    arrowSvg.setAttribute('viewBox', '0 0 24 24');
+                    arrowSvg.setAttribute('fill', 'none');
+                    arrowSvg.setAttribute('stroke', 'currentColor');
+                    arrowSvg.setAttribute('stroke-width', '2');
+                    arrowSvg.innerHTML = '<line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline>';
+                    
+                    textSpan.appendChild(srcSpan);
+                    textSpan.appendChild(arrowSvg);
+                    textSpan.appendChild(tgtSpan);
                     
                     const delBtn = document.createElement('button');
                     delBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';

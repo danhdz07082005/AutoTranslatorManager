@@ -37,7 +37,6 @@ window.ATM.Settings = (function() {
             if (deepl) deepl.addEventListener('change', saveSettings);
             if (tmEl) tmEl.addEventListener('change', saveSettings);
             if (langSel) langSel.addEventListener('change', saveSettings);
-            if (toggle) toggle.addEventListener('change', saveSettings);
             // Accent color picker
             const picker = document.getElementById('accent-color-picker');
             const resetBtn = document.getElementById('accent-reset-btn');

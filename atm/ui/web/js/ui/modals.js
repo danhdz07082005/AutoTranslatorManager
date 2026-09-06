@@ -103,6 +103,39 @@ window.ATM.Modals = (function() {
                 window.ATM.Modals.open('confirm-modal');
             });
         },
+        confirmSave: (message) => {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('save-confirm-modal');
+                const msgEl = document.getElementById('save-confirm-message');
+                const btnSave = document.getElementById('save-confirm-save');
+                const btnDiscard = document.getElementById('save-confirm-discard');
+                const btnCancel = document.getElementById('save-confirm-cancel');
+                
+                if (!modal || !msgEl || !btnSave || !btnDiscard || !btnCancel) {
+                    resolve('cancel');
+                    return;
+                }
+                
+                if (message) msgEl.textContent = message;
+                
+                const cleanup = () => {
+                    btnSave.removeEventListener('click', onSave);
+                    btnDiscard.removeEventListener('click', onDiscard);
+                    btnCancel.removeEventListener('click', onCancel);
+                    window.ATM.Modals.close('save-confirm-modal');
+                };
+                
+                const onSave = () => { cleanup(); resolve('save'); };
+                const onDiscard = () => { cleanup(); resolve('discard'); };
+                const onCancel = () => { cleanup(); resolve('cancel'); };
+                
+                btnSave.addEventListener('click', onSave);
+                btnDiscard.addEventListener('click', onDiscard);
+                btnCancel.addEventListener('click', onCancel);
+                
+                window.ATM.Modals.open('save-confirm-modal');
+            });
+        },
         info: (title, message) => {
             return new Promise((resolve) => {
                 const modal = document.getElementById('info-modal');
@@ -127,6 +160,39 @@ window.ATM.Modals = (function() {
 
                 btnOk.addEventListener('click', onOk);
                 window.ATM.Modals.open('info-modal');
+            });
+        },
+        prompt: (message, defaultValue) => {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('prompt-modal');
+                const msgEl = document.getElementById('prompt-message');
+                const inputEl = document.getElementById('prompt-input');
+                const btnYes = document.getElementById('prompt-yes');
+                const btnNo = document.getElementById('prompt-no');
+
+                if (!modal || !msgEl || !inputEl || !btnYes || !btnNo) {
+                    const fallback = window.prompt(message, defaultValue);
+                    resolve(fallback);
+                    return;
+                }
+
+                msgEl.textContent = message;
+                inputEl.value = defaultValue || '';
+
+                const cleanup = () => {
+                    btnYes.removeEventListener('click', onYes);
+                    btnNo.removeEventListener('click', onNo);
+                    window.ATM.Modals.close('prompt-modal');
+                };
+                
+                const onYes = () => { cleanup(); resolve(inputEl.value); };
+                const onNo = () => { cleanup(); resolve(null); };
+                
+                btnYes.addEventListener('click', onYes);
+                btnNo.addEventListener('click', onNo);
+                
+                window.ATM.Modals.open('prompt-modal');
+                setTimeout(() => inputEl.focus(), 50);
             });
         }
     };

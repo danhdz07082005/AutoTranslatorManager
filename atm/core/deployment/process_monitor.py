@@ -14,6 +14,7 @@ class ProcessMonitor:
         self.process: Optional[subprocess.Popen] = None
         self.monitor_thread: Optional[threading.Thread] = None
         self.is_monitoring = False
+        self.last_error: Optional[str] = None
 
     def start_and_monitor(self, exe_path: str, cwd: str, on_exit_callback: Callable[[], None]) -> bool:
         """
@@ -79,6 +80,7 @@ class ProcessMonitor:
             
         except Exception as e:
             logger.error(f"Failed to start process {exe_path}: {e}")
+            self.last_error = str(e)
             self.is_monitoring = False
             on_exit_callback()
             return False

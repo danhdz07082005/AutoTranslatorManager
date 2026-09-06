@@ -37,8 +37,8 @@ import zlib
 import struct
 import base64
 from collections import Counter
-from decompiler import magic
-import unrpyc
+from atm.core.translation.unren_tools import magic
+import atm.core.translation.unren_tools.unrpyc as unrpyc
 
 
 # Extractors are simple functions of (fobj, slotno) -> bytes

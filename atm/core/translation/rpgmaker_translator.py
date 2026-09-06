@@ -283,8 +283,9 @@ class RPGMakerTranslator:
             rate_limited_error = RateLimitError("Pipeline rate limited during RPG Maker translation")
             logger.warning("Rate limit hit during RPG Maker translation. Writing partial results...")
 
-        if is_cancelled and is_cancelled():
-            return False
+        is_aborted = is_cancelled and is_cancelled()
+        if is_aborted:
+            logger.info("Translation cancelled by user. Writing partial progress to Workspace...")
 
         write_back_files: set[Path] = set()
 
@@ -345,7 +346,7 @@ class RPGMakerTranslator:
                             "path": fake_path,
                             "category": "ui",
                             "classification": "translatable",
-                            "original": tm.original_text,
+                            "original": tm.source_text,
                             "translation": tm.translated_text,
                         }
             except Exception as e:
@@ -353,6 +354,30 @@ class RPGMakerTranslator:
 
         self._atomic_write_overlay(data_dir / self.OVERLAY_FILENAME, overlay_entries)
         self._install_overlay_plugin(game_dir, data_dir)
+
+        # Push translated lines to SQLiteGameLinesRepository for the Workspace Editor
+        try:
+            from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+            from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+            repo = SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
+            
+            db_items = []
+            for entry in extracted_entries:
+                translated = translated_by_path.get(entry.path)
+                if translated:
+                    db_items.append({
+                        "original": entry.original_text,
+                        "translated": translated,
+                        "category": entry.category,
+                        "source_file": entry.source_file,
+                        "source_path": entry.path
+                    })
+                    
+            if db_items:
+                repo.batch_insert(profile.id, db_items)
+                logger.info(f"Pushed {len(db_items)} translated lines to Game DB.")
+        except Exception as e:
+            logger.error(f"Failed to push translated lines to Game DB: {e}")
 
         message = (
             f"Finished RPG Maker (or paused): {len(write_back_files)} files written back, {len(overlay_entries)} entries in overlay / "
@@ -365,6 +390,9 @@ class RPGMakerTranslator:
             
         if rate_limited_error:
             raise rate_limited_error
+            
+        if is_aborted:
+            return False
             
         return True
 

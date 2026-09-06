@@ -37,6 +37,15 @@ class SQLiteGameLinesRepository:
             conn.close()
 
     def _init_db(self):
+        # Fast read check: if table already exists, do not trigger a write transaction
+        conn = self._get_connection()
+        try:
+            cursor = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='game_lines'")
+            if cursor.fetchone():
+                return
+        finally:
+            conn.close()
+
         with self.transaction() as conn:
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS game_lines (
@@ -55,6 +64,10 @@ class SQLiteGameLinesRepository:
             conn.execute('''
                 CREATE INDEX IF NOT EXISTS idx_game_lines_game_id 
                 ON game_lines(game_id)
+            ''')
+            conn.execute('''
+                CREATE INDEX IF NOT EXISTS idx_game_lines_game_updated 
+                ON game_lines(game_id, updated_at DESC)
             ''')
 
     def list_by_game(self, game_id: str, page: int = 1, limit: int = 50, query: Optional[str] = None) -> dict:
@@ -102,6 +115,12 @@ class SQLiteGameLinesRepository:
             "limit": limit
         }
 
+    def get_all_by_game(self, game_id: str) -> dict:
+        """Fetch all translations for a game as a dict of {original: translated}."""
+        with contextlib.closing(self._get_connection()) as conn:
+            cursor = conn.execute("SELECT original, translated FROM game_lines WHERE game_id = ?", (game_id,))
+            return {row[0]: row[1] for row in cursor.fetchall()}
+
     def update(self, item_id: int, game_id: str, translated: str, expected_version: int) -> bool:
         """
         Updates a translation if the expected_version matches AND it belongs to the game_id.
@@ -132,11 +151,16 @@ class SQLiteGameLinesRepository:
                 
             # 1. Bulk select all items to get current versions and validate game_id
             item_ids = [item[0] for item in items]
-            placeholders = ','.join(['?'] * len(item_ids))
             
-            # Fetch current state of these items
-            cursor = conn.execute(f"SELECT id, original, translated, version, game_id FROM game_lines WHERE id IN ({placeholders})", item_ids)
-            db_items = {row[0]: {"original": row[1], "translated": row[2], "version": row[3], "game_id": row[4]} for row in cursor.fetchall()}
+            db_items = {}
+            # Chunking to avoid SQLite variable limit (usually 999 or 32766)
+            CHUNK_SIZE = 500
+            for i in range(0, len(item_ids), CHUNK_SIZE):
+                chunk = item_ids[i:i + CHUNK_SIZE]
+                placeholders = ','.join(['?'] * len(chunk))
+                cursor = conn.execute(f"SELECT id, original, translated, version, game_id FROM game_lines WHERE id IN ({placeholders})", chunk)
+                for row in cursor.fetchall():
+                    db_items[row[0]] = {"original": row[1], "translated": row[2], "version": row[3], "game_id": row[4]}
             
             # Prepare batch updates
             update_data = []
@@ -164,7 +188,8 @@ class SQLiteGameLinesRepository:
                 saved.append({
                     "id": item_id,
                     "original": db_item["original"],
-                    "translated": translated
+                    "translated": translated,
+                    "version": expected_version + 1
                 })
             
             if update_data:
@@ -189,6 +214,30 @@ class SQLiteGameLinesRepository:
                 (game_id, original, translated, category, source_file, source_path, version, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, 1, ?)
             ''', (game_id, original, translated, category, source_file, source_path, now))
+
+    def batch_insert(self, game_id: str, items: List[dict]):
+        """Batch insert lines. items is a list of dicts with original, translated, category, source_file, source_path."""
+        if not items:
+            return
+        now = time.time()
+        rows = []
+        for it in items:
+            rows.append((
+                game_id, 
+                it.get("original", ""), 
+                it.get("translated", ""), 
+                it.get("category", "default"),
+                it.get("source_file"), 
+                it.get("source_path"),
+                now
+            ))
+            
+        with self.transaction() as conn:
+            conn.executemany('''
+                INSERT OR IGNORE INTO game_lines 
+                (game_id, original, translated, category, source_file, source_path, version, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+            ''', rows)
 
     def get_by_id(self, item_id: int) -> Optional[dict]:
         with contextlib.closing(self._get_connection()) as conn:
@@ -215,11 +264,38 @@ class SQLiteGameLinesRepository:
             ''')
             return [{"game_id": row[0], "count": row[1]} for row in cursor.fetchall()]
 
-    def clear_by_game(self, game_id: str, keep_count: int = 0) -> None:
+    def clear_all(self) -> int:
+        """Clear all game lines across all games."""
+        with self.transaction() as conn:
+            cursor = conn.execute("DELETE FROM game_lines")
+            deleted = cursor.rowcount
+        conn = sqlite3.connect(self.db_path, timeout=30.0, isolation_level=None)
+        try:
+            conn.execute("VACUUM")
+            conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        finally:
+            conn.close()
+        return deleted
+
+    def clear_by_game(self, game_id: str, keep_count: int = 0) -> list:
+        deleted_originals = []
         with self.transaction() as conn:
             if keep_count <= 0:
+                cursor = conn.execute("SELECT original FROM game_lines WHERE game_id = ?", (game_id,))
+                deleted_originals = [row[0] for row in cursor.fetchall()]
                 conn.execute("DELETE FROM game_lines WHERE game_id = ?", (game_id,))
             else:
+                cursor = conn.execute('''
+                    SELECT original FROM game_lines 
+                    WHERE game_id = ? AND id NOT IN (
+                        SELECT id FROM game_lines 
+                        WHERE game_id = ?
+                        ORDER BY updated_at DESC
+                        LIMIT ?
+                    )
+                ''', (game_id, game_id, keep_count))
+                deleted_originals = [row[0] for row in cursor.fetchall()]
+                
                 conn.execute('''
                     DELETE FROM game_lines 
                     WHERE game_id = ? AND id NOT IN (
@@ -230,5 +306,11 @@ class SQLiteGameLinesRepository:
                     )
                 ''', (game_id, game_id, keep_count))
         
-        # Auto-vacuum is enabled on the DB, so we don't need manual VACUUM here anymore.
-        pass
+        # Run VACUUM and wal_checkpoint(TRUNCATE) outside transaction to reclaim disk space
+        conn = sqlite3.connect(self.db_path, timeout=30.0, isolation_level=None)
+        try:
+            conn.execute("VACUUM")
+            conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        finally:
+            conn.close()
+        return deleted_originals

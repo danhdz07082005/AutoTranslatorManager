@@ -34,6 +34,18 @@ class CopyResult:
         self.copied_items = items or []
         self.error = error
 
+    def __bool__(self) -> bool:
+        return self.success
+
+    def __len__(self) -> int:
+        return len(self.copied_items)
+
+    def __iter__(self):
+        return iter(self.copied_items)
+
+    def __getitem__(self, index):
+        return self.copied_items[index]
+
 def copy_payload(src_dir: str, dest_dir: str) -> CopyResult:
     copied_items = []
     
@@ -63,8 +75,10 @@ def copy_payload(src_dir: str, dest_dir: str) -> CopyResult:
         logger.error(f"Error copying payload from {src_dir} to {dest_dir}: {e}")
         return CopyResult(False, copied_items, str(e))
 
-def cleanup_items(items: List[str]) -> None:
+def cleanup_items(items: Union[List[str], CopyResult]) -> None:
     import time
+    if isinstance(items, CopyResult):
+        items = items.copied_items
     items_sorted = sorted(items, key=lambda x: len(x), reverse=True)
     for item in items_sorted:
         for attempt in range(4):

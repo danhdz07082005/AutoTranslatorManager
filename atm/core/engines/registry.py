@@ -31,6 +31,6 @@ class EngineRegistry:
 
 # Load built-in engines
 try:
-    import atm.core.engines.bakin
+    import atm.core.engines.bakin  # noqa
 except ImportError:
     pass

@@ -25,15 +25,14 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install customtkinter requests pydantic
         pip install pyinstaller
 
     - name: Build with PyInstaller
       run: |
-        pyinstaller --name AutoTranslator --onefile --windowed --add-data "atm/ui/web;atm/ui/web" --add-data "data/payloads;data/payloads" run_app.py
+        pyinstaller --name AutoTranslator --onefile --windowed --add-data "atm/ui/web;atm/ui/web" --add-data "atm/resources;atm/resources" run_app.py
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: dist/AutoTranslator.exe
         name: Release ${{ github.ref_name }}
@@ -41,3 +40,4 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

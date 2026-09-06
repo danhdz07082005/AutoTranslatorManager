@@ -13,7 +13,7 @@ window.ATM.Theme = (function() {
         init: () => {
             // Đồng bộ UI với trạng thái đã load từ <head>
             const settings = window.ATM.store.get('atm_settings', {});
-            const isDark = settings.dark_mode !== false; // Default là true
+            const isDark = (typeof serverDarkMode !== 'undefined') ? serverDarkMode : (settings.dark_mode !== false);
             applyTheme(isDark);
 
             // Gắn event listener cho toggle
@@ -24,8 +24,9 @@ window.ATM.Theme = (function() {
                     applyTheme(darkEnabled);
                     
                     // Cập nhật localStorage
-                    settings.dark_mode = darkEnabled;
-                    localStorage.setItem('atm_settings', JSON.stringify(settings));
+                    const currentSettings = window.ATM.store.get('atm_settings', {});
+                    currentSettings.dark_mode = darkEnabled;
+                    window.ATM.store.set('atm_settings', currentSettings);
                     
                     // Sync với Backend (Non-blocking)
                     if (window.ATM.api) {

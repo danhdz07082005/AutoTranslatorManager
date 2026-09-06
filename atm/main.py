@@ -47,7 +47,6 @@ def main() -> None:
     t.start()
     
     # Mở trình duyệt mặc định
-    import time
     url = f"http://127.0.0.1:{port}?t={int(time.time())}"
     logger.info(f"Opening browser: {url}")
     time.sleep(0.5) # Chờ server sẵn sàng

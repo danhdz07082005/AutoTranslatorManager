@@ -13,7 +13,9 @@ logger = get_logger(__name__, "launcher.log")
 
 class RateLimitError(Exception):
     """Exception raised when an API rate limit is hit and retries are exhausted."""
-    pass
+    def __init__(self, message, partial_results=None):
+        super().__init__(message)
+        self.partial_results = partial_results
 
 class BaseTranslator:
     def __init__(self):
@@ -209,7 +211,11 @@ class GoogleTranslator(BaseTranslator):
                 break
             
             chunk_texts = [text for _, text in chunk]
-            res_parts = translate_chunk_with_retry(chunk_texts)
+            try:
+                res_parts = translate_chunk_with_retry(chunk_texts)
+            except RateLimitError as e:
+                e.partial_results = translated_texts
+                raise e
             
             if res_parts and None not in res_parts:
                 if progress_callback:

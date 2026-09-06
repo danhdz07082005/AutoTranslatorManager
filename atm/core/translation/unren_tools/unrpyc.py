@@ -50,8 +50,11 @@ except ImportError:
             pass
 
 
-import decompiler
-from decompiler import magic, astdump, translate
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../")))
+import atm.core.translation.unren_tools as decompiler
+from atm.core.translation.unren_tools import magic, astdump, translate
 
 # special definitions for special classes
 
@@ -151,7 +154,7 @@ cls_factory_74 = magic.FakeClassFactory(
 printlock = Lock()
 
 # needs class_factory
-import deobfuscate  # nopep8 # noqa 
+import atm.core.translation.unren_tools.deobfuscate as deobfuscate  # nopep8 # noqa 
 
 # API
 def revertable_switch(raw_dat):

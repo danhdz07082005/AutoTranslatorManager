@@ -16,7 +16,6 @@ window.ATM.Editor = (function() {
 
     let searchDebounceTimer;
     let fetchController = null;
-    let isBatchEditing = false;
     
     const validatePlaceholders = (original, translated) => {
         const regex = /(\{\d+\}|\[\d+\]|%\w+)/g;
@@ -67,22 +66,28 @@ window.ATM.Editor = (function() {
         if (!hasUnsavedChanges()) return true;
         
         return new Promise((resolve) => {
-            const msg = window.ATM.i18n ? window.ATM.i18n.t('editor.confirm_discard', '') : '';
-            if (window.ATM.Modals && window.ATM.Modals.confirm) {
-                window.ATM.Modals.confirm(msg).then(agreed => {
-                    if (agreed) {
+            const msg = window.ATM.i18n ? window.ATM.i18n.t('editor.confirm_discard', 'Bạn có thay đổi chưa lưu. Bạn muốn làm gì?') : 'You have unsaved changes. What would you like to do?';
+            if (window.ATM.Modals && window.ATM.Modals.confirmSave) {
+                window.ATM.Modals.confirmSave(msg).then(async (action) => {
+                    if (action === 'save') {
+                        await saveBatchEdits();
+                        resolve(true); // allow navigation
+                    } else if (action === 'discard') {
                         drafts = {};
                         saveDrafts();
+                        updateMasterButtons();
+                        resolve(true); // allow navigation
+                    } else {
+                        resolve(false); // abort navigation
                     }
-                    resolve(agreed);
                 });
             } else {
                 const agreed = confirm(msg);
                 if (agreed) {
-                    drafts = {};
-                    saveDrafts();
+                    saveBatchEdits().then(() => resolve(true));
+                } else {
+                    resolve(false);
                 }
-                resolve(agreed);
             }
         });
     };
@@ -113,15 +118,6 @@ window.ATM.Editor = (function() {
         container.addEventListener('click', async (e) => {
             if (e.target.closest('#editor-run-qa-btn')) {
                 runQA();
-            } else if (e.target.closest('#editor-search-btn')) {
-                if (await confirmDiscard()) {
-                    const searchInput = document.getElementById('editor-search');
-                    if (searchInput) {
-                        currentQuery = searchInput.value.trim();
-                        currentPage = 1;
-                        fetchData();
-                    }
-                }
             } else if (e.target.closest('#editor-prev-page')) {
                 if (currentPage > 1) {
                     if (await confirmDiscard()) {
@@ -134,10 +130,13 @@ window.ATM.Editor = (function() {
                     currentPage++;
                     fetchData();
                 }
-            } else if (e.target.closest('#editor-batch-edit-btn')) {
-                toggleBatchEdit(true);
-            } else if (e.target.closest('#editor-batch-save-btn')) {
+            } else if (e.target.closest('#editor-master-save-btn')) {
                 saveBatchEdits();
+            } else if (e.target.closest('#editor-master-cancel-btn')) {
+                drafts = {};
+                saveDrafts();
+                updateMasterButtons();
+                renderList();
             }
         });
 
@@ -145,11 +144,14 @@ window.ATM.Editor = (function() {
             if (e.target.id === 'editor-search') {
                 clearTimeout(searchDebounceTimer);
                 searchDebounceTimer = setTimeout(async () => {
-                    if (await confirmDiscard()) {
-                        currentQuery = e.target.value.trim();
-                        currentPage = 1;
-                        fetchData();
+                    if (hasUnsavedChanges()) {
+                        if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('editor.search_draft_warning', 'Vui lòng lưu hoặc hủy thay đổi trước khi tìm kiếm'), 'warning');
+                        e.target.value = currentQuery;
+                        return;
                     }
+                    currentQuery = e.target.value.trim();
+                    currentPage = 1;
+                    fetchData();
                 }, 300);
             }
         });
@@ -167,29 +169,27 @@ window.ATM.Editor = (function() {
         });
     };
     
-    const toggleBatchEdit = (enable) => {
-        isBatchEditing = enable;
-        const editBtn = document.getElementById('editor-batch-edit-btn');
-        const saveBtn = document.getElementById('editor-batch-save-btn');
+    const updateMasterButtons = () => {
+        const saveBtn = document.getElementById('editor-master-save-btn');
+        const cancelBtn = document.getElementById('editor-master-cancel-btn');
+        if (!saveBtn || !cancelBtn) return;
         
-        if (enable) {
-            editBtn.style.display = 'none';
+        let dirtyCount = Object.keys(drafts).length;
+        if (dirtyCount > 0) {
             saveBtn.style.display = 'flex';
             saveBtn.classList.remove('hidden');
-            document.querySelectorAll('.row-actions').forEach(el => el.style.display = 'none');
-            updateBatchSaveButtonText();
+            cancelBtn.style.display = 'flex';
+            cancelBtn.classList.remove('hidden');
+            const saveText = document.getElementById('editor-master-save-text');
+            if (saveText) {
+                saveText.textContent = dirtyCount.toString();
+            }
         } else {
-            editBtn.style.display = 'flex';
             saveBtn.style.display = 'none';
             saveBtn.classList.add('hidden');
+            cancelBtn.style.display = 'none';
+            cancelBtn.classList.add('hidden');
         }
-    };
-    
-    const updateBatchSaveButtonText = () => {
-        if (!isBatchEditing) return;
-        let dirtyCount = Object.keys(drafts).length;
-        const saveText = document.getElementById('editor-batch-save-text');
-        if (saveText) saveText.textContent = '';
     };
 
     const open = (gameId) => {
@@ -199,14 +199,11 @@ window.ATM.Editor = (function() {
         currentFilter = "all";
         qaFindings = {};
         conflictStates = {};
-        isBatchEditing = false;
         
         loadDrafts(); // TASK 5.3: Load drafts on open
         
         const searchInput = document.getElementById('editor-search');
         if (searchInput) searchInput.value = "";
-        
-        toggleBatchEdit(false);
         fetchData();
     };
 
@@ -261,8 +258,6 @@ window.ATM.Editor = (function() {
                 
                 qaFindings = {};
                 conflictStates = {};
-                isBatchEditing = false;
-                toggleBatchEdit(false);
                 renderList();
             }
         } catch (e) {
@@ -281,32 +276,64 @@ window.ATM.Editor = (function() {
             btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;"></span> ' + (window.ATM.i18n.t('editor.qa_running') || '');
             btn.disabled = true;
 
-            // Send entry.id and entry.original
-            const payload = entries.map(e => ({ id: e.id, original: e.original, translated: e.translated }));
+            const payload = entries.map(e => ({
+                id: e.id,
+                source: e.original,
+                translated: drafts[e.id] !== undefined ? drafts[e.id] : e.translated
+            }));
             const res = await window.ATM.api.post('cache/qa-review', {
                 entries: payload
             });
 
             if (res.status === 'success') {
-                // TASK 7.1: QA theo line_id
-                // Assuming backend QA returns { "id": finding } or we just map it here
-                // If backend still returns { "original": finding }, we need to remap it to ID.
                 const backendFindings = res.data.findings || res.data || {};
                 qaFindings = {};
                 
-                // Remap original-based findings to ID-based findings for frontend rendering
+                // Remap backend findings (keyed by entry ID or original) to ID-based findings for frontend rendering
                 for (const e of entries) {
-                    if (backendFindings[e.original]) {
-                        qaFindings[e.id] = backendFindings[e.original];
+                    const rawFinding = backendFindings[e.id] || backendFindings[String(e.id)] || backendFindings[e.original];
+                    if (rawFinding) {
+                        const finding = Array.isArray(rawFinding) ? rawFinding[0] : rawFinding;
+                        if (finding) {
+                            qaFindings[e.id] = finding;
+                        }
                     }
                 }
                 
                 renderList();
+                const count = Object.keys(qaFindings).length;
+                if (window.ATM.Toast) {
+                    if (count > 0) {
+                        const template = window.ATM.i18n ? window.ATM.i18n.t('editor.qa_found') : 'Phát hiện {count} lỗi QA!';
+                        const msg = template.replace('{count}', count);
+                        window.ATM.Toast.show(msg, "warning");
+                    } else {
+                        const msg = window.ATM.i18n ? window.ATM.i18n.t('editor.qa_clean') : 'Tuyệt vời! Không phát hiện lỗi QA nào.';
+                        window.ATM.Toast.show(msg, "success");
+                    }
+                }
+            } else if (window.ATM.Toast) {
+                const i18n = window.ATM.i18n;
+                const errMsg = (res && res.code && i18n ? i18n.t(res.code) : null)
+                    || (res && res.error && i18n ? i18n.t(res.error) : null)
+                    || (res ? res.error : null)
+                    || (i18n ? i18n.t('editor.qa_error') : "Lỗi khi chạy QA");
+                window.ATM.Toast.show(errMsg, "error");
             }
             btn.innerHTML = originalText;
             btn.disabled = false;
         } catch (e) {
-            console.error(e);
+            console.error("QA error:", e);
+            if (window.ATM.Toast) {
+                const errMsg = window.ATM.i18n ? window.ATM.i18n.t('editor.qa_error') : "Lỗi khi chạy QA";
+                window.ATM.Toast.show(`${errMsg}: ${e.message}`, "error");
+            }
+            const btn = document.getElementById('editor-run-qa-btn');
+            if (btn) {
+                btn.innerHTML = '<span data-i18n="editor.run_qa">QA Scanner</span>';
+                if (window.ATM.i18n) window.ATM.i18n.updateDOM(btn);
+                btn.disabled = false;
+            }
         }
     };
     
@@ -319,7 +346,94 @@ window.ATM.Editor = (function() {
         
         try {
             inputEl.disabled = true;
-            saveBtn.innerHTML = '<span class="spinner" style="width:12px;height:12px;display:inline-block"></span><strong>CONFLICT (Version {v})</strong>: Data changed elsewhere.')).replace('{v}', state.serverVersion);
+            saveBtn.innerHTML = '<span class="spinner" style="width:12px;height:12px;display:inline-block"></span>';
+            saveBtn.disabled = true;
+            cancelBtn.disabled = true;
+            
+            const res = await window.ATM.api.post(`games/${encodeURIComponent(currentGameId)}/translations/${entry.id}/update`, {
+                translated: newValue,
+                version: entry.version
+            });
+            
+            if (res.status === 'success') {
+                entry.translated = newValue;
+                entry.version = res.version;
+                actionsEl.style.display = 'none';
+                
+                updateDraft(entry.id, newValue, newValue); 
+                updateMasterButtons();
+                
+                if (window.ATM.events) {
+                    window.ATM.events.publish('cache:updated', { gameId: currentGameId });
+                }
+                
+                if (conflictStates[entry.id]) {
+                    delete conflictStates[entry.id];
+                    const qaBox = rowEl.querySelector('.qa-box');
+                    if (qaBox) qaBox.remove();
+                    rowEl.style.borderColor = 'var(--border-color)';
+                    rowEl.style.boxShadow = 'none';
+                }
+                
+                retryBtn.style.display = 'none';
+                saveBtn.style.display = 'block';
+            } else if (res.status === 'conflict') {
+                // Re-enable and show conflict UI
+                inputEl.disabled = false;
+                cancelBtn.disabled = false;
+                
+                conflictStates[entry.id] = {
+                    serverTranslated: res.server_state.translated,
+                    serverVersion: res.server_state.version
+                };
+                
+                rowEl.style.borderColor = 'var(--danger)';
+                rowEl.style.boxShadow = '0 0 4px var(--danger)';
+                
+                saveBtn.style.display = 'none';
+                retryBtn.style.display = 'block';
+                
+                renderConflictUI(entry, inputEl, rowEl, actionsEl, retryBtn, saveBtn, cancelBtn, conflictStates[entry.id]);
+                
+            } else {
+                throw new Error(res.error || "Save failed");
+            }
+            
+        } catch (e) {
+            console.error(e);
+            inputEl.disabled = false;
+            cancelBtn.disabled = false;
+            
+            saveBtn.style.display = 'none';
+            retryBtn.style.display = 'block';
+            
+            if (window.ATM.Toast) {
+                window.ATM.Toast.show(e.message || window.ATM.i18n.t('editor.save_error'), true);
+            }
+        } finally {
+            saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            saveBtn.disabled = false;
+            inputEl.disabled = false;
+            cancelBtn.disabled = false;
+        }
+    };
+    
+    const renderConflictUI = (entry, inputEl, rowEl, actionsEl, retryBtn, saveBtn, cancelBtn, state) => {
+        const targetCol = inputEl.parentElement;
+        
+        let qaBox = rowEl.querySelector('.qa-box');
+        if (!qaBox) {
+            qaBox = document.createElement('div');
+            qaBox.className = 'qa-box';
+            qaBox.style.borderColor = 'var(--danger)';
+        } else {
+            while(qaBox.firstChild) qaBox.removeChild(qaBox.firstChild);
+            qaBox.style.borderColor = 'var(--danger)';
+        }
+        
+        const msgSpan = document.createElement('span');
+        msgSpan.style.color = 'var(--danger)';
+        msgSpan.innerHTML = (window.ATM.i18n.t("editor.conflict_msg", "<strong>CONFLICT (Version {v})</strong>: Data changed elsewhere.")).replace('{v}', state.serverVersion);
         qaBox.appendChild(msgSpan);
         
         const diffBox = document.createElement('div');
@@ -388,11 +502,10 @@ window.ATM.Editor = (function() {
         });
         
         if (itemsToUpdate.length === 0) {
-            toggleBatchEdit(false);
             return;
         }
         
-        const saveBtn = document.getElementById('editor-batch-save-btn');
+        const saveBtn = document.getElementById('editor-master-save-btn');
         const originalText = saveBtn.innerHTML;
         saveBtn.innerHTML = '<span class="spinner" style="width:14px;height:14px;"></span> ' + window.ATM.i18n.t('editor.saving', 'Saving...');
         saveBtn.disabled = true;
@@ -404,12 +517,39 @@ window.ATM.Editor = (function() {
             
             if (res.status === 'success') {
                 if (window.ATM.events) {
-                    window.ATM.events.publish('');
+                    window.ATM.events.publish('cache:updated', { gameId: currentGameId });
                 }
-                drafts = {}; // Clear drafts for this game on batch save
+                const data = res.data || {};
+                const saved = data.saved || [];
+                const conflicts = data.conflicts || [];
+                const errors = data.errors || [];
+                
+                saved.forEach(s => {
+                    delete drafts[s.id];
+                    const entry = entries.find(e => e.id === s.id);
+                    if (entry) {
+                        entry.translated = s.translated;
+                        entry.version = s.version;
+                    }
+                });
                 saveDrafts();
-                toggleBatchEdit(false);
-                fetchData(); 
+                updateMasterButtons();
+                
+                conflicts.forEach(c => {
+                    conflictStates[c.id] = {
+                        serverTranslated: c.server_state.translated,
+                        serverVersion: c.server_state.version
+                    };
+                });
+                
+                if (conflicts.length > 0 || errors.length > 0) {
+                    if (window.ATM.Toast) {
+                        const template = window.ATM.i18n ? window.ATM.i18n.t('editor.batch_save_partial') : 'Đã lưu {saved}. Bị lỗi/xung đột: {failed}. Vui lòng thử lại.';
+                        const msg = template.replace('{saved}', saved.length).replace('{failed}', conflicts.length + errors.length);
+                        window.ATM.Toast.show(msg, "warning");
+                    }
+                }
+                renderList(); 
             } else {
                 throw new Error(res.error || "Batch update failed");
             }
@@ -453,9 +593,11 @@ window.ATM.Editor = (function() {
             row.style.border = '1px solid var(--border-color)';
             row.style.transition = 'all 0.2s';
             
-            const finding = qaFindings[entry.id];
+            const rawFinding = qaFindings[entry.id];
+            const finding = Array.isArray(rawFinding) ? rawFinding[0] : rawFinding;
             if (finding) {
-                if (finding.severity === 'error') {
+                const severity = (finding.severity || 'warning').toLowerCase();
+                if (severity === 'error') {
                     row.style.borderColor = 'var(--danger)';
                     row.style.boxShadow = '0 0 0 1px var(--danger)';
                 } else {
@@ -502,11 +644,7 @@ window.ATM.Editor = (function() {
             
             // If draft loaded and differs from original, show actions immediately
             if (drafts[entry.id] !== undefined && drafts[entry.id] !== entry.translated) {
-                if (!isBatchEditing) {
-                    actions.style.display = 'flex';
-                } else {
-                    actions.style.display = 'none';
-                }
+                actions.style.display = 'flex';
                 input.style.borderColor = 'var(--warning)';
             } else {
                 actions.style.display = 'none';
@@ -514,41 +652,52 @@ window.ATM.Editor = (function() {
             
             actions.style.justifyContent = 'flex-end';
             actions.style.gap = '8px';
+            actions.style.flexDirection = 'column'; // Stack vertically on the right
             
             const cancelBtn = document.createElement('button');
-            cancelBtn.className = 'btn-secondary heartbeat-neon-red';
-            cancelBtn.innerHTML = '';
+            cancelBtn.className = 'btn-delete heartbeat-neon-red';
+            cancelBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+            cancelBtn.style.padding = '8px';
             
             const retryBtn = document.createElement('button');
             retryBtn.className = 'btn-secondary heartbeat-neon-orange';
             retryBtn.style.display = 'none';
-            retryBtn.innerHTML = '';
+            retryBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>';
+            retryBtn.style.padding = '6px';
             
             const saveBtn = document.createElement('button');
-            saveBtn.className = 'btn-primary heartbeat-neon-green';
-            saveBtn.innerHTML = 'Save';
+            saveBtn.className = 'btn-success heartbeat-neon-green';
+            saveBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            saveBtn.style.padding = '8px';
             
-            actions.appendChild(cancelBtn);
-            actions.appendChild(retryBtn);
             actions.appendChild(saveBtn);
+            actions.appendChild(retryBtn);
+            actions.appendChild(cancelBtn);
             
             const validationBox = document.createElement('div');
             validationBox.style.fontSize = '12px';
             validationBox.style.color = 'var(--danger)';
             validationBox.style.display = 'none';
             validationBox.style.marginTop = '-4px';
+
+            const inputRow = document.createElement('div');
+            inputRow.style.display = 'flex';
+            inputRow.style.gap = '8px';
+            inputRow.style.alignItems = 'flex-start';
+            inputRow.style.width = '100%';
+            
+            input.style.flex = '1';
+            
+            inputRow.appendChild(input);
+            inputRow.appendChild(actions);
             
             input.addEventListener('focus', () => {
-                if (!isBatchEditing) {
-                    actions.style.display = 'flex';
-                }
+                actions.style.display = 'flex';
             });
             
             input.addEventListener('input', () => {
                 updateDraft(entry.id, input.value, entry.translated);
-                if (isBatchEditing) {
-                    updateBatchSaveButtonText();
-                }
+                updateMasterButtons();
                 
                 const missing = validatePlaceholders(entry.original, input.value);
                 if (missing.length > 0) {
@@ -562,19 +711,16 @@ window.ATM.Editor = (function() {
             });
             
             input.addEventListener('blur', () => {
-                if (!isBatchEditing) {
-                    if (input.value === entry.translated && !conflictStates[entry.id]) {
-                        actions.style.display = 'none';
-                        validationBox.style.display = 'none';
-                        input.style.borderColor = 'var(--border-color)';
-                    }
+                if (input.value === entry.translated && !conflictStates[entry.id]) {
+                    actions.style.display = 'none';
+                    validationBox.style.display = 'none';
+                    input.style.borderColor = 'var(--border-color)';
                 }
             });
             
             input.addEventListener('keydown', (e) => {
                 if (e.ctrlKey && e.key === 'Enter') {
-                    if (isBatchEditing) saveBatchEdits();
-                    else saveRow(entry, input, row, actions, retryBtn, saveBtn, cancelBtn);
+                    saveRow(entry, input, row, actions, retryBtn, saveBtn, cancelBtn);
                 } else if (e.key === 'Escape') {
                     if (conflictStates[entry.id]) return;
                     
@@ -582,21 +728,16 @@ window.ATM.Editor = (function() {
                     updateDraft(entry.id, input.value, entry.translated);
                     validationBox.style.display = 'none';
                     input.style.borderColor = 'var(--border-color)';
-                    if (!isBatchEditing) actions.style.display = 'none';
-                    if (isBatchEditing) updateBatchSaveButtonText();
+                    actions.style.display = 'none';
+                    updateMasterButtons();
                 }
             });
             
             cancelBtn.addEventListener('click', () => {
                 input.value = entry.translated;
                 updateDraft(entry.id, input.value, entry.translated);
-                
-                if (!isBatchEditing) {
-                    actions.style.display = 'none';
-                }
-                if (isBatchEditing) {
-                    updateBatchSaveButtonText();
-                }
+                actions.style.display = 'none';
+                updateMasterButtons();
                 
                 validationBox.style.display = 'none';
                 input.style.borderColor = 'var(--border-color)';
@@ -615,9 +756,8 @@ window.ATM.Editor = (function() {
             saveBtn.addEventListener('click', () => saveRow(entry, input, row, actions, retryBtn, saveBtn, cancelBtn));
             retryBtn.addEventListener('click', () => saveRow(entry, input, row, actions, retryBtn, saveBtn, cancelBtn));
 
-            targetCol.appendChild(input);
+            targetCol.appendChild(inputRow);
             targetCol.appendChild(validationBox);
-            targetCol.appendChild(actions);
 
             if (finding) {
                 const qaBox = document.createElement('div');
@@ -629,7 +769,8 @@ window.ATM.Editor = (function() {
                 qaBox.style.flexDirection = 'column';
                 qaBox.style.gap = '4px';
                 
-                if (finding.severity === 'error') {
+                const severity = (finding.severity || 'warning').toLowerCase();
+                if (severity === 'error') {
                     qaBox.style.background = 'rgba(239, 68, 68, 0.1)';
                     qaBox.style.color = 'var(--danger)';
                 } else {
@@ -639,11 +780,22 @@ window.ATM.Editor = (function() {
 
                 const msgSpan = document.createElement('div');
                 const strong = document.createElement('strong');
-                strong.textContent = `QA ${finding.severity.toUpperCase()}`;
+                strong.textContent = `QA ${severity.toUpperCase()}`;
                 msgSpan.appendChild(strong);
-                msgSpan.appendChild(document.createTextNode(`: ${finding.message} `));
+                msgSpan.appendChild(document.createTextNode(`: ${finding.message || ''} `));
                 qaBox.appendChild(msgSpan);
                 targetCol.appendChild(qaBox);
+            }
+
+            if (conflictStates[entry.id]) {
+                input.disabled = false;
+                cancelBtn.disabled = false;
+                row.style.borderColor = 'var(--danger)';
+                row.style.boxShadow = '0 0 4px var(--danger)';
+                saveBtn.style.display = 'none';
+                retryBtn.style.display = 'block';
+                actions.style.display = 'flex';
+                renderConflictUI(entry, input, row, actions, retryBtn, saveBtn, cancelBtn, conflictStates[entry.id]);
             }
 
             row.appendChild(sourceCol);

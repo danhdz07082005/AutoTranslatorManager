@@ -10,18 +10,27 @@
       (function(){
         document.documentElement.classList.add('fouc-guard');
         var accent = localStorage.getItem('atm_accent');
-        if (accent) document.documentElement.style.setProperty('--accent', accent);
+        if (accent) {
+            document.documentElement.style.setProperty('--accent', accent);
+            var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(accent);
+            if (m) {
+                document.documentElement.style.setProperty('--accent-rgb', parseInt(m[1], 16) + ', ' + parseInt(m[2], 16) + ', ' + parseInt(m[3], 16));
+            }
+        }
         
+        /*__SERVER_DARK_MODE__*/
         var settings = {};
         try {
             settings = JSON.parse(localStorage.getItem('atm_settings') || '{}');
         } catch (e) {
             console.error("Local storage atm_settings is malformed", e);
         }
-        if (settings.dark_mode !== false) {
+        var isDark = (typeof serverDarkMode !== 'undefined') ? serverDarkMode : (settings.dark_mode !== false);
+        if (isDark) {
             document.documentElement.classList.add('theme-dark');
             document.documentElement.style.backgroundColor = '#0F172A'; // Dark mode bg
         } else {
+            document.documentElement.classList.remove('theme-dark');
             document.documentElement.style.backgroundColor = '#F8F9FA'; // Light mode bg
         }
         
@@ -71,6 +80,7 @@
     </style>
 </head>
 <body>
+    <div id="error-banner" style="display:none; background:#ff4d4f; color:white; text-align:center; padding:8px; position:sticky; top:0; z-index:9999;"></div>
     <div id="offline-banner" data-i18n="app.offline" style="display:none; background:#ff4d4f; color:white; text-align:center; padding:8px; position:sticky; top:0; z-index:9999;"></div>
     <noscript>
         <div style="background: var(--danger-color, #ef4444); color: white; padding: 20px; text-align: center; font-size: 16px; font-weight: bold; position: fixed; top: 0; left: 0; width: 100%; z-index: 999999;">
@@ -81,8 +91,33 @@
         <div class="modal-content">
             <h3 id="confirm-message"></h3>
             <div class="confirm-actions">
-                <button id="confirm-no" class="btn-secondary" data-i18n="confirm.no"></button>
-                <button id="confirm-yes" class="btn-primary" data-i18n="confirm.yes"></button>
+                <button id="confirm-no" class="btn-delete">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <span data-i18n="confirm.no">Hủy</span>
+                </button>
+                <button id="confirm-yes" class="btn-success">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span data-i18n="confirm.yes">Đồng ý</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div id="save-confirm-modal" class="modal-overlay" style="display:none;z-index:10000;">
+        <div class="modal-content" style="max-width: 500px; padding: 24px;">
+            <h3 id="save-confirm-message" style="margin-bottom: 24px; line-height: 1.6; font-size: 16px;">Bạn có thay đổi chưa lưu. Bạn muốn làm gì?</h3>
+            <div class="confirm-actions" style="display: flex; gap: 12px; width: 100%;">
+                <button id="save-confirm-cancel" class="btn-secondary" style="flex: 1;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <span data-i18n="common.cancel">Hủy (Ở lại)</span>
+                </button>
+                <button id="save-confirm-discard" class="btn-delete" style="flex: 1; padding: 10px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <span data-i18n="editor.discard_leave">Không Lưu & Rời đi</span>
+                </button>
+                <button id="save-confirm-save" class="btn-success heartbeat-neon-green" style="flex: 1; padding: 10px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span data-i18n="editor.save_leave">Lưu & Rời đi</span>
+                </button>
             </div>
         </div>
     </div>
@@ -91,7 +126,28 @@
             <h3 id="info-title" style="margin-bottom: 12px; font-weight: 600;" data-i18n="common.info"></h3>
             <div id="info-message" style="margin-bottom: 20px; white-space: pre-wrap; font-size: 14px; color: var(--text-secondary); max-height: 400px; overflow-y: auto; text-align: left;"></div>
             <div class="confirm-actions" style="justify-content: flex-end;">
-                <button id="info-ok" class="btn-primary" data-i18n="confirm.ok"></button>
+                <button id="info-ok" class="btn-accent" style="min-width: 120px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span data-i18n="confirm.ok">OK</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Prompt Modal -->
+    <div id="prompt-modal" class="modal-overlay" style="display:none;z-index:10000;">
+        <div class="modal-content">
+            <h3 id="prompt-message" style="margin-bottom: 12px;"></h3>
+            <input type="number" id="prompt-input" class="input-base themed-input" style="width: 100%; margin-bottom: 20px; padding: 10px; border-radius: var(--radius-md);" min="0">
+            <div class="confirm-actions">
+                <button id="prompt-no" class="btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <span data-i18n="confirm.no">Hủy</span>
+                </button>
+                <button id="prompt-yes" class="btn-success">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span data-i18n="confirm.ok">OK</span>
+                </button>
             </div>
         </div>
     </div>
@@ -103,14 +159,13 @@
 
     <!--  Goodbye Screen  -->
     <div id="goodbye-screen" class="goodbye-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:var(--bg-base); z-index:99999; flex-direction:column; justify-content:center; align-items:center;">
-        <div class="goodbye-logo" style="margin-bottom:32px;position:relative;">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none"
-                 stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <div class="intro-logo-container">
+            <svg class="intro-logo-svg" viewBox="0 0 24 24" fill="none">
                 <polygon points="12 2 22 7 22 17 12 22 2 17 2 7"></polygon>
             </svg>
-            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:900;font-size:20px;color:var(--accent);">ATM</div>
+            <div class="intro-logo-text">ATM</div>
         </div>
-        <h2 class="goodbye-title" data-i18n="goodbye.title" style="color:var(--text); font-size: 24px; margin-bottom: 10px; font-weight:600;"></h2>
+        <h2 class="goodbye-title" data-i18n="goodbye.title" style="color:var(--text-primary); font-size: 24px; margin-bottom: 10px; font-weight:600;"></h2>
         <p class="goodbye-subtitle" data-i18n="goodbye.subtitle" style="color:var(--text-muted); font-size: 14px;"></p>
     </div>
 
@@ -134,23 +189,23 @@
             
             <div class="lang-row mt-sm mb-sm">
                 <div class="lang-group">
-                    <label data-i18n="card.engine"></label>
+                    <label data-i18n="card.engine">Engine Dịch</label>
                     <select class="lang-select engine-select"></select>
                 </div>
                 <div class="lang-group">
-                    <label data-i18n="card.source_lang"></label>
+                    <label data-i18n="card.source_lang">Ngôn ngữ gốc</label>
                     <select class="lang-select source-select"></select>
                 </div>
                 <span class="lang-arrow" style="margin-top: 14px;"></span>
                 <div class="lang-group">
-                    <label data-i18n="card.target_lang"></label>
+                    <label data-i18n="card.target_lang">Dịch sang</label>
                     <select class="lang-select target-select"></select>
                 </div>
             </div>
 
             <div class="progress-container hidden mb-sm" style="display:none;">
                 <div class="progress-header flex-row justify-between text-xs font-semibold text-accent mb-xs" style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; color: var(--accent);">
-                    <span class="progress-status" data-i18n="card.translating"></span>
+                    <span class="progress-status" data-i18n="card.translating">đang dịch</span>
                     <span class="progress-percent">0%</span>
                 </div>
                 <div class="progress-bar-track" style="width: 100%; height: 6px; background-color: var(--bg-hover); border-radius: 3px; overflow: hidden;">
@@ -159,8 +214,8 @@
             </div>
 
             <div class="game-actions flex-row gap-sm mt-sm" style="display: flex; gap: 8px; margin-top: 12px;">
-                <button class="btn-start flex-1 btn-action-start" data-action="start" style="flex: 1;" data-i18n="card.start"></button>
-                <button class="btn-icon" data-action="editor" title="Workspace" style="color: var(--accent); background: rgba(112,0,255,0.05); border-color: rgba(112,0,255,0.1);">
+                <button class="btn-start flex-1 btn-action-start" data-action="start" data-i18n="card.start">Bắt đầu dịch</button>
+                <button class="btn-icon" data-action="editor" title="Workspace">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                 </button>
                 <button class="btn-delete" data-action="delete" title="Xóa Game">
@@ -175,19 +230,16 @@
         <div class="workspace-shell" style="padding: 20px; display:flex; flex-direction:column; height: 100%;">
             <div class="workspace-tabs" style="display:flex; justify-content:space-between; border-bottom: 1px solid var(--border-color); margin-bottom: 15px;">
                 <div style="display:flex;">
-                    <button class="tab-btn tab-editor active" style="padding: 12px 20px; background: transparent; border: none; border-bottom: 2px solid var(--accent); color: var(--accent); font-weight: 600; cursor: pointer;" data-i18n="workspace.tab_editor"></button>
-                    <button class="tab-btn tab-glossary" style="padding: 12px 20px; background: transparent; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer;" data-i18n="workspace.tab_glossary"></button>
-                    <button class="tab-btn tab-tm" style="padding: 12px 20px; background: transparent; border: none; color: var(--text-secondary); font-weight: 600; cursor: pointer;" data-i18n="workspace.tab_tm"></button>
-                    <button class="tab-btn tab-audit hidden" style="padding: 12px 20px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-weight:600; display: none;" data-i18n="workspace.tab_audit"></button>
-                    <button class="tab-btn tab-extract hidden" style="padding: 12px 20px; background: transparent; border: none; color: var(--accent); cursor: pointer; font-weight:600; display: none;" data-i18n="workspace.tab_extract"></button>
+                    <button class="tab-btn tab-editor active" data-i18n="workspace.tab_editor"></button>
+                    <button class="tab-btn tab-glossary" data-i18n="workspace.tab_glossary"></button>
+                    <button class="tab-btn tab-tm" data-i18n="workspace.tab_tm"></button>
+                    <button class="tab-btn tab-audit hidden" style="display: none;" data-i18n="workspace.tab_audit"></button>
+                    <button class="tab-btn tab-extract hidden" style="display: none;" data-i18n="workspace.tab_extract"></button>
                 </div>
                 <div style="display:flex; align-items:center; padding-right:10px;">
-                    <div style="position: relative; display: inline-block;">
-                        <button class="btn-refresh-workspace" data-i18n-title="workspace.sync_btn_title" title="Đồng bộ lại dữ liệu dịch" style="background:transparent; border:none; color:var(--text-secondary); cursor:pointer; padding:6px; border-radius:6px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="refresh-icon"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                        </button>
-                        <span class="sync-dot" style="display: none; position: absolute; top: 4px; right: 4px; width: 8px; height: 8px; background-color: var(--danger-color, #ef4444); border-radius: 50%; box-shadow: 0 0 5px var(--danger-color, #ef4444);"></span>
-                    </div>
+                    <button class="btn-refresh-workspace" data-i18n-title="workspace.sync_btn_title" title="Đồng bộ lại dữ liệu dịch" style="background:transparent; border:none; color:var(--text-secondary); cursor:pointer; padding:6px; border-radius:6px; display:flex; align-items:center; justify-content:center; transition: all 0.2s;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="refresh-icon"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                    </button>
                 </div>
                 
                 <div class="job-progress-container" style="display:none; padding: 12px 20px; align-items:center;">
@@ -234,14 +286,13 @@
 
     <!--  Hello Screen  -->
     <div id="hello-screen" class="hello-overlay" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:var(--bg-base); z-index:99999; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-        <div style="margin-bottom:32px;position:relative;">
-            <svg width="80" height="80" viewBox="0 0 24 24" fill="none"
-                 stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <div class="intro-logo-container">
+            <svg class="intro-logo-svg" viewBox="0 0 24 24" fill="none">
                 <polygon points="12 2 22 7 22 17 12 22 2 17 2 7"></polygon>
             </svg>
-            <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-weight:900;font-size:20px;color:var(--accent);">ATM</div>
+            <div class="intro-logo-text">ATM</div>
         </div>
-        <h1 style="color:var(--text); font-size:32px; font-weight:800; margin-bottom: 30px; letter-spacing: -0.5px;">ATM Translator</h1>
+        <h1 style="color:var(--text-primary); font-size:32px; font-weight:800; margin-bottom: 30px; letter-spacing: -0.5px;">ATM Translator</h1>
         <div style="width: 240px; height: 4px; background: var(--bg-card); border-radius: 2px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);">
             <div id="hello-loading-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.1s linear;"></div>
         </div>
@@ -252,14 +303,16 @@
         <!--  Sidebar  -->
         <nav class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <div class="logo-area">
+                <div class="logo-area" id="sidebar-brand" title="ATM Translator">
                     <div class="logo-icon">ATM</div>
                     <h2>Translator</h2>
                 </div>
-                <label class="switch" title="Ghim Sidebar" style="margin-left: auto; transform: scale(0.8);">
-                    <input type="checkbox" id="sidebar-pin-switch">
-                    <span class="slider"></span>
-                </label>
+                <button class="sidebar-pin-btn" id="sidebar-pin-btn" data-i18n-title="sidebar.pin_tooltip" title="Ghim thanh bên">
+                    <svg class="pin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="17" x2="12" y2="22"></line>
+                        <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>
+                    </svg>
+                </button>
             </div>
 
             <ul class="nav-links">
@@ -282,20 +335,24 @@
             </ul>
 
             <div class="bottom-action">
-                <button class="btn-primary" id="add-game-btn" style="padding: 14px 10px;">
-                    <span>+</span> <span class="sidebar-text-only" data-i18n="menu.add_game" style="display:none; transition: opacity var(--transition-fast);"></span>
+                <button class="btn-primary" id="add-game-btn" data-i18n-title="menu.add_game" title="Thêm Game">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span class="sidebar-text-only" data-i18n="menu.add_game"></span>
                 </button>
-                <button class="btn-delete" id="exit-btn" style="width: 100%; justify-content: center; gap: 8px; margin-top: 10px; background: var(--danger); font-weight: 600; color: white; border: none;">
-                    <div style="display:flex; align-items:center; justify-content:center; width:20px; height:20px; position:relative; flex-shrink: 0;">
-                        <svg style="position:absolute;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
+                <button class="btn-delete" id="exit-btn" data-i18n-title="menu.exit" title="Thoát ứng dụng">
+                    <div class="exit-icon-wrap">
+                        <svg class="exit-hex" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <polygon points="12 2 22 7 22 17 12 22 2 17 2 7"></polygon>
                         </svg>
-                        <svg style="position:absolute; width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <svg class="exit-power" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                             <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
                             <line x1="12" y1="2" x2="12" y2="12"></line>
                         </svg>
                     </div>
-                    <span class="sidebar-text-only" data-i18n="menu.exit" style="display:none; transition: opacity var(--transition-fast);"></span>
+                    <span class="sidebar-text-only" data-i18n="menu.exit"></span>
                 </button>
             </div>
         </nav>
@@ -323,9 +380,9 @@
                         <p class="subtitle" id="workspace-subtitle">Đang dịch - 45%</p>
                     </div>
                     <div>
-                        <button class="btn-secondary" id="workspace-back-btn">
+                        <button class="btn-accent workspace-back-btn" id="workspace-back-btn">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                            <span data-i18n="workspace.back"></span>
+                            <span data-i18n="workspace.back">Trở về Thư viện</span>
                         </button>
                     </div>
                 </header>
@@ -376,11 +433,11 @@
                 </header>
 
                 <div class="data-actions-bar">
-                    <button class="btn-secondary" id="data-open-folder-btn">
+                    <button class="btn-accent" id="data-open-folder-btn">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
                         <span data-i18n="data.open_folder"></span>
                     </button>
-                    <button class="btn-secondary" id="data-refresh-btn">
+                    <button class="btn-accent" id="data-refresh-btn">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
                         <span data-i18n="data.refresh"></span>
                     </button>
@@ -402,7 +459,7 @@
                         <div class="stat-actions">
                             <input type="number" id="cache-keep-count" value="5000"
                                    class="themed-input" style="width:100px;" title="Keep N entries">
-                            <button class="btn-secondary" id="data-keep-clear-btn" data-i18n="data.keep_clear"></button>
+                            <button class="btn-accent" id="data-keep-clear-btn" data-i18n="data.keep_clear"></button>
                             <button class="btn-delete" id="data-clear-all-cache-btn" data-i18n="data.clear_all"></button>
                         </div>
                     </div>
@@ -494,21 +551,22 @@
     <!--  TEMPLATE: WORKSPACE EDITOR  -->
     <template id="workspace-editor-template">
         <div style="display:flex;flex-direction:column;height:100%;">
-            <div style="margin-bottom:16px; display:flex; gap:8px; align-items:center;">
+            <div style="margin-bottom:16px; display:flex; gap:8px; align-items:center; padding-right: 8px;">
                 <input type="text" id="editor-search" class="themed-input" placeholder="" data-i18n-placeholder="editor.search_placeholder" style="flex:1;padding:8px; border-radius: var(--radius-sm);">
                 <select id="editor-filter-type" class="lang-select">
                     <option value="all" data-i18n="editor.filter_all"></option>
                     <option value="qa_error" data-i18n="editor.filter_qa"></option>
                 </select>
-                <button class="btn-secondary" id="editor-run-qa-btn" style="display: flex; align-items: center; gap: 6px;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <button class="btn-accent" id="editor-run-qa-btn" style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     <span data-i18n="editor.run_qa"></span>
                 </button>
-                <button class="btn-secondary" id="editor-batch-edit-btn" style="display: flex; align-items: center; gap: 6px;">
-                    <span data-i18n="editor.batch_edit"></span>
+                <button class="btn-success heartbeat-neon-green hidden" id="editor-master-save-btn" style="position: relative; display: none; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; padding: 0;" title="Lưu thay đổi">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    <span id="editor-master-save-text" style="position: absolute; top: -6px; right: -6px; background: var(--danger, #f43f5e); color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px; border: 2px solid var(--bg-card);">0</span>
                 </button>
-                <button class="btn-primary heartbeat-neon-cyan hidden" id="editor-batch-save-btn" style="display: none; align-items: center; gap: 6px;">
-                    <span data-i18n="editor.batch_save" id="editor-batch-save-text"></span>
+                <button class="btn-delete heartbeat-neon-red hidden" id="editor-master-cancel-btn" style="display: none; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; padding: 0;" title="Hủy toàn bộ">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
             
@@ -533,7 +591,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </template>
 
     <!--  Modals  -->
 
@@ -549,8 +607,8 @@
                     <p data-i18n="glossary.desc" style="color:var(--text-secondary);font-size:13px;margin:0;"></p>
                     <div style="display:flex; gap:8px;">
                         <input type="file" id="glossary-import-file" accept=".csv" style="display:none;">
-                        <button class="btn-secondary" id="glossary-import-btn" style="padding:4px 8px; font-size:12px;" data-i18n="glossary.import"></button>
-                        <button class="btn-secondary" id="glossary-export-btn" style="padding:4px 8px; font-size:12px;" data-i18n="glossary.export"></button>
+                        <button class="btn-accent" id="glossary-import-btn" style="padding:4px 8px; font-size:12px;" data-i18n="glossary.import"></button>
+                        <button class="btn-accent" id="glossary-export-btn" style="padding:4px 8px; font-size:12px;" data-i18n="glossary.export"></button>
                     </div>
                 </div>
                 
@@ -565,15 +623,24 @@
                     <input type="text" id="glossary-target" class="themed-input"
                            data-i18n-placeholder="glossary.target_placeholder"
                            placeholder="Translation" style="flex:1;padding:8px;border-radius:6px;">
-                    <button class="btn-primary" id="glossary-add-btn"
-                            style="width:auto;padding:8px 16px;" data-i18n="btn.add"></button>
+                    <button class="btn-accent" id="glossary-add-btn"
+                            style="width:auto;padding:8px 16px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span data-i18n="btn.add"></span>
+                    </button>
                 </div>
             </div>
             <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px;">
                 <button class="btn-delete" id="glossary-modal-close-btn"
-                        style="padding:8px 16px;" data-i18n="btn.close"></button>
-                <button class="btn-start" id="glossary-save-btn"
-                        style="width:auto;padding:8px 16px;" data-i18n="btn.save"></button>
+                        style="padding:8px 16px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <span data-i18n="btn.close"></span>
+                </button>
+                <button class="btn-success" id="glossary-save-btn"
+                        style="width:auto;padding:8px 16px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span data-i18n="btn.save"></span>
+                </button>
             </div>
         </div>
     </div>
@@ -605,8 +672,11 @@
                         <option value="system">system</option>
                         <option value="unknown" selected>unknown</option>
                     </select>
-                    <button class="btn-primary" id="tm-find-btn"
-                            style="width:auto;padding:8px 16px;" data-i18n="tm.find_btn"></button>
+                    <button class="btn-accent" id="tm-find-btn"
+                            style="width:auto;padding:8px 16px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <span data-i18n="tm.find_btn"></span>
+                    </button>
                 </div>
                 <div id="tm-suggestions" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;"></div>
             </div>

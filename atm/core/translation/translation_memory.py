@@ -193,6 +193,87 @@ class TranslationMemory:
         with self._lock:
             return tuple(self._entries)
 
+    def clear(self) -> None:
+        """Clear all entries in translation memory."""
+        with self._lock:
+            self._entries.clear()
+            self._save_unlocked()
+
+    def forget(self, term: str, category: str | None = None) -> bool:
+        """Remove a term from translation memory."""
+        with self._lock:
+            initial_count = len(self._entries)
+            self._entries = [
+                e for e in self._entries
+                if not (e.source_text == term and (category is None or e.category == category))
+            ]
+            if len(self._entries) != initial_count:
+                self._save_unlocked()
+                return True
+            return False
+
+    def batch_forget(self, terms: list[str], category: str | None = None) -> int:
+        """Remove multiple terms from translation memory."""
+        if not terms:
+            return 0
+        term_set = set(terms)
+        with self._lock:
+            initial_count = len(self._entries)
+            self._entries = [
+                e for e in self._entries
+                if not (e.source_text in term_set and (category is None or e.category == category))
+            ]
+            removed = initial_count - len(self._entries)
+            if removed > 0:
+                self._save_unlocked()
+            return removed
+
+    def batch_remember(
+        self,
+        items: list[dict],
+        source_lang: str,
+        target_lang: str,
+        category: str = "glossary",
+        *,
+        source: str = "user",
+        confidence: str = "confirmed",
+    ) -> int:
+        """Batch record entries into translation memory and persist once."""
+        if not items:
+            return 0
+        now = datetime.now(timezone.utc).isoformat()
+        added = 0
+        with self._lock:
+            existing_map = {
+                (e.source_lang, e.target_lang, e.category, e.source_text): i
+                for i, e in enumerate(self._entries)
+            }
+            for item in items:
+                src = item.get("source") or item.get("source_text") or ""
+                tgt = item.get("target") or item.get("translated_text") or ""
+                if not src.strip() or not tgt.strip():
+                    continue
+                entry = TranslationMemoryEntry(
+                    source_lang=source_lang,
+                    target_lang=target_lang,
+                    category=category,
+                    source_text=src,
+                    translated_text=tgt,
+                    source=source,
+                    confidence=confidence,
+                    last_used=now,
+                )
+                key = (source_lang, target_lang, category, src)
+                if key in existing_map:
+                    self._entries[existing_map[key]] = entry
+                else:
+                    self._entries.append(entry)
+                    existing_map[key] = len(self._entries) - 1
+                added += 1
+            if added > 0:
+                self._save_unlocked()
+        return added
+
     def _save_unlocked(self) -> None:
         self.repository.save(
             {

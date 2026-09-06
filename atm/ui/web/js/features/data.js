@@ -32,6 +32,10 @@ window.ATM.Data = (function() {
                         window.ATM.api.post('data/clear', { type: 'cache', keep: 0 })
                             .then(() => {
                                 if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.cache_cleared') || '', 'success');
+                                if (window.ATM.events) {
+                                    window.ATM.events.publish('cache:cleared', {});
+                                    window.ATM.events.publish('cache:synced', {});
+                                }
                                 window.ATM.Data.refresh(true);
                             }).catch((err) => {
                                 if (window.ATM.Toast) window.ATM.Toast.show(err.message || window.ATM.i18n.t('toast.clear_cache_error_all', 'Error clearing all cache'), 'error');
@@ -48,6 +52,9 @@ window.ATM.Data = (function() {
                         window.ATM.api.post('data/clear', { type: 'tm' })
                             .then(() => {
                                 if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.tm_cleared') || '', 'success');
+                                if (window.ATM.events) {
+                                    window.ATM.events.publish('glossary:changed', {});
+                                }
                                 window.ATM.Data.refresh(true);
                             }).catch((err) => {
                                 if (window.ATM.Toast) window.ATM.Toast.show(err.message || window.ATM.i18n.t('toast.tm_error', 'Error clearing TM'), 'error');
@@ -104,20 +111,25 @@ window.ATM.Data = (function() {
                             row.style.padding = '10px';
                             row.style.marginBottom = '10px';
                             
-                            const nameText = window.ATM.i18n ? window.ATM.i18n.t('data.game_name', '') : '';
-                            const folderText = window.ATM.i18n ? window.ATM.i18n.t('data.folder', '') : '';
-                            const entriesText = window.ATM.i18n ? window.ATM.i18n.t('data.entries_count', '') : '';
-                            const sizeText = window.ATM.i18n ? window.ATM.i18n.t('data.approx_size', '') : '';
+                            const nameText = window.ATM.i18n ? (window.ATM.i18n.t('data.game_name') || 'Tên Game: ') : 'Tên Game: ';
+                            const folderText = window.ATM.i18n ? (window.ATM.i18n.t('data.folder') || 'Thư mục: ') : 'Thư mục: ';
+                            const entriesText = window.ATM.i18n ? (window.ATM.i18n.t('data.entries_count') || 'Số câu: ') : 'Số câu: ';
+                            const termsText = window.ATM.i18n ? (window.ATM.i18n.t('data.terms_count') || 'Thuật ngữ: ') : 'Thuật ngữ: ';
+                            const sizeText = window.ATM.i18n ? (window.ATM.i18n.t('data.size_display') || 'Kích thước (Size): ') : 'Kích thước (Size): ';
                             
                             row.innerHTML = `
                                 <div>
-                                    <div style="font-weight: bold; margin-bottom: 4px;">${nameText}${g.name} <span class="engine-badge">${g.engine}</span></div>
+                                    <div style="font-weight: bold; margin-bottom: 4px;">${nameText}${g.name} <span class="engine-badge" data-engine="${g.engine}">${g.engine}</span></div>
                                     <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${folderText}${g.folder}</div>
-                                    <div style="font-size: 12px; color: var(--text-secondary);">${entriesText}<strong>${g.entries}</strong> | ${sizeText}<strong>${sizeKb} KB</strong></div>
+                                    <div style="font-size: 12px; color: var(--text-secondary);">${entriesText}<strong>${g.entries}</strong> | ${termsText}<strong>${g.terms || 0}</strong> | ${sizeText}<strong>${sizeKb} KB</strong></div>
                                 </div>
                                 <div style="display: flex; gap: 8px;">
-                                    <button class="btn-secondary btn-clear-keep" data-id="${g.id}"></button>
-                                    <button class="btn-delete btn-clear-all" data-id="${g.id}"></button>
+                                    <button class="btn-accent btn-clear-keep" data-id="${g.id}" title="${window.ATM.i18n ? (window.ATM.i18n.t('data.keep_clear') || 'Clear & Keep N') : 'Clear & Keep'}">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                    </button>
+                                    <button class="btn-delete btn-clear-all" data-id="${g.id}" title="${window.ATM.i18n ? (window.ATM.i18n.t('data.clear_all') || 'Clear All') : 'Clear All'}">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    </button>
                                 </div>
                             `;
                             listContainer.appendChild(row);
@@ -125,55 +137,77 @@ window.ATM.Data = (function() {
                         
                         listContainer.querySelectorAll('.btn-clear-all').forEach(btn => {
                             btn.addEventListener('click', async (e) => {
-                                const gameId = e.target.getAttribute('data-id');
-                                const confirmMsg = window.ATM.i18n ? window.ATM.i18n.t('data.clear_game_confirm', '') : '';
-                                if (await window.ATM.Modals.confirm(confirmMsg)) {
-                                    window.ATM.api.post('data/clear', { type: 'game_lines', game_id: gameId, keep: 0 })
-                                        .then(() => {
-                                            const successMsg = window.ATM.i18n ? window.ATM.i18n.t('toast.game_cleared', window.ATM.i18n.t('toast.game_cleared', 'Game data cleared successfully.')) : window.ATM.i18n.t('toast.game_cleared', 'Game data cleared successfully.');
-                                            window.ATM.Toast.show(successMsg, 'success');
-                                            window.ATM.Data.refresh(true);
-                                        }).catch(err => {
-                                            const errorPrefix = window.ATM.i18n ? window.ATM.i18n.t('toast.clear_error', window.ATM.i18n.t('toast.clear_error', 'Clear error: ')) : window.ATM.i18n.t('toast.clear_error', 'Clear error: ');
-                                            window.ATM.Toast.show(errorPrefix + (err.message || 'Error'), 'error');
-                                        });
+                                const gameId = e.currentTarget.getAttribute('data-id');
+                                const msg = window.ATM.i18n ? window.ATM.i18n.t('data.clear_game_confirm', '') : '';
+                                const agreed = await window.ATM.Modals.confirm(msg);
+                                if (agreed) {
+                                    try {
+                                        const res = await window.ATM.api.post('data/clear', { type: 'game_all', game_id: gameId });
+                                        if (res.status === 'success') {
+                                            const clearedMsg = window.ATM.i18n ? window.ATM.i18n.t('toast.clear_game_success', 'Cleared') : 'Cleared';
+                                            if (window.ATM.Toast) window.ATM.Toast.show(clearedMsg, "success");
+                                            if (window.ATM.events) {
+                                                window.ATM.events.publish('glossary:changed', { gameId: gameId });
+                                                window.ATM.events.publish('cache:updated', { gameId: gameId });
+                                                window.ATM.events.publish('editor:reload', { gameId: gameId });
+                                            }
+                                            window.ATM.Data.refresh();
+                                        }
+                                    } catch (err) {
+                                        console.error(err);
+                                    }
                                 }
                             });
                         });
                         
                         listContainer.querySelectorAll('.btn-clear-keep').forEach(btn => {
                             btn.addEventListener('click', async (e) => {
-                                const gameId = e.target.getAttribute('data-id');
+                                const gameId = e.currentTarget.getAttribute('data-id');
                                 const promptMsg = window.ATM.i18n ? window.ATM.i18n.t('data.keep_prompt', '') : '';
-                                const input = prompt(promptMsg, "5000");
-                                if (input !== null) {
+                                const input = await window.ATM.Modals.prompt(promptMsg, "5000");
+                                if (input !== null && input !== "") {
                                     const keepCount = parseInt(input, 10);
                                     if (isNaN(keepCount) || keepCount < 0) {
-                                        window.ATM.Toast.show(window.ATM.i18n.t('toast.invalid_number', 'Please enter a valid number.'), "error");
+                                        const invalidNumMsg = window.ATM.i18n ? window.ATM.i18n.t('toast.invalid_number', 'Please enter a valid number.') : 'Please enter a valid number.';
+                                        if (window.ATM.Toast) window.ATM.Toast.show(invalidNumMsg, "error");
                                         return;
                                     }
                                     window.ATM.api.post('data/clear', { type: 'game_lines', game_id: gameId, keep: keepCount })
                                         .then(() => {
-                                            const successMsg = window.ATM.i18n ? window.ATM.i18n.t('toast.game_cleared', window.ATM.i18n.t('toast.game_cleared', 'Game data cleared successfully.')) : window.ATM.i18n.t('toast.game_cleared', 'Game data cleared successfully.');
-                                            window.ATM.Toast.show(successMsg, 'success');
+                                            const successMsg = window.ATM.i18n ? window.ATM.i18n.t('toast.game_cleared', 'Game data cleared successfully.') : 'Game data cleared successfully.';
+                                            if (window.ATM.Toast) window.ATM.Toast.show(successMsg, 'success');
+                                            if (window.ATM.events) {
+                                                window.ATM.events.publish('cache:updated', { gameId: gameId });
+                                                window.ATM.events.publish('editor:reload', { gameId: gameId });
+                                            }
                                             window.ATM.Data.refresh(true);
                                         }).catch(err => {
-                                            const errorPrefix = window.ATM.i18n ? window.ATM.i18n.t('toast.clear_error', window.ATM.i18n.t('toast.clear_error', 'Clear error: ')) : window.ATM.i18n.t('toast.clear_error', 'Clear error: ');
-                                            window.ATM.Toast.show(errorPrefix + (err.message || 'Error'), 'error');
+                                            const errorPrefix = window.ATM.i18n ? window.ATM.i18n.t('toast.clear_error', 'Clear error: ') : 'Clear error: ';
+                                            if (window.ATM.Toast) window.ATM.Toast.show(errorPrefix + (err.message || 'Error'), 'error');
                                         });
                                 }
                             });
                         });
                         
-                        if (window.ATM.i18n) window.ATM.i18n.translateDOM(listContainer);
+                        if (window.ATM.i18n) window.ATM.i18n.updateDOM();
                     }
                 }
 
-                if (!silent && window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.stats_refreshed') || '');
+                if (!silent && window.ATM.Toast) {
+                    const refreshedMsg = window.ATM.i18n ? (window.ATM.i18n.t('toast.stats_refreshed') || '') : '';
+                    if (refreshedMsg) window.ATM.Toast.show(refreshedMsg);
+                }
             } catch (e) {
                 console.error('Data stats error:', e);
-                if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.stats_error') || window.ATM.i18n.t('toast.stats_error', 'Error loading stats'), 'error');
+                const statsErrMsg = window.ATM.i18n ? window.ATM.i18n.t('toast.stats_error', 'Error loading stats') : 'Error loading stats';
+                if (window.ATM.Toast) window.ATM.Toast.show(statsErrMsg, 'error');
             }
         }
     };
+    
+    if (window.ATM.events) {
+        window.ATM.events.subscribe('lang:changed', () => {
+            loadDataStats(true);
+        });
+    }
 })();

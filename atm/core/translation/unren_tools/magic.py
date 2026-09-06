@@ -396,8 +396,20 @@ class FakePackageLoader(object):
         else:
             return None
 
+    def find_spec(self, fullname, path, target=None):
+        import importlib.util
+        if fullname == self.root or fullname.startswith(self.root + "."):
+            return importlib.util.spec_from_loader(fullname, self)
+        return None
+
     def load_module(self, fullname):
         return FakePackage(fullname)
+
+    def create_module(self, spec):
+        return FakePackage(spec.name)
+
+    def exec_module(self, module):
+        pass
 
 # Fake unpickler implementation
 

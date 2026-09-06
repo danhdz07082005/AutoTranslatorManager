@@ -30,12 +30,16 @@ class TranslationCache:
                     cls._instance._initialized = False
         return cls._instance
 
-    def __init__(self, data_dir: str = "data"):
+    def __init__(self, data_dir: str = None):
         if getattr(self, "_initialized", False):
             return
         with self._init_lock:
             if getattr(self, "_initialized", False):
                 return
+            
+            if data_dir is None:
+                from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+                data_dir = TRANSLATIONS_DIR
             self.data_dir = data_dir
             os.makedirs(data_dir, exist_ok=True)
             
@@ -196,11 +200,11 @@ class TranslationCache:
             "limit": limit
         }
 
-    def clear(self, keep_count: int | None = None) -> None:
+    def clear(self, keep_count: int | None = None, clear_game_lines: bool = False) -> None:
         """Clear the cache, optionally keeping `keep_count` newest entries globally."""
         if keep_count is None:
             keep_count = 0
-        self.repo.clear(keep_count)
+        self.repo.clear(keep_count, clear_game_lines=clear_game_lines)
 
     def invalidate_by_term(self, source_lang: str, target_lang: str, term: str) -> int:
         """Invalidate cache entries containing a specific term."""
@@ -219,3 +223,9 @@ class TranslationCache:
         if not terms:
             return 0
         return self.repo.batch_invalidate_by_terms(source_lang, target_lang, terms)
+
+    def batch_delete_exact(self, originals: list) -> int:
+        """Delete exact cache entries based on a list of original strings."""
+        if not originals:
+            return 0
+        return self.repo.batch_delete_exact(originals)

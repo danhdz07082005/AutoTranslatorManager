@@ -93,25 +93,56 @@ function initWorkspace() {
     const navLinks = document.querySelectorAll('.nav-links li');
     const viewSections = document.querySelectorAll('.view-section');
     const sidebar = document.getElementById('sidebar');
-    const sidebarPinSwitch = document.getElementById('sidebar-pin-switch');
+    const sidebarPinBtn = document.getElementById('sidebar-pin-btn');
+    const sidebarBrand = document.getElementById('sidebar-brand');
     
     // Sidebar toggle (Pinned state)
-    if (sidebarPinSwitch && sidebar) {
+    if (sidebarPinBtn && sidebar) {
         // Load pinned state from settings
         const settings = window.ATM.store.get('atm_settings', {});
-        if (settings.sidebar_pinned === true) {
-            sidebar.classList.add('expanded');
-            sidebarPinSwitch.checked = true;
-        }
+        let isPinned = settings.sidebar_pinned === true;
         
-        sidebarPinSwitch.addEventListener('change', (e) => {
-            sidebar.classList.toggle('expanded', e.target.checked);
+        const updatePinState = (pinned) => {
+            isPinned = pinned;
+            sidebar.classList.toggle('expanded', isPinned);
+            sidebarPinBtn.classList.toggle('active', isPinned);
+            
+            const i18n = window.ATM.i18n;
+            const title = isPinned 
+                ? (i18n ? i18n.t('sidebar.unpin_tooltip', 'Bỏ ghim thanh bên') : 'Bỏ ghim thanh bên')
+                : (i18n ? i18n.t('sidebar.pin_tooltip', 'Ghim thanh bên') : 'Ghim thanh bên');
+            sidebarPinBtn.setAttribute('title', title);
+        };
+        
+        updatePinState(isPinned);
+        
+        const togglePin = (e) => {
+            if (e) e.stopPropagation();
+            const nextState = !isPinned;
+            updatePinState(nextState);
             
             // Save state
             const currentSettings = window.ATM.store.get('atm_settings', {});
-            currentSettings.sidebar_pinned = e.target.checked;
+            currentSettings.sidebar_pinned = nextState;
             localStorage.setItem('atm_settings', JSON.stringify(currentSettings));
-        });
+        };
+        
+        sidebarPinBtn.addEventListener('click', togglePin);
+        
+        // Clicking logo when collapsed can also expand/pin
+        if (sidebarBrand) {
+            sidebarBrand.addEventListener('click', () => {
+                if (!sidebar.classList.contains('expanded')) {
+                    togglePin();
+                }
+            });
+        }
+        
+        if (window.ATM.events) {
+            window.ATM.events.subscribe('lang:changed', () => {
+                updatePinState(isPinned);
+            });
+        }
         
         const sidebarOverlay = document.getElementById('sidebar-overlay');
         if (sidebarOverlay) {

@@ -29,10 +29,11 @@ window.ATM.store = {
     }
 
     class BackendError extends Error {
-        constructor(message, status) {
+        constructor(message, status, code = null) {
             super(message);
             this.name = "BackendError";
             this.status = status;
+            this.code = code;
         }
     }
 
@@ -82,12 +83,26 @@ window.ATM.store = {
                 const url = `/api/${endpoint}${sep}t=${Date.now()}`;
                 const response = await fetchWithTimeout(url, options);
                 if (!response.ok) {
-                    throw new BackendError(`HTTP Error: ${response.status}`, response.status);
+                    const errorData = await response.json().catch(() => ({}));
+                    const i18n = window.ATM.i18n;
+                    const localizedMsg = (errorData.code && i18n ? i18n.t(errorData.code) : null)
+                        || (errorData.error && i18n ? i18n.t(errorData.error) : null)
+                        || errorData.error
+                        || `HTTP Error: ${response.status}`;
+                    const err = new BackendError(localizedMsg, response.status, errorData.code);
+                    err.data = errorData;
+                    throw err;
                 }
                 const data = await response.json();
                 if (data.status === 'error') {
-                    const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.server_error') : '';
-                    throw new BackendError(data.error || fallback, response.status);
+                    const i18n = window.ATM.i18n;
+                    const localizedMsg = (data.code && i18n ? i18n.t(data.code) : null)
+                        || (data.error && i18n ? i18n.t(data.error) : null)
+                        || data.error
+                        || (i18n ? i18n.t('toast.server_error') : 'Server error');
+                    const err = new BackendError(localizedMsg, response.status, data.code);
+                    err.data = data;
+                    throw err;
                 }
                 return data;
             } catch (error) {
@@ -112,12 +127,25 @@ window.ATM.store = {
                 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    throw new BackendError(errorData.error || `HTTP Error: ${response.status}`, response.status);
+                    const i18n = window.ATM.i18n;
+                    const localizedMsg = (errorData.code && i18n ? i18n.t(errorData.code) : null)
+                        || (errorData.error && i18n ? i18n.t(errorData.error) : null)
+                        || errorData.error
+                        || `HTTP Error: ${response.status}`;
+                    const err = new BackendError(localizedMsg, response.status, errorData.code);
+                    err.data = errorData;
+                    throw err;
                 }
                 const resData = await response.json();
                 if (resData.status === 'error') {
-                    const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.server_error') : '';
-                    throw new BackendError(resData.error || fallback, response.status);
+                    const i18n = window.ATM.i18n;
+                    const localizedMsg = (resData.code && i18n ? i18n.t(resData.code) : null)
+                        || (resData.error && i18n ? i18n.t(resData.error) : null)
+                        || resData.error
+                        || (i18n ? i18n.t('toast.server_error') : 'Server error');
+                    const err = new BackendError(localizedMsg, response.status, resData.code);
+                    err.data = resData;
+                    throw err;
                 }
                 return resData;
             } catch (error) {

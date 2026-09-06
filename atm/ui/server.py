@@ -11,7 +11,7 @@ mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('text/css', '.css')
 mimetypes.add_type('text/html', '.html')
 
-import threading
+
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from atm.utils.logger import get_logger
@@ -78,6 +78,19 @@ class ATMHandler(BaseHTTPRequestHandler):
                 query.get('text', [''])[0],
                 query.get('category', ['unknown'])[0],
             ))
+        elif self.path.startswith('/api/cache/search'):
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            q_str = query.get('q', [''])[0]
+            page = int(query.get('page', ['1'])[0])
+            limit = int(query.get('limit', ['50'])[0])
+            self._json_response(self.api.search_cache(q_str, page, limit))
+        elif parsed_path.startswith('/api/games/') and parsed_path.endswith('/translations'):
+            game_id = parsed_path.split('/')[3]
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            q_str = query.get('query', [''])[0]
+            page = int(query.get('page', ['1'])[0])
+            limit = int(query.get('limit', ['50'])[0])
+            self._json_response(self.api.get_game_translations(game_id, page, limit, q_str))
         elif parsed_path == '/api/data/stats':
             self._json_response(self.api.get_data_stats())
         elif self.path.startswith('/api/engines/coverage'):
@@ -149,6 +162,25 @@ class ATMHandler(BaseHTTPRequestHandler):
             result = self.api.sync_game(body.get('game_id', ''))
             self._json_response(result)
 
+        elif route_path.startswith('/api/games/') and '/translations/' in route_path and route_path.endswith('/update'):
+            game_id = route_path.split('/')[3]
+            item_id = int(route_path.split('/')[5])
+            result = self.api.update_game_translation(
+                game_id,
+                item_id,
+                body.get('translated', ''),
+                body.get('version', 1)
+            )
+            self._json_response(result)
+
+        elif route_path.startswith('/api/games/') and route_path.endswith('/translations/batch-update'):
+            game_id = route_path.split('/')[3]
+            result = self.api.batch_update_game_translations(
+                game_id,
+                body.get('items', [])
+            )
+            self._json_response(result)
+
         elif route_path == '/api/games/delete':
             result = self.api.delete_game(body.get('game_id', ''))
             self._json_response(result)
@@ -200,15 +232,6 @@ class ATMHandler(BaseHTTPRequestHandler):
             )
             self._json_response(result)
 
-        elif route_path == '/api/translation-memory/confirm':
-            result = self.api.confirm_translation_memory_suggestion(
-                body.get('game_id', ''),
-                body.get('source_text', ''),
-                body.get('translated_text', ''),
-                body.get('category', 'unknown'),
-            )
-            self._json_response(result)
-
         elif route_path == '/api/settings':
             result = self.api.update_settings(**body)
             self._json_response(result)
@@ -228,12 +251,14 @@ class ATMHandler(BaseHTTPRequestHandler):
         elif route_path == '/api/data/clear':
             clear_type = body.get('type')
             if clear_type == 'cache':
-                keep_count = body.get('keep', 5000)
+                keep_count = body.get('keep', 0)
                 result = self.api.clear_global_cache(keep_count)
             elif clear_type == 'tm':
                 result = self.api.clear_global_memory()
             elif clear_type == 'game_lines':
                 result = self.api.clear_game_lines(body.get('game_id'), body.get('keep', 0))
+            elif clear_type in ('game_all', 'game_data'):
+                result = self.api.clear_game_full(body.get('game_id'))
             else:
                 result = {"status": "error", "error": "Invalid type"}
             self._json_response(result)
@@ -242,10 +267,10 @@ class ATMHandler(BaseHTTPRequestHandler):
             result = self.api.open_data_folder()
             self._json_response(result)
 
-        elif self.path in ('/api/jobs/extract', '/api/engines/extract'):
+        elif route_path in ('/api/jobs/extract', '/api/engines/extract'):
             self._json_response(self.api.extract_offline(body.get('game_id', '')))
 
-        elif self.path in ('/api/jobs/patch', '/api/engines/patch'):
+        elif route_path in ('/api/jobs/patch', '/api/engines/patch'):
             self._json_response(self.api.patch_offline(body.get('game_id', '')))
 
         else:
@@ -294,6 +319,12 @@ class ATMHandler(BaseHTTPRequestHandler):
                 import re, time
                 html_str = content.decode('utf-8')
                 html_str = re.sub(r'\?v=\d+', f'?v={int(time.time())}', html_str)
+                try:
+                    s_conf = self.api.settings_repo.load()
+                    is_dark = "true" if s_conf.dark_mode else "false"
+                    html_str = html_str.replace('/*__SERVER_DARK_MODE__*/', f'var serverDarkMode = {is_dark};')
+                except Exception:
+                    pass
                 content = html_str.encode('utf-8')
                 
             self.send_response(200)

@@ -21,6 +21,45 @@ window.ATM.core = window.ATM.core || {};
             'status.completed': 'Hoàn thành',
             'status.failed': 'Lỗi dịch thuật',
             'status.interrupted': 'Bị gián đoạn',
+            'translation.preparing': 'Đang chuẩn bị dịch...',
+            'translation.cancelled': 'Đã hủy dịch',
+            'translation.success': 'Dịch hoàn tất',
+            'translation.failed': 'Dịch thất bại',
+            'translation.rate_limited': 'Bị giới hạn tốc độ API (Rate limit)',
+            'translation.error': 'Lỗi trong quá trình dịch',
+            'translation.not_running': 'Không có tiến trình dịch nào đang chạy',
+            'translation.realtime_running': 'Đang dịch trong game (Real-time)...',
+            'translation.realtime_finished': 'Game đã đóng',
+            'translation.ready': 'Sẵn sàng',
+            'status.ready': 'Sẵn sàng',
+            'toast.game_busy': 'Tiến trình dịch trước đó đang hoàn tất lưu dữ liệu dở dang, vui lòng đợi trong giây lát.',
+            'workspace.coverage_title': 'Báo cáo độ phủ {engine}',
+            'workspace.coverage_stats': 'Tổng: {total}\nĐã dịch: {translated}\nChưa dịch: {untranslated}\nĐộ phủ: {coverage}%',
+            'workspace.audit_failed': 'Lỗi khi kiểm tra độ phủ cho {engine}',
+            'workspace.job_already_running': 'Tác vụ đang chạy!',
+            'workspace.extract_started': 'Đã bắt đầu trích xuất văn bản.',
+            'workspace.extract_completed': 'Trích xuất văn bản hoàn tất!',
+            'workspace.extract_failed': 'Trích xuất văn bản thất bại: {status}',
+            'workspace.extract_start_error': 'Không thể khởi chạy tác vụ trích xuất.',
+            'error.game_not_found': 'Không tìm thấy game trong hệ thống!',
+            'error.target_lang_missing': 'Vui lòng chọn ngôn ngữ đích trước khi thực hiện.',
+            'toast.delete_running_error': 'Game đang chạy hoặc đang dịch. Vui lòng dừng game trước khi xóa!',
+            'toast.clear_running_error': 'Không thể xóa dữ liệu khi game đang dịch. Vui lòng dừng dịch trước!',
+            'error.invalid_threshold': 'Ngưỡng Translation Memory phải nằm trong khoảng từ 0 đến 1.',
+
+            
+            'editor.master_save': 'Lưu các thay đổi',
+            'editor.master_cancel': 'Hủy toàn bộ',
+            'editor.confirm_discard': 'Bạn có thay đổi chưa lưu. Bạn muốn làm gì?',
+            'editor.discard_leave': 'Không Lưu & Rời đi',
+            'editor.save_leave': 'Lưu & Rời đi',
+            'editor.missing_vars': '⚠️ Cảnh báo: Thiếu biến {vars}',
+            'editor.saving': 'Đang lưu...',
+            'editor.qa_running': 'Đang quét lỗi...',
+            'editor.network_error': 'Lỗi mạng hoặc xung đột dữ liệu',
+            'editor.error_load': 'Lỗi tải dữ liệu',
+            'editor.keep_mine': 'Giữ bản của tôi (Ghi đè)',
+            'editor.use_new': 'Dùng bản mới (Hủy thay đổi)',
 
             'editor.loading': 'Đang tải dữ liệu...',
             'editor.accept': 'Chấp nhận',
@@ -69,6 +108,8 @@ window.ATM.core = window.ATM.core || {};
             'card.stop': 'Dừng',
             'card.resume': 'Tiếp tục (Lỗi/Khởi động lại)',
             'card.play': 'Chơi Game',
+            'games.btn_sync': 'Đồng bộ & Dịch',
+            'games.needs_sync_tooltip': 'Có dữ liệu mới từ Editor/Glossary. Vui lòng bấm để đồng bộ.',
             'workspace.status_ready': 'Sẵn sàng',
             'dashboard.empty_title': 'Không tìm thấy game nào',
             'dashboard.empty_desc': 'Bấm "+ Thêm Game" để bắt đầu.',
@@ -81,6 +122,7 @@ window.ATM.core = window.ATM.core || {};
             'editor.apply_error': 'Lỗi lưu gợi ý',
             'editor.empty': 'Không có dữ liệu.',
             'editor.save_error': 'Không thể lưu bản dịch. Đã khôi phục lại.',
+            'editor.batch_save_partial': 'Đã lưu {saved}. Bị lỗi/xung đột: {failed}. Vui lòng thử lại.',
             'glossary.add_success': 'Đã thêm từ',
             'glossary.add_error': 'Lỗi thêm từ',
             'glossary.export_success': 'Đã tải xuống file CSV',
@@ -91,6 +133,19 @@ window.ATM.core = window.ATM.core || {};
             'plugins.deepl_configured': 'Đã cấu hình',
             'plugins.deepl_placeholder': 'Nhập API Key (tùy chọn)',
             'card.delete_confirm': 'Bạn chắc chắn muốn xóa game này?',
+            'app.offline': 'Mất kết nối máy chủ',
+            'editor.conflict_msg': 'Dữ liệu trên máy chủ đã thay đổi. Bạn có muốn ghi đè không?',
+            'editor.search_draft_warning': 'Bạn có các thay đổi chưa lưu. Tìm kiếm hoặc chuyển trang sẽ làm mất các bản nháp chưa lưu này. Bạn có muốn tiếp tục?',
+            'games.auto_fix_confirm': 'Xác nhận tự động sửa đường dẫn game',
+            'games.auto_fix_error': 'Lỗi khi sửa đường dẫn: ',
+            'games.auto_fix_success': 'Đã sửa đường dẫn game thành công! Đang khởi động lại...',
+            'games.unicode_error_msg': 'Đường dẫn thư mục hoặc file game có chứa ký tự tiếng Việt / Unicode có dấu, có thể khiến bộ dịch bị lỗi. Bạn có muốn tự động sửa tên thư mục sang không dấu không?',
+            'toast.clear_cache_error_all': 'Lỗi khi xóa toàn bộ cache',
+            'toast.clear_error': 'Lỗi khi xóa: ',
+            'toast.clear_game_success': 'Đã xóa toàn bộ dữ liệu của game',
+            'toast.folder_error': 'Lỗi mở thư mục dữ liệu',
+            'toast.game_cleared': 'Đã xóa dữ liệu câu dịch của game',
+            'toast.invalid_number': 'Vui lòng nhập số lượng hợp lệ.',
 
             // === MENU ===
             "menu.library": "Thư viện",
@@ -243,10 +298,12 @@ window.ATM.core = window.ATM.core || {};
             "data.game_name": "Tên Game: ",
             "data.folder": "Thư mục: ",
             "data.entries_count": "Số câu: ",
-            "data.clear_game_confirm": "Bạn có chắc muốn xóa TOÀN BỘ dữ liệu dịch của game này?",
+            "data.terms_count": "Thuật ngữ: ",
+            "data.size_display": "Kích thước (Size): ",
+            "data.clear_game_confirm": "Bạn có chắc chắn muốn xóa TOÀN BỘ dữ liệu dịch và thuật ngữ của game này?",
             "data.keep_prompt": "Nhập số câu mới nhất muốn GIỮ LẠI (những câu cũ hơn sẽ bị xóa):",
             "data.clear_all_confirm": "Bạn có chắc chắn muốn xóa toàn bộ Cache?",
-            "data.clear_tm_confirm": "Bạn có chắc chắn muốn xóa toàn bộ Translation Memory?",
+            "data.clear_tm_confirm": "Bạn có chắc chắn muốn xóa toàn bộ Translation Memory và thuật ngữ của tất cả các game?",
 
 
             // === MISC ===
@@ -255,6 +312,8 @@ window.ATM.core = window.ATM.core || {};
             "goodbye.title": "Cảm ơn bạn đã sử dụng ATM. Hẹn gặp lại!",
             "goodbye.subtitle": "Đang lưu cài đặt và tắt hệ thống...",
             "goodbye.message": "Cảm ơn bạn đã sử dụng ATM. Hẹn gặp lại!",
+            "sidebar.pin_tooltip": "Ghim thanh bên",
+            "sidebar.unpin_tooltip": "Bỏ ghim thanh bên",
         },
         'en': {
             // === COMMON ===
@@ -270,6 +329,86 @@ window.ATM.core = window.ATM.core || {};
             'status.completed': 'Completed',
             'status.failed': 'Translation Failed',
             'status.interrupted': 'Interrupted',
+            'translation.preparing': 'Preparing translation...',
+            'translation.cancelled': 'Translation cancelled',
+            'translation.success': 'Translation completed',
+            'translation.failed': 'Translation failed',
+            'translation.rate_limited': 'API rate limited (HTTP 429)',
+            'translation.error': 'Error during translation',
+            'translation.not_running': 'No translation is currently running',
+            'translation.realtime_running': 'Real-time translation running...',
+            'translation.realtime_finished': 'Game closed',
+            'translation.ready': 'Ready',
+            'status.ready': 'Ready',
+            'toast.game_busy': 'Previous translation is still shutting down, please wait a moment.',
+            'workspace.coverage_title': '{engine} Coverage Report',
+            'workspace.coverage_stats': 'Total: {total}\nTranslated: {translated}\nUntranslated: {untranslated}\nCoverage: {coverage}%',
+            'workspace.audit_failed': 'Failed to audit {engine} coverage.',
+            'workspace.job_already_running': 'Job is already running!',
+            'workspace.extract_started': 'Extract job started.',
+            'workspace.extract_completed': 'Extract job completed!',
+            'workspace.extract_failed': 'Extract job {status}',
+            'workspace.extract_start_error': 'Failed to start extract job.',
+            'error.game_not_found': 'Game not found in the system!',
+            'error.target_lang_missing': 'Please select target language before proceeding.',
+            'toast.delete_running_error': 'Game is currently running or translating. Please stop it before deleting!',
+            'toast.clear_running_error': 'Cannot clear data while translation is running. Stop it first!',
+            'error.invalid_threshold': 'Translation-memory threshold must be between 0 and 1.',
+
+            
+            'editor.master_save': 'Save changes',
+            'editor.master_cancel': 'Discard all',
+            'editor.confirm_discard': 'You have unsaved changes. What would you like to do?',
+            'editor.discard_leave': 'Discard & Leave',
+            'editor.save_leave': 'Save & Leave',
+            'editor.missing_vars': '⚠️ Warning: Missing vars {vars}',
+            'editor.saving': 'Saving...',
+            'editor.qa_running': 'Running QA...',
+            'editor.qa_found': 'Found {count} QA issue(s)!',
+            'editor.qa_clean': 'Great! No QA issues found.',
+            'editor.qa_error': 'Error running QA scan',
+            'editor.apply_success': 'Applied suggestion',
+            'editor.apply_error': 'Error saving suggestion',
+            'editor.empty': 'No data available.',
+            'editor.save_error': 'Could not save translation. Restored original.',
+            'editor.batch_save_partial': 'Saved {saved}. Failed/conflicts: {failed}. Please retry.',
+            'editor.network_error': 'Network error or data conflict',
+            'editor.error_load': 'Error loading data',
+            'editor.keep_mine': 'Keep mine (Overwrite)',
+            'editor.use_new': 'Use new version',
+
+            'glossary.add_success': 'Term added successfully',
+            'glossary.add_error': 'Error adding term',
+            'glossary.export_success': 'CSV file downloaded successfully',
+            'glossary.export_error': 'Error exporting Glossary',
+            'glossary.import_confirm': 'Preview Import:\n- {new} New\n- {conflict} Conflicts\n- {duplicate} Duplicates\n- {invalid} Invalid.\n\nDo you want to Overwrite (Merge)?',
+            'glossary.import_success': 'Glossary imported successfully',
+            'glossary.import_error': 'Import Error',
+
+            'toast.add_game_error': 'Error adding game',
+            'toast.delete_success': 'Game deleted successfully',
+            'card.start': 'Start translation',
+            'card.stop': 'Stop',
+            'card.resume': 'Resume (Error/Restart)',
+            'card.play': 'Play Game',
+            'games.btn_sync': 'Sync & Translate',
+            'games.needs_sync_tooltip': 'New changes detected from Editor/Glossary. Click to sync and apply.',
+            'card.delete_confirm': 'Are you sure you want to delete this game?',
+            'app.offline': 'Disconnected from server',
+            'editor.conflict_msg': 'Data on server has changed. Do you want to overwrite?',
+            'editor.search_draft_warning': 'You have unsaved changes. Searching or paging will discard these drafts. Continue?',
+            'games.auto_fix_confirm': 'Confirm auto-fix game path',
+            'games.auto_fix_error': 'Error fixing path: ',
+            'games.auto_fix_success': 'Game path fixed successfully! Restarting...',
+            'games.unicode_error_msg': 'Game path contains non-ASCII or accented characters which may cause translation engine errors. Do you want to automatically rename folder to ASCII?',
+            'toast.clear_cache_error_all': 'Error clearing all cache',
+            'toast.clear_error': 'Clear error: ',
+            'toast.clear_game_success': 'Game data cleared successfully',
+            'toast.folder_error': 'Error opening folder',
+            'toast.game_cleared': 'Game data cleared successfully.',
+            'toast.invalid_number': 'Please enter a valid number.',
+            'data.loading': 'Loading data...',
+            'plugins.deepl_configured': 'Configured',
 
             'editor.loading': 'Loading data...',
             'editor.accept': 'Accept',
@@ -461,11 +600,13 @@ window.ATM.core = window.ATM.core || {};
             "data.no_games": "No game data found.",
             "data.game_name": "Game Name: ",
             "data.folder": "Folder: ",
-            "data.entries_count": "Entries: ",
-            "data.clear_game_confirm": "Are you sure you want to clear ALL translation data for this game?",
+            "data.entries_count": "Lines: ",
+            "data.terms_count": "Glossary: ",
+            "data.size_display": "Size: ",
+            "data.clear_game_confirm": "Are you sure you want to clear ALL translation data and glossary for this game?",
             "data.keep_prompt": "Enter the number of latest entries to KEEP (older ones will be deleted):",
             "data.clear_all_confirm": "Are you sure you want to clear all Cache?",
-            "data.clear_tm_confirm": "Are you sure you want to clear all Translation Memory?",
+            "data.clear_tm_confirm": "Are you sure you want to clear all Translation Memory and glossaries?",
 
 
 
@@ -475,6 +616,8 @@ window.ATM.core = window.ATM.core || {};
             "goodbye.title": "Thank you for using ATM. See you again!",
             "goodbye.subtitle": "Saving settings and shutting down...",
             "goodbye.message": "Thank you for using ATM. See you again!",
+            "sidebar.pin_tooltip": "Pin sidebar",
+            "sidebar.unpin_tooltip": "Unpin sidebar",
         }
     };
 
@@ -484,11 +627,18 @@ window.ATM.core = window.ATM.core || {};
         /**
          * Lấy câu dịch theo key
          */
-        t: function(key, params = {}) {
+        t: function(key, fallbackOrParams = {}) {
             let text = dict[currentLang] && dict[currentLang][key];
-            if (text === undefined) return undefined;
-            for (const [k, v] of Object.entries(params)) {
-                text = text.replace(new RegExp(`{${k}}`, 'g'), v);
+            if (text === undefined) {
+                if (typeof fallbackOrParams === 'string') return fallbackOrParams;
+                let enText = dict['en'] && dict['en'][key];
+                if (enText !== undefined) return enText;
+                return key;
+            }
+            if (typeof fallbackOrParams === 'object') {
+                for (const [k, v] of Object.entries(fallbackOrParams)) {
+                    text = text.replace(new RegExp(`{${k}}`, 'g'), v);
+                }
             }
             return text;
         },
@@ -501,6 +651,9 @@ window.ATM.core = window.ATM.core || {};
                 currentLang = lang;
                 window.ATM.store.set('atm_lang', lang);
                 this.updateDOM();
+                if (window.ATM.events) {
+                    window.ATM.events.publish('lang:changed', lang);
+                }
             }
         },
 

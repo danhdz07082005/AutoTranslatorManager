@@ -340,7 +340,7 @@ def protect_glossary_terms(
         pattern = re.compile(re.escape(term), re.IGNORECASE)
 
         def replace(match: re.Match[str]) -> str:
-            placeholder = f"[[GL{len(replacements)}]]"
+            placeholder = f"<<{9000 + len(replacements)}>>"
             replacements[placeholder] = translation
             return placeholder
 
@@ -353,10 +353,10 @@ def restore_glossary_terms(text: object, replacements: Mapping[str, str]) -> obj
         return text
 
     def replace(match: re.Match[str]) -> str:
-        placeholder = f"[[GL{match.group(1)}]]"
+        placeholder = f"<<{match.group(1)}>>"
         return replacements.get(placeholder, match.group(0))
 
-    return re.sub(r"\[\[GL(\d+)\]\]", replace, text)
+    return _API_PLACEHOLDER_RE.sub(replace, text)
 
 
 def validate_translation(source: str, translated: object) -> ValidationResult:
@@ -510,8 +510,8 @@ class TranslationPipeline:
         stats.unique = len(groups)
         stats.duplicate_entries = stats.normalized - stats.unique
 
-        if not target_lang:
-            raise ValueError("target_lang must be provided")
+        source_lang = source_lang or "auto"
+        target_lang = target_lang or "vi"
         active_glossary = self._normalise_glossary(
             self.glossary if glossary is None else glossary
         )
@@ -651,6 +651,7 @@ class TranslationPipeline:
         total_groups = len(groups)
         processed_groups = 0
         generic_glossary, contextual_glossary = glossary
+        lower_generic_glossary = {k.lower(): v for k, v in generic_glossary.items()}
 
         for group in groups:
             glossary_value = contextual_glossary.get(group.key, _GLOSSARY_MISS)
@@ -659,11 +660,7 @@ class TranslationPipeline:
                 
             # Case-insensitive fallback for full exact match
             if glossary_value is _GLOSSARY_MISS:
-                text_lower = group.text.lower()
-                for k, v in generic_glossary.items():
-                    if k.lower() == text_lower:
-                        glossary_value = v
-                        break
+                glossary_value = lower_generic_glossary.get(group.text.lower(), _GLOSSARY_MISS)
                         
             if glossary_value is not _GLOSSARY_MISS:
                 stats.glossary_hits += 1
@@ -727,6 +724,10 @@ class TranslationPipeline:
             except RateLimitError as e:
                 self.log.warning("Pipeline caught RateLimitError. Halting API calls for remaining groups.")
                 stats.rate_limited = True
+                if getattr(e, "partial_results", None):
+                    for group, translation in zip(category_groups, e.partial_results):
+                        if translation is not None:
+                            candidates[group.key] = (translation, TranslationOrigin.API)
                 break
 
         return candidates
