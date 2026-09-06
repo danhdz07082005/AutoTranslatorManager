@@ -3,7 +3,10 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*' # Chạy khi tạo tag có định dạng v1.0.0, v2.1.0...
+      - 'v*' # Kích hoạt khi push tag phiên bản (vd: v2.0.0)
+  release:
+    types: [published] # Kích hoạt khi bấm tạo/xuất bản Release trên web GitHub
+  workflow_dispatch: # Kích hoạt bằng nút bấm "Run workflow" thủ công trên GitHub Actions
 
 permissions:
   contents: write
@@ -31,7 +34,8 @@ jobs:
       run: |
         pyinstaller --name AutoTranslator --onefile --windowed --add-data "atm/ui/web;atm/ui/web" --add-data "atm/resources;atm/resources" run_app.py
 
-    - name: Create Release
+    - name: Upload to GitHub Release
+      if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
       uses: softprops/action-gh-release@v2
       with:
         files: dist/AutoTranslator.exe
@@ -40,4 +44,11 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AutoTranslator-Windows-x64
+        path: dist/AutoTranslator.exe
+
 
