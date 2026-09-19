@@ -45,3 +45,31 @@ def test_i18n_completeness():
         error_msgs.append(f"Tiếng Việt thiếu các keys sau: {missing_in_vi}")
         
     assert not error_msgs, "\n".join(error_msgs)
+
+def test_all_referenced_keys_exist_in_i18n():
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    ui_web_dir = os.path.join(base_dir, "atm", "ui", "web")
+    content = get_i18n_js_content()
+    vi_keys = parse_keys_for_lang(content, "vi")
+    
+    referenced_keys = set()
+    for root, dirs, files in os.walk(ui_web_dir):
+        for f in files:
+            if f.endswith('.html') or (f.endswith('.js') and f != 'i18n.js'):
+                fpath = os.path.join(root, f)
+                with open(fpath, 'r', encoding='utf-8') as fh:
+                    txt = fh.read()
+                    # Find t('key') or t("key")
+                    for k in re.findall(r"\bt\(\s*['\"]([^'\"]+)['\"]", txt):
+                        # ignore dynamic or template vars if any
+                        if not k.startswith('${'):
+                            referenced_keys.add(k)
+                    # Find data-i18n="key", data-i18n-title="key", data-i18n-placeholder="key"
+                    for k in re.findall(r"data-i18n(?:-[a-z]+)?=['\"]([^'\"]+)['\"]", txt):
+                        referenced_keys.add(k)
+
+    missing_keys = referenced_keys - vi_keys
+    # Ignore dynamic prefix keys if any, e.g. status.
+    unmatched = [k for k in missing_keys if not any(k.startswith(p) for p in ['status.'])]
+    assert not unmatched, f"The following keys are referenced in UI but missing in i18n: {unmatched}"
+

@@ -1,4 +1,4 @@
-﻿import os
+import os
 from atm.core.engines.ir import LocalizationEntry
 from atm.core.engines.bakin.extractor import BakinExtractor
 from atm.core.engines.bakin.auditor import BakinAuditor

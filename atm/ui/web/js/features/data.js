@@ -128,11 +128,11 @@ window.ATM.Data = (function() {
                             row.style.padding = '10px';
                             row.style.marginBottom = '10px';
                             
-                            const nameText = window.ATM.i18n ? window.ATM.i18n.t('data.game_name', 'TÃªn Game: ') : 'TÃªn Game: ';
-                            const folderText = window.ATM.i18n ? window.ATM.i18n.t('data.folder', 'ThÆ° má»¥c: ') : 'ThÆ° má»¥c: ';
-                            const entriesText = window.ATM.i18n ? window.ATM.i18n.t('data.entries_count', 'Sá»‘ cÃ¢u: ') : 'Sá»‘ cÃ¢u: ';
-                            const termsText = window.ATM.i18n ? window.ATM.i18n.t('data.terms_count', 'Thuáº­t ngá»¯: ') : 'Thuáº­t ngá»¯: ';
-                            const sizeText = window.ATM.i18n ? window.ATM.i18n.t('data.size_display', 'KÃ­ch thÆ°á»›c (Size): ') : 'KÃ­ch thÆ°á»›c (Size): ';
+                            const nameText = window.ATM.i18n ? window.ATM.i18n.t('data.game_name', 'Tên Game: ') : 'Tên Game: ';
+                            const folderText = window.ATM.i18n ? window.ATM.i18n.t('data.folder', 'Thư mục: ') : 'Thư mục: ';
+                            const entriesText = window.ATM.i18n ? window.ATM.i18n.t('data.entries_count', 'Số câu: ') : 'Số câu: ';
+                            const termsText = window.ATM.i18n ? window.ATM.i18n.t('data.terms_count', 'Thuật ngữ: ') : 'Thuật ngữ: ';
+                            const sizeText = window.ATM.i18n ? window.ATM.i18n.t('data.size_display', 'Kích thước (Size): ') : 'Kích thước (Size): ';
                             
                             const infoDiv = document.createElement('div');
 

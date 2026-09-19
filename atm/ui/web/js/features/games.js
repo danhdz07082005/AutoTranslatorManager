@@ -193,18 +193,18 @@ window.ATM.Games = (function() {
     }
 
     function getEngineOptions() {
-        const readyText = window.ATM.i18n ? window.ATM.i18n.t('games.engine_ready') : 'Sáºµn sÃ ng';
-        const noKeyText = window.ATM.i18n ? window.ATM.i18n.t('games.engine_no_key') : 'ChÆ°a cÃ³ Key';
+        const readyText = window.ATM.i18n ? window.ATM.i18n.t('games.engine_ready', 'Sẵn sàng') : 'Sẵn sàng';
+        const noKeyText = window.ATM.i18n ? window.ATM.i18n.t('games.engine_no_key', 'Chưa có Key') : 'Chưa có Key';
 
         return [
-            { value: 'google', text: `Google Translate [âœ“ ${readyText}]` },
-            { value: 'gemini', text: `Google Gemini [${isEngineConfigured('gemini') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
-            { value: 'deepseek', text: `DeepSeek (V3/R1) [${isEngineConfigured('deepseek') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
-            { value: 'openai', text: `OpenAI (ChatGPT) [${isEngineConfigured('openai') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
-            { value: 'claude', text: `Anthropic Claude [${isEngineConfigured('claude') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
-            { value: 'kimi', text: `Kimi (Moonshot) [${isEngineConfigured('kimi') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
-            { value: 'custom_llm', text: `Custom / Local LLM [${isEngineConfigured('custom_llm') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
-            { value: 'deepl', text: `DeepL API [${isEngineConfigured('deepl') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` }
+            { value: 'google', text: `Google Translate [✓ ${readyText}]` },
+            { value: 'gemini', text: `Google Gemini [${isEngineConfigured('gemini') ? '✓ ' + readyText : '⚠️ ' + noKeyText}]` },
+            { value: 'deepseek', text: `DeepSeek (V3/R1) [${isEngineConfigured('deepseek') ? '✓ ' + readyText : '⚠️ ' + noKeyText}]` },
+            { value: 'openai', text: `OpenAI (ChatGPT) [${isEngineConfigured('openai') ? '✓ ' + readyText : '⚠️ ' + noKeyText}]` },
+            { value: 'claude', text: `Anthropic Claude [${isEngineConfigured('claude') ? '✓ ' + readyText : '⚠️ ' + noKeyText}]` },
+            { value: 'kimi', text: `Kimi (Moonshot) [${isEngineConfigured('kimi') ? '✓ ' + readyText : '⚠️ ' + noKeyText}]` },
+            { value: 'custom_llm', text: `Custom / Local LLM [${isEngineConfigured('custom_llm') ? '✓ ' + readyText : '⚠️ ' + noKeyText}]` },
+            { value: 'deepl', text: `DeepL API [${isEngineConfigured('deepl') ? '✓ ' + readyText : '⚠️ ' + noKeyText}]` }
         ];
     }
 
@@ -222,12 +222,12 @@ window.ATM.Games = (function() {
             engineSel.classList.add('needs-key');
             if (btnStart && card.dataset.state !== 'TRANSLATING') {
                 btnStart.classList.add('needs-key');
-                btnStart.title = window.ATM.i18n ? window.ATM.i18n.t('games.engine_warning_tooltip') : 'Cáº§n cáº¥u hÃ¬nh API Key trong CÃ i Ä‘áº·t Ä‘á»ƒ sá»­ dá»¥ng';
+                btnStart.title = window.ATM.i18n ? window.ATM.i18n.t('games.engine_warning_tooltip', 'Cần cấu hình API Key trong Cài đặt để sử dụng') : 'Cần cấu hình API Key trong Cài đặt để sử dụng';
             }
             if (!warningEl) {
                 warningEl = document.createElement('div');
                 warningEl.className = 'engine-key-warning';
-                warningEl.textContent = window.ATM.i18n ? `âš  ${window.ATM.i18n.t('games.engine_warning_tooltip')}` : 'âš  Cáº§n cáº¥u hÃ¬nh API Key';
+                warningEl.textContent = window.ATM.i18n ? `⚠️ ${window.ATM.i18n.t('games.engine_warning_tooltip', 'Cần cấu hình API Key')}` : '⚠️ Cần cấu hình API Key';
                 const parent = engineSel.parentNode;
                 if (parent) parent.appendChild(warningEl);
             }
@@ -285,7 +285,7 @@ window.ATM.Games = (function() {
             if (btnStart && card.dataset.state !== 'TRANSLATING') {
                 btnStart.classList.remove('btn-start', 'btn-success', 'btn-secondary');
                 btnStart.classList.add('btn-delete', 'heartbeat-neon-red');
-                btnStart.textContent = t('games.btn_sync', 'Äá»“ng bá»™ & Dá»‹ch');
+                btnStart.textContent = t('games.btn_sync', 'Đồng bộ & Dịch');
                 btnStart.removeAttribute('data-i18n');
             }
         } else {
@@ -433,7 +433,7 @@ window.ATM.Games = (function() {
                 // Block changing engine while translating
                 if (card.dataset.state === 'TRANSLATING') {
                     if (window.ATM.Toast) {
-                        const msg = window.ATM.i18n ? window.ATM.i18n.t('games.cannot_change_engine') : 'KhÃ´ng thá»ƒ thay Ä‘á»•i bá»™ dá»‹ch khi Ä‘ang dá»‹ch!';
+                        const msg = window.ATM.i18n ? window.ATM.i18n.t('games.cannot_change_engine') : 'Không thể thay đổi bộ dịch khi đang dịch!';
                         window.ATM.Toast.show(msg, 'warning');
                     }
                     return;
@@ -479,7 +479,7 @@ window.ATM.Games = (function() {
                 btnStart.classList.remove('btn-start', 'btn-success', 'btn-secondary');
                 btnStart.classList.add('btn-delete', 'heartbeat-neon-red');
                 btnStart.removeAttribute('data-i18n');
-                btnStart.textContent = window.ATM.i18n ? window.ATM.i18n.t('games.btn_sync', 'Äá»“ng bá»™ & Dá»‹ch') : 'Äá»“ng bá»™ & Dá»‹ch';
+                btnStart.textContent = window.ATM.i18n ? window.ATM.i18n.t('games.btn_sync', 'Đồng bộ & Dịch') : 'Đồng bộ & Dịch';
             }
         }
         
@@ -695,10 +695,12 @@ window.ATM.Games = (function() {
             
             if (state === 'COMPLETE') {
                 btnPlay.className = 'btn-success flex-1 btn-play';
-                btnPlay.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line><rect x="2" y="6" width="20" height="12" rx="2"></rect></svg><span data-i18n="card.play_now">${t('card.play_now', 'Chơi Game Ngay')}</span>`;
+                btnPlay.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line><rect x="2" y="6" width="20" height="12" rx="2"></rect></svg><span data-i18n="card.play_now"></span>';
+                const span = btnPlay.querySelector('span');
+                if (span) span.textContent = t('card.play_now', 'Chơi Game Ngay');
             } else {
                 btnPlay.className = 'btn-icon btn-play';
-                btnPlay.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line><rect x="2" y="6" width="20" height="12" rx="2"></rect></svg>`;
+                btnPlay.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line><rect x="2" y="6" width="20" height="12" rx="2"></rect></svg>';
             }
         }
 
@@ -729,7 +731,7 @@ window.ATM.Games = (function() {
 
         if (state === 'READY') {
             btnStart.setAttribute('data-i18n', 'card.start');
-            btnStart.textContent = t('card.start', 'Báº¯t Ä‘áº§u dá»‹ch');
+            btnStart.textContent = t('card.start', 'Bắt đầu dịch');
             btnStart.className = "btn-start flex-1 btn-action-start";
             btnStart.style.color = "";
             btnStart.style.backgroundColor = "";
@@ -738,7 +740,7 @@ window.ATM.Games = (function() {
             progContainer.style.display = 'none';
             progContainer.classList.add('hidden');
             if (statusBadge) {
-                statusBadge.textContent = t('status.ready', 'Sáºµn sÃ ng');
+                statusBadge.textContent = t('status.ready', 'Sẵn sàng');
                 statusBadge.style.backgroundColor = "var(--bg-hover)";
                 statusBadge.style.color = "var(--text-muted)";
             }
@@ -747,13 +749,13 @@ window.ATM.Games = (function() {
             if (needsSync) {
                 btnStart.classList.remove('btn-start');
                 btnStart.classList.add('btn-delete', 'heartbeat-neon-red');
-                btnStart.textContent = t('games.btn_sync', 'Äá»“ng bá»™ & Dá»‹ch');
+                btnStart.textContent = t('games.btn_sync', 'Đồng bộ & Dịch');
                 btnStart.removeAttribute('data-i18n');
             }
         } 
         else if (state === 'TRANSLATING') {
             btnStart.removeAttribute('data-i18n');
-            btnStart.textContent = t('card.stop', 'Dá»«ng');
+            btnStart.textContent = t('card.stop', 'Dừng');
             btnStart.className = "btn-delete flex-1 btn-action-start";
             btnStart.style.color = "";
             btnStart.style.backgroundColor = "";
@@ -772,10 +774,10 @@ window.ATM.Games = (function() {
                     ? statusObj.translated_lines
                     : (card.dataset.lines ? parseInt(card.dataset.lines, 10) : 0);
                 if (progPercent) {
-                    progPercent.textContent = `${linesCount} ${t('common.lines', 'cÃ¢u')}`;
+                    progPercent.textContent = `${linesCount} ${t('common.lines', 'câu')}`;
                 }
                 if (progStatus) {
-                    progStatus.textContent = t('translation.realtime_running', 'Äang dá»‹ch trong game (Real-time)...');
+                    progStatus.textContent = t('translation.realtime_running', 'Đang dịch trong game (Real-time)...');
                 }
             } else {
                 if (progBarFill) {
@@ -783,11 +785,11 @@ window.ATM.Games = (function() {
                     progBarFill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
                 }
                 if (progPercent) progPercent.textContent = `${Math.round(percent)}%`;
-                if (progStatus) progStatus.textContent = t('card.translating', 'Ä ang dá»‹ch...');
+                if (progStatus) progStatus.textContent = t('card.translating', 'Đang dịch...');
             }
             
             if (statusBadge) {
-                statusBadge.textContent = t('status.running', 'Ä ang dá»‹ch...');
+                statusBadge.textContent = t('status.running', 'Đang dịch...');
                 statusBadge.style.backgroundColor = "rgba(59, 130, 246, 0.1)"; // accent tinted
                 statusBadge.style.color = "var(--accent)";
             }
@@ -827,7 +829,7 @@ window.ATM.Games = (function() {
         }
         else if (state === 'INTERRUPTED') {
             btnStart.removeAttribute('data-i18n');
-            btnStart.textContent = t('card.resume', 'Tiáº¿p tá»¥c');
+            btnStart.textContent = t('card.resume', 'Tiếp tục');
             btnStart.className = "btn-warning flex-1 btn-action-start";
             btnStart.style.color = "";
             btnStart.style.backgroundColor = "";
@@ -835,10 +837,10 @@ window.ATM.Games = (function() {
             btnStart.dataset.action = "start";
             progContainer.style.display = 'block';
             progContainer.classList.remove('hidden');
-            if (progStatus) progStatus.textContent = t('status.paused', 'Táº¡m dá»«ng');
+            if (progStatus) progStatus.textContent = t('status.paused', 'Tạm dừng');
             
             if (statusBadge) {
-                statusBadge.textContent = t('status.paused', 'Táº¡m dá»«ng');
+                statusBadge.textContent = t('status.paused', 'Tạm dừng');
                 statusBadge.style.backgroundColor = "rgba(245, 158, 11, 0.1)"; // warning tinted
                 statusBadge.style.color = "var(--warning)";
             }
@@ -847,7 +849,7 @@ window.ATM.Games = (function() {
             if (needsSync) {
                 btnStart.classList.remove('btn-warning');
                 btnStart.classList.add('btn-delete', 'heartbeat-neon-red');
-                btnStart.textContent = t('games.btn_sync', 'Äá»“ng bá»™ & Dá»‹ch');
+                btnStart.textContent = t('games.btn_sync', 'Đồng bộ & Dịch');
                 btnStart.removeAttribute('data-i18n');
                 btnStart.dataset.action = "start";
             }
@@ -885,7 +887,7 @@ window.ATM.Games = (function() {
             if (!isEngineConfigured(selectedEngine)) {
                 if (window.ATM.Toast) {
                     const engineName = selectedEngine.toUpperCase();
-                    const msg = window.ATM.i18n ? window.ATM.i18n.t('toast.no_ai_key', { engine: engineName }) : `Vui lÃ²ng cáº¥u hÃ¬nh API Key cho ${engineName} trÆ°á»›c khi báº¯t Ä‘áº§u dá»‹ch!`;
+                    const msg = window.ATM.i18n ? window.ATM.i18n.t('toast.no_ai_key', { engine: engineName }) : `Vui lòng cấu hình API Key cho ${engineName} trước khi bắt đầu dịch!`;
                     window.ATM.Toast.show(msg, 'error');
                 }
                 updateCardEngineWarning(card);
