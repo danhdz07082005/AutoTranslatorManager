@@ -116,24 +116,46 @@ class SQLiteGameLinesRepository:
         }
 
     def get_all_by_game(self, game_id: str) -> dict:
-        """Fetch all translations for a game as a dict of {original: translated}."""
+        """Fetch all translations for a game as a dict of {original: translated}.
+        Ordered by updated_at ASC so the most recent edits overwrite older entries in dict."""
         with contextlib.closing(self._get_connection()) as conn:
-            cursor = conn.execute("SELECT original, translated FROM game_lines WHERE game_id = ?", (game_id,))
+            cursor = conn.execute("SELECT original, translated FROM game_lines WHERE game_id = ? ORDER BY updated_at ASC", (game_id,))
             return {row[0]: row[1] for row in cursor.fetchall()}
+
+    def count_by_game(self, game_id: str) -> int:
+        """Count total lines stored for a game."""
+        with contextlib.closing(self._get_connection()) as conn:
+            cursor = conn.execute("SELECT COUNT(*) FROM game_lines WHERE game_id = ?", (game_id,))
+            return cursor.fetchone()[0]
 
     def update(self, item_id: int, game_id: str, translated: str, expected_version: int) -> bool:
         """
         Updates a translation if the expected_version matches AND it belongs to the game_id.
+        Also synchronizes any sibling rows with the same original text.
         Returns True if successful, False if version mismatch or not found.
         """
         now = time.time()
         with self.transaction() as conn:
+            cursor = conn.execute("SELECT original FROM game_lines WHERE id = ? AND game_id = ?", (item_id, game_id))
+            row = cursor.fetchone()
+            if not row:
+                return False
+            orig_text = row[0]
+
             cursor = conn.execute('''
                 UPDATE game_lines 
                 SET translated = ?, version = version + 1, updated_at = ?
                 WHERE id = ? AND game_id = ? AND version = ?
             ''', (translated, now, item_id, game_id, expected_version))
-            return cursor.rowcount > 0
+            
+            if cursor.rowcount > 0:
+                conn.execute('''
+                    UPDATE game_lines 
+                    SET translated = ?, updated_at = ?
+                    WHERE game_id = ? AND original = ? AND id != ?
+                ''', (translated, now, game_id, orig_text, item_id))
+                return True
+            return False
 
     def batch_update(self, game_id: str, items: List[Tuple[int, str, int]]) -> dict:
         """

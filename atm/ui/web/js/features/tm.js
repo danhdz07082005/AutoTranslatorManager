@@ -62,22 +62,24 @@ window.ATM.TM = (function() {
                 }
             });
 
-            const searchInput = document.getElementById('tm-source-text');
-            if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
+            document.body.addEventListener('input', (e) => {
+                if (e.target && e.target.id === 'tm-source-text') {
                     const query = e.target.value;
                     if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
                     searchDebounceTimer = setTimeout(() => {
                         performSearch(query);
                     }, 400);
-                });
-            }
+                }
+            });
         },
         open: (gameId) => {
             const suggContainer = document.getElementById('tm-suggestions');
             if (suggContainer) suggContainer.replaceChildren();
             const searchInput = document.getElementById('tm-source-text');
             if (searchInput) searchInput.value = '';
+        },
+        mount: (gameId) => {
+            window.ATM.TM.open(gameId);
         }
     };
 })();

@@ -77,3 +77,5 @@ def test_app_settings_defaults():
     assert settings.auto_update is True
     assert settings.dark_mode is True
     assert settings.ui_language == "vi"
+    assert settings.gemini_model == "gemini-2.5-flash"
+    assert settings.claude_model == "claude-3-7-sonnet-20250219"

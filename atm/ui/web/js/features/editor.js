@@ -269,7 +269,26 @@ window.ATM.Editor = (function() {
     };
 
     const runQA = async () => {
-        if (!entries || entries.length === 0) return;
+        if (!entries || entries.length === 0) {
+            if (window.ATM.Toast) {
+                const msg = window.ATM.i18n ? window.ATM.i18n.t('editor.qa_no_entries') : 'No translation lines available for QA scanning!';
+                window.ATM.Toast.show(msg, 'info');
+            }
+            return;
+        }
+
+        const hasTranslations = entries.some(e => {
+            const tr = drafts[e.id] !== undefined ? drafts[e.id] : e.translated;
+            return tr && String(tr).trim().length > 0;
+        });
+
+        if (!hasTranslations) {
+            if (window.ATM.Toast) {
+                const msg = window.ATM.i18n ? window.ATM.i18n.t('editor.qa_no_translations') : 'No translated lines found yet. Please translate before running QA!';
+                window.ATM.Toast.show(msg, 'info');
+            }
+            return;
+        }
         try {
             const btn = document.getElementById('editor-run-qa-btn');
             const originalText = btn.innerHTML;

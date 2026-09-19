@@ -15,26 +15,33 @@ def get_js_files():
 
 def test_no_innerhtml_for_dynamic_data():
     """
-    Đảm bảo không sử dụng innerHTML cho các data động. 
-    Chỉ cho phép innerHTML cho static icons (ví dụ svg icon).
+    Đảm bảo không sử dụng innerHTML cho các data động (kể cả multi-line template literals). 
+    Chỉ cho phép innerHTML cho static icons (ví dụ svg icon) hoặc static markup rỗng.
     """
     js_files = get_js_files()
     assert len(js_files) > 0, "Không tìm thấy file JS nào"
     
     violations = []
+    template_pattern = re.compile(r'\.innerHTML\s*=\s*`([^`]+)`', re.DOTALL)
+    
     for fpath in js_files:
         with open(fpath, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-            for i, line in enumerate(lines):
-                # Nếu có dùng innerHTML với string interpolation chứa biến (game.xxx, item.xxx, etc.)
-                if '.innerHTML' in line and '${' in line:
-                    # Chấp nhận ngoại lệ nếu chỉ là SVG
-                    if '<svg' in line and 'game.' not in line:
-                        continue
-                    violations.append(f"{os.path.basename(fpath)}:{i+1} -> {line.strip()}")
+            content = f.read()
 
-    # Trong games.js có một chỗ empty state dùng innerHTML nhưng nó tĩnh, không có data động.
-    # Trong games.js lúc tạo game card, các phần tử động như title, path đều dùng textContent.
+        # Multi-line template literals check
+        for match in template_pattern.finditer(content):
+            matched_text = match.group(1)
+            if '${' in matched_text:
+                violations.append(f"{os.path.basename(fpath)} -> innerHTML template contains interpolation: {matched_text[:80].strip()}...")
+
+        # Single line checks
+        lines = content.splitlines()
+        for i, line in enumerate(lines):
+            if '.innerHTML' in line and '${' in line:
+                if '<svg' in line and not any(var in line for var in ('game.', 'item.', 'g.', 'profile.', 'data.')):
+                    continue
+                violations.append(f"{os.path.basename(fpath)}:{i+1} -> {line.strip()}")
+
     assert not violations, f"Phát hiện việc sử dụng innerHTML tiềm ẩn rủi ro XSS:\n" + "\n".join(violations)
 
 def test_dom_api_usage():

@@ -83,3 +83,54 @@ def test_cleanup_items_non_existent():
     """Kiểm tra cleanup_items không gây ra lỗi khi đường dẫn không tồn tại."""
     # Truyền vào đường dẫn ảo
     cleanup_items(["C:/NonExistentFolder/temp.txt", "/invalid/path/folder"])
+
+def test_copy_payload_bepinex_coexistence_and_cleanup(tmp_path):
+    """Kiểm tra coexistence khi game đã có sẵn BepInEx và plugin của user."""
+    src_dir = tmp_path / "payload"
+    dest_dir = tmp_path / "game"
+    src_dir.mkdir()
+    dest_dir.mkdir()
+
+    # Pre-existing BepInEx in game directory
+    user_bepinex = dest_dir / "BepInEx"
+    user_plugins = user_bepinex / "plugins"
+    user_plugins.mkdir(parents=True)
+    custom_mod = user_plugins / "InfiniteMoneyPlugin.dll"
+    custom_mod.write_text("user mod binary", encoding="utf-8")
+
+    existing_winhttp = dest_dir / "winhttp.dll"
+    existing_winhttp.write_text("existing winhttp", encoding="utf-8")
+
+    # ATM Payload structure
+    payload_bepinex = src_dir / "BepInEx"
+    payload_plugins = payload_bepinex / "plugins" / "XUnity.AutoTranslator"
+    payload_plugins.mkdir(parents=True)
+    atm_plugin = payload_plugins / "XUnity.AutoTranslator.dll"
+    atm_plugin.write_text("atm plugin binary", encoding="utf-8")
+
+    payload_winhttp = src_dir / "winhttp.dll"
+    payload_winhttp.write_text("atm payload winhttp", encoding="utf-8")
+
+    # Copy payload
+    copied_items = copy_payload(str(src_dir), str(dest_dir))
+
+    # Existing files must NOT be overwritten
+    assert existing_winhttp.read_text(encoding="utf-8") == "existing winhttp"
+    assert custom_mod.read_text(encoding="utf-8") == "user mod binary"
+
+    # Only missing items are copied
+    copied_atm_plugin = dest_dir / "BepInEx" / "plugins" / "XUnity.AutoTranslator" / "XUnity.AutoTranslator.dll"
+    assert copied_atm_plugin.exists()
+
+    # Pre-existing items must not be in copied_items
+    assert str(user_bepinex) not in copied_items.copied_items
+    assert str(custom_mod) not in copied_items.copied_items
+    assert str(existing_winhttp) not in copied_items.copied_items
+
+    # On game exit cleanup: only ATM's injected items are cleaned up, user BepInEx & mods remain intact
+    cleanup_items(copied_items)
+    assert not copied_atm_plugin.exists()
+    assert user_bepinex.exists()
+    assert custom_mod.exists()
+    assert existing_winhttp.exists()
+

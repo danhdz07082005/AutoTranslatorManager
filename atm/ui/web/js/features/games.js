@@ -7,15 +7,269 @@ window.ATM = window.ATM || {};
 window.ATM.Games = (function() {
     const containerId = 'games-container';
     let languages = {};
+    let appSettings = {};
     
     // Poller Registry: 1 Game = 1 Poller
     const pollers = new Map(); // gameId -> timeoutId
+    let isSelectionMode = false;
+    const selectedGameIds = new Set();
 
     const getContainer = () => document.getElementById(containerId);
 
+    function updateSelectionUI() {
+        const t = (key, fallback) => window.ATM.i18n ? window.ATM.i18n.t(key, fallback) : fallback;
+        const textDeleteSelected = document.getElementById('games-delete-selected-text');
+        const btnDeleteSelected = document.getElementById('games-delete-selected-btn');
+        const textSelectAll = document.getElementById('games-select-all-text');
+        const container = getContainer();
+        const totalCards = container ? container.querySelectorAll('.game-card').length : 0;
+        const count = selectedGameIds.size;
+
+        if (textDeleteSelected) {
+            textDeleteSelected.textContent = t('games.btn_delete_selected', 'Xóa ({count})').replace('{count}', count);
+        }
+        if (btnDeleteSelected) {
+            btnDeleteSelected.disabled = (count === 0);
+        }
+        if (textSelectAll) {
+            if (totalCards > 0 && count === totalCards) {
+                textSelectAll.textContent = t('games.btn_deselect_all', 'Bỏ chọn tất cả');
+            } else {
+                textSelectAll.textContent = t('games.btn_select_all', 'Chọn tất cả');
+            }
+        }
+    }
+
+    function enterSelectionMode() {
+        isSelectionMode = true;
+        selectedGameIds.clear();
+        const container = getContainer();
+        if (container) {
+            container.classList.add('selection-mode');
+        }
+        const btnMode = document.getElementById('games-select-mode-btn');
+        const controls = document.getElementById('games-selection-controls');
+        if (btnMode) btnMode.style.display = 'none';
+        if (controls) controls.style.display = 'flex';
+        updateSelectionUI();
+    }
+
+    function exitSelectionMode() {
+        isSelectionMode = false;
+        selectedGameIds.clear();
+        const container = getContainer();
+        if (container) {
+            container.classList.remove('selection-mode');
+            container.querySelectorAll('.game-card').forEach(c => {
+                c.classList.remove('is-selected');
+                const cb = c.querySelector('.game-card-checkbox');
+                if (cb) cb.checked = false;
+            });
+        }
+        const btnMode = document.getElementById('games-select-mode-btn');
+        const controls = document.getElementById('games-selection-controls');
+        if (controls) controls.style.display = 'none';
+        if (btnMode) btnMode.style.display = 'inline-flex';
+    }
+
+    function toggleCardSelection(gameId) {
+        const card = document.getElementById(`card-${gameId}`);
+        if (!card) return;
+        const cb = card.querySelector('.game-card-checkbox');
+        if (selectedGameIds.has(gameId)) {
+            selectedGameIds.delete(gameId);
+            card.classList.remove('is-selected');
+            if (cb) cb.checked = false;
+        } else {
+            selectedGameIds.add(gameId);
+            card.classList.add('is-selected');
+            if (cb) cb.checked = true;
+        }
+        updateSelectionUI();
+    }
+
+    function toggleSelectAll() {
+        const container = getContainer();
+        if (!container) return;
+        const cards = container.querySelectorAll('.game-card');
+        if (cards.length === 0) return;
+
+        const allSelected = (selectedGameIds.size === cards.length);
+        if (allSelected) {
+            selectedGameIds.clear();
+            cards.forEach(c => {
+                c.classList.remove('is-selected');
+                const cb = c.querySelector('.game-card-checkbox');
+                if (cb) cb.checked = false;
+            });
+        } else {
+            cards.forEach(c => {
+                const id = c.dataset.gameId;
+                if (id) {
+                    selectedGameIds.add(id);
+                    c.classList.add('is-selected');
+                    const cb = c.querySelector('.game-card-checkbox');
+                    if (cb) cb.checked = true;
+                }
+            });
+        }
+        updateSelectionUI();
+    }
+
+    async function handleBatchDelete() {
+        if (selectedGameIds.size === 0) return;
+        const count = selectedGameIds.size;
+        const t = (key, fallback) => window.ATM.i18n ? window.ATM.i18n.t(key, fallback) : fallback;
+        const ids = Array.from(selectedGameIds);
+
+        const btnDeleteSelected = document.getElementById('games-delete-selected-btn');
+        if (btnDeleteSelected) btnDeleteSelected.disabled = true;
+
+        let totalSizeMb = 0;
+        try {
+            await Promise.all(ids.map(async (id) => {
+                try {
+                    const res = await window.ATM.api.get(`games/delete-info?game_id=${id}`);
+                    if (res && res.status === 'success' && res.size_mb) {
+                        totalSizeMb += res.size_mb;
+                    }
+                } catch (e) {
+                    console.warn(`Failed to get delete info for ${id}`, e);
+                }
+            }));
+        } catch (e) {
+            console.error("Error calculating batch delete size", e);
+        }
+
+        totalSizeMb = Math.round(totalSizeMb * 100) / 100;
+
+        const msgTemplate = t('games.delete_multiple_confirm', 'Bạn có chắc chắn muốn xóa {count} game đã chọn? (Sẽ hoàn nguyên file game về nguyên bản)');
+        const msg = msgTemplate.replace('{count}', count);
+
+        const cbLabelTemplate = t('card.delete_purge_data', 'Xóa vĩnh viễn dữ liệu dịch (Giải phóng ~{size}MB Database). Nếu không tích, dữ liệu sẽ được giữ lại để phục hồi sau này.');
+        const cbLabel = cbLabelTemplate.replace('{size}', totalSizeMb);
+
+        const result = await window.ATM.Modals.confirm(msg, { checkboxLabel: cbLabel });
+        if (!result || !result.agreed) {
+            if (btnDeleteSelected) btnDeleteSelected.disabled = (selectedGameIds.size === 0);
+            return;
+        }
+
+        let successCount = 0;
+        for (const gameId of ids) {
+            try {
+                await window.ATM.api.post('games/delete', { game_id: gameId, purge_data: result.checked });
+                cleanupPoller(gameId);
+                localStorage.removeItem('atm_needs_sync_' + gameId);
+                const card = document.getElementById(`card-${gameId}`);
+                if (card) card.remove();
+                successCount++;
+            } catch (err) {
+                console.error(`Failed to delete game ${gameId}`, err);
+            }
+        }
+
+        exitSelectionMode();
+
+        const successMsg = t('games.delete_multiple_success', 'Đã xóa thành công {count} game').replace('{count}', successCount);
+        if (window.ATM.Toast) {
+            window.ATM.Toast.show(successMsg, 'success');
+        }
+
+        const container = getContainer();
+        if (container && container.querySelectorAll('.game-card').length === 0) {
+            renderEmptyState(container);
+            const btnMode = document.getElementById('games-select-mode-btn');
+            if (btnMode) btnMode.style.display = 'none';
+        }
+    }
+
+    function isEngineConfigured(engine) {
+        if (!engine || engine === 'google') return true;
+        if (engine === 'custom_llm') {
+            return Boolean(appSettings.custom_llm_configured || (appSettings.custom_llm_model && appSettings.custom_llm_base_url));
+        }
+        return Boolean(appSettings[`${engine}_api_key_configured`]);
+    }
+
+    function getEngineOptions() {
+        const readyText = window.ATM.i18n ? window.ATM.i18n.t('games.engine_ready') : 'Sáºµn sÃ ng';
+        const noKeyText = window.ATM.i18n ? window.ATM.i18n.t('games.engine_no_key') : 'ChÆ°a cÃ³ Key';
+
+        return [
+            { value: 'google', text: `Google Translate [âœ“ ${readyText}]` },
+            { value: 'gemini', text: `Google Gemini [${isEngineConfigured('gemini') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
+            { value: 'deepseek', text: `DeepSeek (V3/R1) [${isEngineConfigured('deepseek') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
+            { value: 'openai', text: `OpenAI (ChatGPT) [${isEngineConfigured('openai') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
+            { value: 'claude', text: `Anthropic Claude [${isEngineConfigured('claude') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
+            { value: 'kimi', text: `Kimi (Moonshot) [${isEngineConfigured('kimi') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
+            { value: 'custom_llm', text: `Custom / Local LLM [${isEngineConfigured('custom_llm') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` },
+            { value: 'deepl', text: `DeepL API [${isEngineConfigured('deepl') ? 'âœ“ ' + readyText : 'âš  ' + noKeyText}]` }
+        ];
+    }
+
+    function updateCardEngineWarning(card) {
+        if (!card) return;
+        const engineSel = card.querySelector('.engine-select');
+        if (!engineSel) return;
+        const engine = engineSel.value;
+        const isConfigured = isEngineConfigured(engine);
+        const btnStart = card.querySelector('.btn-action-start');
+
+        let warningEl = card.querySelector('.engine-key-warning');
+
+        if (!isConfigured) {
+            engineSel.classList.add('needs-key');
+            if (btnStart && card.dataset.state !== 'TRANSLATING') {
+                btnStart.classList.add('needs-key');
+                btnStart.title = window.ATM.i18n ? window.ATM.i18n.t('games.engine_warning_tooltip') : 'Cáº§n cáº¥u hÃ¬nh API Key trong CÃ i Ä‘áº·t Ä‘á»ƒ sá»­ dá»¥ng';
+            }
+            if (!warningEl) {
+                warningEl = document.createElement('div');
+                warningEl.className = 'engine-key-warning';
+                warningEl.textContent = window.ATM.i18n ? `âš  ${window.ATM.i18n.t('games.engine_warning_tooltip')}` : 'âš  Cáº§n cáº¥u hÃ¬nh API Key';
+                const parent = engineSel.parentNode;
+                if (parent) parent.appendChild(warningEl);
+            }
+        } else {
+            engineSel.classList.remove('needs-key');
+            if (btnStart) {
+                btnStart.classList.remove('needs-key');
+                btnStart.title = '';
+            }
+            if (warningEl) {
+                warningEl.remove();
+            }
+        }
+    }
+
+    function refreshAllEngineSelects() {
+        const container = getContainer();
+        if (!container) return;
+        const cards = container.querySelectorAll('.game-card');
+        const opts = getEngineOptions();
+
+        cards.forEach(card => {
+            const engineSel = card.querySelector('.engine-select');
+            if (!engineSel) return;
+            const currentVal = engineSel.value;
+            buildOptions(engineSel, opts, currentVal);
+            updateCardEngineWarning(card);
+        });
+    }
+
     // Initializer
     async function init() {
-        languages = await window.ATM.api.get('languages') || {};
+        try {
+            const [langs, s] = await Promise.all([
+                window.ATM.api.get('languages'),
+                window.ATM.api.get('settings')
+            ]);
+            languages = langs || {};
+            appSettings = s || {};
+        } catch (err) {
+            console.error("Failed to init settings or languages:", err);
+        }
         setupEventDelegation();
         setupCrossTabSync();
         await loadGames();
@@ -31,7 +285,7 @@ window.ATM.Games = (function() {
             if (btnStart && card.dataset.state !== 'TRANSLATING') {
                 btnStart.classList.remove('btn-start', 'btn-success', 'btn-secondary');
                 btnStart.classList.add('btn-delete', 'heartbeat-neon-red');
-                btnStart.textContent = t('games.btn_sync', 'Đồng bộ & Dịch');
+                btnStart.textContent = t('games.btn_sync', 'Äá»“ng bá»™ & Dá»‹ch');
                 btnStart.removeAttribute('data-i18n');
             }
         } else {
@@ -56,6 +310,12 @@ window.ATM.Games = (function() {
 
     // Cross-tab synchronization for the 'Sync' heartbeat
     function setupCrossTabSync() {
+        if (window.ATM.events) {
+            window.ATM.events.subscribe('settings:updated', (newSettings) => {
+                appSettings = newSettings || {};
+                refreshAllEngineSelects();
+            });
+        }
         window.ATM.events.subscribe('glossary:changed', (payload) => {
             if (payload && payload.gameId) {
                 updateCardSyncState(payload.gameId, true);
@@ -101,17 +361,16 @@ window.ATM.Games = (function() {
                     } else if (res && res.status === 'cancelled') {
                         // User cancelled the file dialog  no action needed
                     } else if (res && res.error) {
-                        const isDup = (res.code === 'toast.duplicate_game') || res.error.includes("thêm vào hệ thống") || res.error.includes("already exists");
-                        const msg = isDup && window.ATM.i18n ? window.ATM.i18n.t('toast.duplicate_game') : res.error;
+                        const i18n = window.ATM.i18n;
+                        const code = res.code;
+                        const msg = (i18n && code && i18n.t(code)) ? i18n.t(code) : (res.error || (i18n ? i18n.t('toast.add_game_error') : 'Add game error'));
                         if (window.ATM.Toast) window.ATM.Toast.show(msg, "error");
                     }
                 } catch(e) {
                     console.error("Failed to add game:", e);
                     const i18n = window.ATM.i18n;
-                    const isDup = (e.code === 'toast.duplicate_game')
-                        || (e.data && e.data.code === 'toast.duplicate_game')
-                        || (e.message && (e.message.includes("already exists") || e.message.includes("thêm vào hệ thống")));
-                    const msg = isDup && i18n ? i18n.t('toast.duplicate_game') : (e.message || (i18n ? i18n.t('toast.add_game_error') : 'Add game error'));
+                    const code = e.code || (e.data && e.data.code);
+                    const msg = (i18n && code && i18n.t(code)) ? i18n.t(code) : (e.message || (i18n ? i18n.t('toast.add_game_error') : 'Add game error'));
                     if (window.ATM.Toast) window.ATM.Toast.show(msg, "error");
                 } finally {
                     btnAdd.disabled = false;
@@ -120,9 +379,27 @@ window.ATM.Games = (function() {
         }
 
         const container = getContainer();
+        const btnSelectMode = document.getElementById('games-select-mode-btn');
+        const btnSelectAll = document.getElementById('games-select-all-btn');
+        const btnDeleteSelected = document.getElementById('games-delete-selected-btn');
+        const btnCancelSelect = document.getElementById('games-cancel-select-btn');
+
+        if (btnSelectMode) btnSelectMode.addEventListener('click', enterSelectionMode);
+        if (btnSelectAll) btnSelectAll.addEventListener('click', toggleSelectAll);
+        if (btnDeleteSelected) btnDeleteSelected.addEventListener('click', handleBatchDelete);
+        if (btnCancelSelect) btnCancelSelect.addEventListener('click', exitSelectionMode);
+
         if (!container) return;
 
         container.addEventListener('click', async (e) => {
+            if (isSelectionMode) {
+                const card = e.target.closest('.game-card');
+                if (card && card.dataset.gameId) {
+                    toggleCardSelection(card.dataset.gameId);
+                }
+                return;
+            }
+
             const btn = e.target.closest('[data-action]');
             if (!btn) return;
             
@@ -153,10 +430,21 @@ window.ATM.Games = (function() {
                 const card = e.target.closest('.game-card');
                 if (!card) return;
                 
+                // Block changing engine while translating
+                if (card.dataset.state === 'TRANSLATING') {
+                    if (window.ATM.Toast) {
+                        const msg = window.ATM.i18n ? window.ATM.i18n.t('games.cannot_change_engine') : 'KhÃ´ng thá»ƒ thay Ä‘á»•i bá»™ dá»‹ch khi Ä‘ang dá»‹ch!';
+                        window.ATM.Toast.show(msg, 'warning');
+                    }
+                    return;
+                }
+
                 const gameId = card.dataset.gameId;
                 const engine = card.querySelector('.engine-select').value;
                 const source = card.querySelector('.source-select').value;
                 const target = card.querySelector('.target-select').value;
+
+                updateCardEngineWarning(card);
                 
                 window.ATM.api.post('games/update-settings', {
                     game_id: gameId,
@@ -180,6 +468,8 @@ window.ATM.Games = (function() {
         card.id = `card-${game.id}`;
         card.dataset.gameId = game.id;
         card.dataset.state = game.runtime_state || 'READY';
+        card.dataset.engine = game.engine || 'Unknown';
+        card.dataset.lines = game.runtime_lines || 0;
         
         // Sync Button
         const needsSync = localStorage.getItem('atm_needs_sync_' + String(game.id)) === 'true';
@@ -189,7 +479,7 @@ window.ATM.Games = (function() {
                 btnStart.classList.remove('btn-start', 'btn-success', 'btn-secondary');
                 btnStart.classList.add('btn-delete', 'heartbeat-neon-red');
                 btnStart.removeAttribute('data-i18n');
-                btnStart.textContent = window.ATM.i18n ? window.ATM.i18n.t('games.btn_sync', 'Đồng bộ & Dịch') : 'Đồng bộ & Dịch';
+                btnStart.textContent = window.ATM.i18n ? window.ATM.i18n.t('games.btn_sync', 'Äá»“ng bá»™ & Dá»‹ch') : 'Äá»“ng bá»™ & Dá»‹ch';
             }
         }
         
@@ -199,7 +489,7 @@ window.ATM.Games = (function() {
         card.querySelector('.game-path').textContent = game.exe_path || '';
         const badgeEl = card.querySelector('.engine-badge');
         if (badgeEl) {
-            badgeEl.textContent = game.engine || 'Unknown';
+            badgeEl.textContent = game.engine === 'Bakin' ? 'Bakin (BETA)' : (game.engine || 'Unknown');
             badgeEl.dataset.engine = game.engine || 'Unknown';
         }
         
@@ -211,13 +501,35 @@ window.ATM.Games = (function() {
 
         // Build Selectors
         const engineSel = card.querySelector('.engine-select');
-        buildOptions(engineSel, [{value: 'google', text: 'Google Translate'}, {value: 'deepl', text: 'DeepL API'}], game.translator);
+        buildOptions(engineSel, getEngineOptions(), game.translator);
+        updateCardEngineWarning(card);
 
         const srcSel = card.querySelector('.source-select');
         buildOptions(srcSel, langArr, game.input_lang, false);
 
         const tgtSel = card.querySelector('.target-select');
         buildOptions(tgtSel, langArr, game.output_lang, true);
+
+        const btnPlay = card.querySelector('.btn-play');
+        if (btnPlay) {
+            if (card.dataset.state === 'TRANSLATING') {
+                btnPlay.disabled = true;
+                btnPlay.setAttribute('data-i18n-title', 'card.play_disabled_translating');
+                btnPlay.title = window.ATM.i18n ? window.ATM.i18n.t('card.play_disabled_translating') : 'Game is translating';
+            } else {
+                btnPlay.disabled = false;
+                btnPlay.setAttribute('data-i18n-title', 'card.play_tooltip');
+                btnPlay.title = window.ATM.i18n ? window.ATM.i18n.t('card.play_tooltip') : 'Play Game';
+            }
+        }
+
+        const checkbox = card.querySelector('.game-card-checkbox');
+        if (checkbox) {
+            checkbox.checked = selectedGameIds.has(game.id);
+            if (selectedGameIds.has(game.id)) {
+                card.classList.add('is-selected');
+            }
+        }
 
         return clone;
     }
@@ -233,6 +545,10 @@ window.ATM.Games = (function() {
             if (card) {
                 updateCardPartial(card, card.dataset.state, 0);
             }
+            const btnMode = document.getElementById('games-select-mode-btn');
+            if (btnMode && !isSelectionMode) {
+                btnMode.style.display = 'inline-flex';
+            }
             if (window.ATM.i18n && typeof window.ATM.i18n.updateDOM === 'function') {
                 window.ATM.i18n.updateDOM();
             }
@@ -243,11 +559,19 @@ window.ATM.Games = (function() {
     async function loadGames() {
         const container = getContainer();
         if (!container) return;
+        if (isSelectionMode) {
+            exitSelectionMode();
+        }
 
         try {
             const data = await window.ATM.api.get('games');
             const games = data.games || [];
             
+            const btnMode = document.getElementById('games-select-mode-btn');
+            if (btnMode) {
+                btnMode.style.display = games.length > 0 ? 'inline-flex' : 'none';
+            }
+
             if (games.length === 0) {
                 renderEmptyState(container);
                 return;
@@ -274,8 +598,14 @@ window.ATM.Games = (function() {
             games.forEach(game => {
                 const card = document.getElementById(`card-${game.id}`);
                 if (card) {
+                    card.dataset.lines = game.runtime_lines || 0;
+                    card.dataset.engine = game.engine || 'Unknown';
                     const pct = game.runtime_total ? Math.round((game.runtime_progress / game.runtime_total) * 100) : 0;
-                    updateCardPartial(card, card.dataset.state, pct);
+                    const initialStatus = (game.runtime_state === 'TRANSLATING' && (game.engine || '').includes('Unity')) ? {
+                        code: 'translation.realtime_running',
+                        translated_lines: game.runtime_lines || 0
+                    } : null;
+                    updateCardPartial(card, card.dataset.state, pct, initialStatus);
                     
                     if (card.dataset.state === 'TRANSLATING') {
                         startPoller(game.id, card);
@@ -336,7 +666,7 @@ window.ATM.Games = (function() {
     }
 
     // TASK 5: Partial UI update - Never recreate the card
-    function updateCardPartial(card, state, percent = 0) {
+    function updateCardPartial(card, state, percent = 0, statusObj = null) {
         card.dataset.state = state;
         
         const btnStart = card.querySelector('.btn-action-start');
@@ -347,21 +677,68 @@ window.ATM.Games = (function() {
         const statusBadge = card.querySelector('.status-badge');
 
         if (!btnStart) return;
-        
-        // Helper rút gọn
-        const t = (key, fallback) => window.ATM.i18n ? window.ATM.i18n.t(key, fallback) : fallback;
+
+        const t = (k, fb) => (window.ATM.i18n ? window.ATM.i18n.t(k, fb) : fb);
+
+        // Independent Play Button state management
+        const btnPlay = card.querySelector('.btn-play');
+        if (btnPlay) {
+            if (state === 'TRANSLATING') {
+                btnPlay.disabled = true;
+                btnPlay.setAttribute('data-i18n-title', 'card.play_disabled_translating');
+                btnPlay.title = t('card.play_disabled_translating', 'Game đang dịch, không thể khởi chạy');
+            } else {
+                btnPlay.disabled = false;
+                btnPlay.setAttribute('data-i18n-title', 'card.play_tooltip');
+                btnPlay.title = t('card.play_tooltip', 'Chơi Game');
+            }
+            
+            if (state === 'COMPLETE') {
+                btnPlay.className = 'btn-success flex-1 btn-play';
+                btnPlay.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line><rect x="2" y="6" width="20" height="12" rx="2"></rect></svg><span data-i18n="card.play_now">${t('card.play_now', 'Chơi Game Ngay')}</span>`;
+            } else {
+                btnPlay.className = 'btn-icon btn-play';
+                btnPlay.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line><rect x="2" y="6" width="20" height="12" rx="2"></rect></svg>`;
+            }
+        }
+
+        // Toggle input select availability based on state
+        const selects = card.querySelectorAll('.engine-select, .source-select, .target-select');
+        if (state === 'TRANSLATING') {
+            selects.forEach(s => s.disabled = true);
+        } else {
+            selects.forEach(s => s.disabled = false);
+            updateCardEngineWarning(card);
+        }
+
+        // Independent Delete Button state management
+        const btnDelete = card.querySelector('.btn-delete[data-action="delete"]');
+        if (btnDelete) {
+            if (state === 'TRANSLATING') {
+                btnDelete.disabled = true;
+                btnDelete.style.opacity = '0.5';
+                btnDelete.style.cursor = 'not-allowed';
+                btnDelete.title = t('card.delete_disabled_translating', 'Không thể xóa khi đang dịch');
+            } else {
+                btnDelete.disabled = false;
+                btnDelete.style.opacity = '';
+                btnDelete.style.cursor = '';
+                btnDelete.title = t('card.delete_tooltip', 'Xóa game');
+            }
+        }
 
         if (state === 'READY') {
             btnStart.setAttribute('data-i18n', 'card.start');
-            btnStart.textContent = t('card.start', 'Bắt đầu dịch');
+            btnStart.textContent = t('card.start', 'Báº¯t Ä‘áº§u dá»‹ch');
             btnStart.className = "btn-start flex-1 btn-action-start";
             btnStart.style.color = "";
             btnStart.style.backgroundColor = "";
             btnStart.style.border = "";
             btnStart.dataset.action = "start";
             progContainer.style.display = 'none';
+            progContainer.classList.add('hidden');
             if (statusBadge) {
-                statusBadge.textContent = t('status.ready', 'Sẵn sàng');
+                statusBadge.textContent = t('status.ready', 'Sáºµn sÃ ng');
                 statusBadge.style.backgroundColor = "var(--bg-hover)";
                 statusBadge.style.color = "var(--text-muted)";
             }
@@ -370,39 +747,63 @@ window.ATM.Games = (function() {
             if (needsSync) {
                 btnStart.classList.remove('btn-start');
                 btnStart.classList.add('btn-delete', 'heartbeat-neon-red');
-                btnStart.textContent = t('games.btn_sync', 'Đồng bộ & Dịch');
+                btnStart.textContent = t('games.btn_sync', 'Äá»“ng bá»™ & Dá»‹ch');
                 btnStart.removeAttribute('data-i18n');
             }
         } 
         else if (state === 'TRANSLATING') {
             btnStart.removeAttribute('data-i18n');
-            btnStart.textContent = t('card.stop', 'Dừng');
+            btnStart.textContent = t('card.stop', 'Dá»«ng');
             btnStart.className = "btn-delete flex-1 btn-action-start";
             btnStart.style.color = "";
             btnStart.style.backgroundColor = "";
             btnStart.style.border = "";
             btnStart.dataset.action = "start";
             progContainer.style.display = 'block';
+            progContainer.classList.remove('hidden');
             
-            if (progBarFill) progBarFill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
-            if (progPercent) progPercent.textContent = `${Math.round(percent)}%`;
-            if (progStatus) progStatus.textContent = t('card.translating', 'Đang dịch...');
+            const isUnity = (card.dataset.engine || '').includes('Unity');
+            if (isUnity || (statusObj && statusObj.code === 'translation.realtime_running')) {
+                if (progBarFill) {
+                    progBarFill.style.width = '100%';
+                    progBarFill.classList.add('progress-bar-animated');
+                }
+                const linesCount = (statusObj && statusObj.translated_lines !== undefined)
+                    ? statusObj.translated_lines
+                    : (card.dataset.lines ? parseInt(card.dataset.lines, 10) : 0);
+                if (progPercent) {
+                    progPercent.textContent = `${linesCount} ${t('common.lines', 'cÃ¢u')}`;
+                }
+                if (progStatus) {
+                    progStatus.textContent = t('translation.realtime_running', 'Äang dá»‹ch trong game (Real-time)...');
+                }
+            } else {
+                if (progBarFill) {
+                    progBarFill.classList.remove('progress-bar-animated');
+                    progBarFill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+                }
+                if (progPercent) progPercent.textContent = `${Math.round(percent)}%`;
+                if (progStatus) progStatus.textContent = t('card.translating', 'Ä ang dá»‹ch...');
+            }
             
             if (statusBadge) {
-                statusBadge.textContent = t('status.running', 'Đang dịch...');
+                statusBadge.textContent = t('status.running', 'Ä ang dá»‹ch...');
                 statusBadge.style.backgroundColor = "rgba(59, 130, 246, 0.1)"; // accent tinted
                 statusBadge.style.color = "var(--accent)";
             }
         }
         else if (state === 'COMPLETE') {
             btnStart.removeAttribute('data-i18n');
-            btnStart.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>' + t('card.play', 'Chơi Game');
-            btnStart.className = "btn-success flex-1 btn-action-start";
+            btnStart.className = "btn-icon btn-warning btn-action-start";
+            btnStart.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>`;
+            btnStart.setAttribute('data-i18n-title', 'card.retranslate');
+            btnStart.title = t('card.retranslate', 'Dịch Lại');
             btnStart.style.color = "";
             btnStart.style.backgroundColor = "";
             btnStart.style.border = "";
-            btnStart.dataset.action = "play";
+            btnStart.dataset.action = "start";
             progContainer.style.display = 'none';
+            progContainer.classList.add('hidden');
             
             if (statusBadge) {
                 statusBadge.textContent = t('status.completed', 'Hoàn thành');
@@ -412,26 +813,32 @@ window.ATM.Games = (function() {
             
             const needsSync = localStorage.getItem('atm_needs_sync_' + card.dataset.gameId) === 'true';
             if (needsSync) {
-                btnStart.classList.remove('btn-success');
-                btnStart.classList.add('btn-delete', 'heartbeat-neon-red');
-                btnStart.textContent = t('games.btn_sync', 'Đồng bộ & Dịch');
-                btnStart.removeAttribute('data-i18n');
+                btnStart.className = "btn-delete heartbeat-neon-red flex-1 btn-action-start";
+                btnStart.innerHTML = t('games.btn_sync', 'Đồng bộ & Dịch');
+                btnStart.removeAttribute('data-i18n-title');
+                btnStart.removeAttribute('title');
                 btnStart.dataset.action = "start";
+                // Restore Play button to icon if Sync is needed to avoid width overflow
+                if (btnPlay) {
+                    btnPlay.className = 'btn-icon btn-play';
+                    btnPlay.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="10" y2="12"></line><line x1="8" y1="10" x2="8" y2="14"></line><line x1="15" y1="13" x2="15.01" y2="13"></line><line x1="18" y1="11" x2="18.01" y2="11"></line><rect x="2" y="6" width="20" height="12" rx="2"></rect></svg>`;
+                }
             }
         }
         else if (state === 'INTERRUPTED') {
             btnStart.removeAttribute('data-i18n');
-            btnStart.textContent = t('card.resume', 'Tiếp tục');
+            btnStart.textContent = t('card.resume', 'Tiáº¿p tá»¥c');
             btnStart.className = "btn-warning flex-1 btn-action-start";
             btnStart.style.color = "";
             btnStart.style.backgroundColor = "";
             btnStart.style.border = "";
             btnStart.dataset.action = "start";
             progContainer.style.display = 'block';
-            if (progStatus) progStatus.textContent = t('status.paused', 'Tạm dừng');
+            progContainer.classList.remove('hidden');
+            if (progStatus) progStatus.textContent = t('status.paused', 'Táº¡m dá»«ng');
             
             if (statusBadge) {
-                statusBadge.textContent = t('status.paused', 'Tạm dừng');
+                statusBadge.textContent = t('status.paused', 'Táº¡m dá»«ng');
                 statusBadge.style.backgroundColor = "rgba(245, 158, 11, 0.1)"; // warning tinted
                 statusBadge.style.color = "var(--warning)";
             }
@@ -440,7 +847,7 @@ window.ATM.Games = (function() {
             if (needsSync) {
                 btnStart.classList.remove('btn-warning');
                 btnStart.classList.add('btn-delete', 'heartbeat-neon-red');
-                btnStart.textContent = t('games.btn_sync', 'Đồng bộ & Dịch');
+                btnStart.textContent = t('games.btn_sync', 'Äá»“ng bá»™ & Dá»‹ch');
                 btnStart.removeAttribute('data-i18n');
                 btnStart.dataset.action = "start";
             }
@@ -455,6 +862,7 @@ window.ATM.Games = (function() {
             btnStart.style.border = "";
             btnStart.dataset.action = "start";
             progContainer.style.display = 'none';
+            progContainer.classList.add('hidden');
         }
     }
 
@@ -471,6 +879,19 @@ window.ATM.Games = (function() {
             await window.ATM.api.post('games/stop', { game_id: gameId }).catch(()=>{});
             btnStart.disabled = false;
         } else {
+            // Check engine configuration before starting
+            const engineSel = card.querySelector('.engine-select');
+            const selectedEngine = engineSel ? engineSel.value : 'google';
+            if (!isEngineConfigured(selectedEngine)) {
+                if (window.ATM.Toast) {
+                    const engineName = selectedEngine.toUpperCase();
+                    const msg = window.ATM.i18n ? window.ATM.i18n.t('toast.no_ai_key', { engine: engineName }) : `Vui lÃ²ng cáº¥u hÃ¬nh API Key cho ${engineName} trÆ°á»›c khi báº¯t Ä‘áº§u dá»‹ch!`;
+                    window.ATM.Toast.show(msg, 'error');
+                }
+                updateCardEngineWarning(card);
+                return;
+            }
+
             // Start
             btnStart.disabled = true;
             
@@ -479,7 +900,12 @@ window.ATM.Games = (function() {
                 const wsRefreshBtn = document.querySelector('.btn-refresh-workspace');
                 if (wsRefreshBtn) wsRefreshBtn.classList.remove('heartbeat-neon-red', 'btn-needs-sync');
                 
-                updateCardPartial(card, 'TRANSLATING', 0);
+                const isUnity = (card.dataset.engine || '').includes('Unity');
+                const initialStatus = isUnity ? {
+                    code: 'translation.realtime_running',
+                    translated_lines: card.dataset.lines ? parseInt(card.dataset.lines, 10) : 0
+                } : null;
+                updateCardPartial(card, 'TRANSLATING', 0, initialStatus);
                 
                 const res = await window.ATM.api.post('games/start', { game_id: gameId });
                 
@@ -514,7 +940,7 @@ window.ATM.Games = (function() {
                 if (res.status === 'busy' || res.status === 'error') {
                     updateCardPartial(card, 'READY');
                     if (window.ATM.Toast) {
-                        const errMsg = (res.code && window.ATM.i18n ? window.ATM.i18n.t(res.code) : null)
+                        const errMsg = (res.code && window.ATM.i18n ? window.ATM.i18n.t(res.code, res.params) : null)
                             || res.message
                             || res.error
                             || (window.ATM.i18n ? window.ATM.i18n.t('toast.start_failed') : 'Start failed');
@@ -561,7 +987,7 @@ window.ATM.Games = (function() {
                     
                     if (status.error && status.code !== 'translation.cancelled' && window.ATM.Toast) {
                         const i18n = window.ATM.i18n;
-                        const errMsg = (status.code && i18n ? i18n.t(status.code) : null)
+                        const errMsg = (status.code && i18n ? i18n.t(status.code, status.params || {}) : null)
                             || status.details
                             || (i18n ? i18n.t('status.failed') : null)
                             || 'Translation Failed';
@@ -571,8 +997,11 @@ window.ATM.Games = (function() {
                     return;
                 }
                 
+                if (status.translated_lines !== undefined) {
+                    card.dataset.lines = status.translated_lines;
+                }
                 const pct = (status.total > 0) ? (status.progress / status.total) * 100 : 0;
-                updateCardPartial(card, 'TRANSLATING', pct);
+                updateCardPartial(card, 'TRANSLATING', pct, status);
                 
                 if (window.ATM.events) {
                     window.ATM.events.publish('translation_progress', { gameId, state: 'TRANSLATING', percent: pct });
@@ -589,35 +1018,65 @@ window.ATM.Games = (function() {
 
     async function handlePlay(gameId) {
         const card = document.getElementById(`card-${gameId}`);
-        const btnStart = card ? card.querySelector('[data-action="play"]') : null;
-        if (btnStart) btnStart.disabled = true;
+        if (card && card.dataset.state === 'TRANSLATING') {
+            const warnMsg = window.ATM.i18n ? window.ATM.i18n.t('toast.game_translating') : 'Game is currently translating!';
+            if (window.ATM.Toast) window.ATM.Toast.show(warnMsg, "warning");
+            return;
+        }
+        const btnPlay = card ? card.querySelector('[data-action="play"]') : null;
+        if (btnPlay) btnPlay.disabled = true;
         try {
             const initMsg = window.ATM.i18n ? window.ATM.i18n.t('toast.initializing') : 'Initializing...';
-            if (window.ATM.Toast) window.ATM.Toast.show(initMsg, false);
-            await window.ATM.api.post('games/play', { game_id: gameId }); 
+            if (window.ATM.Toast) window.ATM.Toast.show(initMsg, "info");
+            const res = await window.ATM.api.post('games/play', { game_id: gameId });
+            if (res && res.status === 'error') {
+                const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.play_failed') : 'Play failed';
+                const code = res.code;
+                const msg = (window.ATM.i18n && code && window.ATM.i18n.t(code)) ? window.ATM.i18n.t(code) : (res.error || fallback);
+                if (window.ATM.Toast) window.ATM.Toast.show(msg, "error");
+            }
         } catch(e) {
             if (window.ATM.Toast) {
                 const fallback = window.ATM.i18n ? window.ATM.i18n.t('toast.play_failed') : 'Play failed';
-                window.ATM.Toast.show(e.message || fallback, "error");
+                const code = e.code || (e.data && e.data.code);
+                const msg = (window.ATM.i18n && code && window.ATM.i18n.t(code)) ? window.ATM.i18n.t(code) : (e.error || e.message || fallback);
+                window.ATM.Toast.show(msg, "error");
             }
         } finally {
-            if (btnStart) btnStart.disabled = false;
+            if (btnPlay && (!card || card.dataset.state !== 'TRANSLATING')) {
+                btnPlay.disabled = false;
+            }
         }
     }
 
     // TASK 4: Local Mutation
     async function handleDelete(gameId, card) {
         const t = (key, fallback) => window.ATM.i18n ? window.ATM.i18n.t(key, fallback) : fallback;
-        const msg = t('card.delete_confirm', "Bạn chắc chắn muốn xóa game này?");
-        if (!(await window.ATM.Modals.confirm(msg))) {
-            return;
-        }
-
         const btnDel = card.querySelector('[data-action="delete"]');
         if (btnDel) btnDel.disabled = true;
 
+        let sizeMb = 0;
         try {
-            await window.ATM.api.post('games/delete', { game_id: gameId });
+            const sizeRes = await window.ATM.api.get(`games/delete-info?game_id=${gameId}`);
+            if (sizeRes.status === 'success' && sizeRes.size_mb) {
+                sizeMb = sizeRes.size_mb;
+            }
+        } catch (e) {
+            console.warn("Failed to get game delete info", e);
+        }
+
+        const msg = t('card.delete_confirm', "Bạn có chắc chắn muốn xóa game này? (Sẽ hoàn nguyên file game về nguyên bản)");
+        const cbLabelText = t('card.delete_purge_data', "Xóa vĩnh viễn dữ liệu dịch (Giải phóng ~{size}MB Database). Nếu không tích, dữ liệu sẽ được giữ lại để phục hồi sau này.");
+        const cbLabel = cbLabelText.replace('{size}', sizeMb);
+
+        const result = await window.ATM.Modals.confirm(msg, { checkboxLabel: cbLabel });
+        if (!result || !result.agreed) {
+            if (btnDel) btnDel.disabled = false;
+            return;
+        }
+
+        try {
+            await window.ATM.api.post('games/delete', { game_id: gameId, purge_data: result.checked });
             
             // Clean up poller to avoid zombie requests
             cleanupPoller(gameId);
@@ -632,8 +1091,10 @@ window.ATM.Games = (function() {
             
             // Check if empty
             const container = getContainer();
-            if (container && container.children.length === 0) {
+            if (container && container.querySelectorAll('.game-card').length === 0) {
                 renderEmptyState(container);
+                const btnMode = document.getElementById('games-select-mode-btn');
+                if (btnMode) btnMode.style.display = 'none';
             }
         } catch(e) {
             if (btnDel) btnDel.disabled = false;
@@ -655,6 +1116,7 @@ window.ATM.Games = (function() {
             }
         });
         window.ATM.events.subscribe('lang:changed', () => {
+            refreshAllEngineSelects();
             loadGames();
         });
     }

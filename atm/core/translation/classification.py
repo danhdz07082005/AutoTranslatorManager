@@ -137,7 +137,7 @@ PROTECTED_FIELDS = {
     "formula",
     "script",
 }
-EVENT_TEXT_CODES = {401, 102, 105, 405, 108, 408}
+EVENT_TEXT_CODES = {401, 102, 105, 405, 108, 408, 101, 122}
 ASSET_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".ogg", ".m4a", ".wav", ".mp3")
 PLACEHOLDER_RE = re.compile(r"<<\s*\d+\s*>>|\{[^{}\r\n]*\}|\[[^\[\]\r\n]*\]")
 NOTE_TAG_RE = re.compile(r"^\s*<[^>\r\n]+>\s*$")
@@ -206,16 +206,18 @@ def classify(
         return StringClassification.PROTECTED, WritePolicy.NONE
 
     if inside_event_parameters:
-        return _classify_event_parameter(path, event_code)
+        return _classify_event_parameter(text, path, event_code)
 
     if filename in _SCHEMA_REGISTRY:
         if key in _SCHEMA_REGISTRY[filename]:
             spec = _SCHEMA_REGISTRY[filename][key]
             return spec.classification, spec.write_policy
         if filename == "system.json":
+            if "commands" in key_set:
+                return StringClassification.PROTECTED, WritePolicy.NONE
             system_arrays = {"terms", "equiptypes", "skilltypes", "weapontypes", "armortypes", "elements"}
             if not system_arrays.isdisjoint(key_set):
-                return StringClassification.TRANSLATABLE, WritePolicy.DISPLAY_ONLY
+                return StringClassification.TRANSLATABLE, WritePolicy.WRITE_BACK
 
     if filename.startswith("plugin") or "plugin" in filename or "config" in filename:
         return StringClassification.PROTECTED, WritePolicy.NONE
@@ -224,7 +226,7 @@ def classify(
 
 
 def _classify_event_parameter(
-    path: Sequence[Any], event_code: int | None
+    text: str, path: Sequence[Any], event_code: int | None
 ) -> tuple[StringClassification, WritePolicy]:
     if event_code not in EVENT_TEXT_CODES:
         return StringClassification.PROTECTED, WritePolicy.NONE
@@ -245,7 +247,28 @@ def _classify_event_parameter(
             if len(relative) == 1 and relative[0] == 0
             else (StringClassification.PROTECTED, WritePolicy.NONE)
         )
-    # Scrolling text
+    # Speaker name in 101
+    if event_code == 101:
+        return (
+            (StringClassification.TRANSLATABLE, WritePolicy.WRITE_BACK)
+            if len(relative) == 1 and relative[0] == 4
+            else (StringClassification.PROTECTED, WritePolicy.NONE)
+        )
+    # Variable script text in 122 (Must be a pure string literal, e.g. '"Safe day"', not a JS script like '$gameParty.name()')
+    if event_code == 122:
+        is_string_literal = (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'"))
+        return (
+            (StringClassification.TRANSLATABLE, WritePolicy.WRITE_BACK)
+            if len(relative) == 1 and relative[0] == 4 and is_string_literal
+            else (StringClassification.PROTECTED, WritePolicy.NONE)
+        )
+    # Scrolling text (105 setup with text or 405 lines)
+    if event_code == 405:
+        return (
+            (StringClassification.TRANSLATABLE, WritePolicy.WRITE_BACK)
+            if len(relative) == 1 and relative[0] == 0
+            else (StringClassification.PROTECTED, WritePolicy.NONE)
+        )
     if event_code == 105:
         return (
             (StringClassification.TRANSLATABLE, WritePolicy.WRITE_BACK)

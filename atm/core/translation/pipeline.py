@@ -334,17 +334,30 @@ def protect_glossary_terms(
 
     replacements: dict[str, str] = {}
     protected = text
-    for term, translation in sorted(glossary_terms.items(), key=lambda item: len(item[0]), reverse=True):
+    sorted_terms = sorted(glossary_terms.items(), key=lambda item: len(item[0]) if isinstance(item[0], str) else 0, reverse=True)
+
+    # Pass 1: EXACT CASE MATCH
+    for term, translation in sorted_terms:
         if not term or term.lower() == text.lower() or not isinstance(translation, str):
             continue
-        pattern = re.compile(re.escape(term), re.IGNORECASE)
-
-        def replace(match: re.Match[str]) -> str:
+        pattern = re.compile(re.escape(term))
+        def replace_exact(match: re.Match[str]) -> str:
             placeholder = f"<<{9000 + len(replacements)}>>"
             replacements[placeholder] = translation
             return placeholder
+        protected = pattern.sub(replace_exact, protected)
 
-        protected = pattern.sub(replace, protected)
+    # Pass 2: CASE-INSENSITIVE MATCH
+    for term, translation in sorted_terms:
+        if not term or term.lower() == text.lower() or not isinstance(translation, str):
+            continue
+        pattern = re.compile(re.escape(term), re.IGNORECASE)
+        def replace_insensitive(match: re.Match[str]) -> str:
+            placeholder = f"<<{9000 + len(replacements)}>>"
+            replacements[placeholder] = translation
+            return placeholder
+        protected = pattern.sub(replace_insensitive, protected)
+
     return protected, replacements
 
 
@@ -584,12 +597,7 @@ class TranslationPipeline:
                 results.append(result)
                 self._write_if_requested(result, writer, stats)
 
-        self._write_cache(
-            cache_writes,
-            source_lang=source_lang,
-            target_lang=target_lang,
-            stats=stats,
-        )
+
         self._log_stats(stats)
         
         # Check if rate limited
@@ -698,37 +706,62 @@ class TranslationPipeline:
             by_category.setdefault(group.category, []).append(group)
 
         for category, category_groups in by_category.items():
-            source_texts = [group.text for group in category_groups]
-            stats.api_calls += 1
-            stats.api_strings += len(source_texts)
-            
-            def batch_progress(strings_done: int):
-                nonlocal processed_groups
-                processed_groups += strings_done
-                if progress_callback:
-                    progress_callback(processed_groups, total_groups, "translation.translating", {"engine": "API"})
-            
-            try:
-                translated = self._translate_batch(
-                    source_texts,
-                    source_lang=source_lang,
-                    target_lang=target_lang,
-                    category=category,
-                    stats=stats,
-                    glossary_terms=generic_glossary,
-                    is_cancelled=is_cancelled,
-                    progress_callback=batch_progress,
-                )
-                for group, translation in zip(category_groups, translated):
-                    candidates[group.key] = (translation, TranslationOrigin.API)
-            except RateLimitError as e:
-                self.log.warning("Pipeline caught RateLimitError. Halting API calls for remaining groups.")
-                stats.rate_limited = True
-                if getattr(e, "partial_results", None):
-                    for group, translation in zip(category_groups, e.partial_results):
+            chunk_size = 50
+            for i in range(0, len(category_groups), chunk_size):
+                chunk_groups = category_groups[i:i + chunk_size]
+                source_texts = [group.text for group in chunk_groups]
+                stats.api_calls += 1
+                stats.api_strings += len(source_texts)
+                
+                def batch_progress(strings_done: int):
+                    nonlocal processed_groups
+                    processed_groups += strings_done
+                    if progress_callback:
+                        progress_callback(processed_groups, total_groups, "translation.translating", {"engine": "API"})
+                
+                try:
+                    translated = self._translate_batch(
+                        source_texts,
+                        source_lang=source_lang,
+                        target_lang=target_lang,
+                        category=category,
+                        stats=stats,
+                        glossary_terms=generic_glossary,
+                        is_cancelled=is_cancelled,
+                        progress_callback=batch_progress,
+                    )
+                    cache_batch = OrderedDict()
+                    for group, translation in zip(chunk_groups, translated):
                         if translation is not None:
                             candidates[group.key] = (translation, TranslationOrigin.API)
-                break
+                            val = validate_translation(group.text, translation)
+                            if val.is_valid:
+                                cache_batch.setdefault(category, []).append(
+                                    (group.text, normalize_text(translation))
+                                )
+                    if cache_batch:
+                        self._write_cache(cache_batch, source_lang=source_lang, target_lang=target_lang, stats=stats)
+                        
+                except RateLimitError as e:
+                    self.log.warning("Pipeline caught RateLimitError. Halting API calls for remaining groups.")
+                    stats.rate_limited = True
+                    if getattr(e, "partial_results", None):
+                        cache_batch = OrderedDict()
+                        for group, translation in zip(chunk_groups, e.partial_results):
+                            if translation is not None:
+                                candidates[group.key] = (translation, TranslationOrigin.API)
+                                val = validate_translation(group.text, translation)
+                                if val.is_valid:
+                                    cache_batch.setdefault(category, []).append(
+                                        (group.text, normalize_text(translation))
+                                    )
+                        if cache_batch:
+                            self._write_cache(cache_batch, source_lang=source_lang, target_lang=target_lang, stats=stats)
+                    break
+                except ValueError as e:
+                    self.log.error(f"Pipeline caught unrecoverable error: {e}. Halting API calls.")
+                    stats.api_errors += 1
+                    break
 
         return candidates
 
@@ -779,7 +812,7 @@ class TranslationPipeline:
                 is_cancelled=is_cancelled,
                 progress_callback=progress_callback,
             )
-        except RateLimitError:
+        except (RateLimitError, ValueError):
             raise
         except Exception as exc:  # API failures must not cause unsafe write-back.
             stats.api_errors += 1

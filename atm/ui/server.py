@@ -49,8 +49,24 @@ class ATMHandler(BaseHTTPRequestHandler):
     # ============ API GET ============
     def _handle_api_get(self):
         parsed_path = urllib.parse.urlparse(self.path).path
+        query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         if parsed_path == '/api/games':
             self._json_response(self.api.get_games())
+        elif parsed_path == '/api/games/delete-info':
+            game_id = query.get('game_id', [None])[0]
+            self._json_response(self.api.get_delete_info(game_id))
+        elif parsed_path == '/api/translate/unity' or parsed_path.startswith('/api/translate/unity/'):
+            game_id = None
+            if parsed_path.startswith('/api/translate/unity/'):
+                game_id = parsed_path[len('/api/translate/unity/'):].strip()
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            if not game_id:
+                game_id = query.get('game_id', [None])[0]
+            text = query.get('text', [''])[0]
+            from_lang = query.get('from', ['auto'])[0]
+            to_lang = query.get('to', ['vi'])[0]
+            translated = self.api.translate_unity_text(text, from_lang, to_lang, game_id=game_id)
+            self._plain_response(translated)
         elif parsed_path == '/api/languages':
             self._json_response(self.api.get_languages())
         elif parsed_path == '/api/settings':
@@ -182,11 +198,12 @@ class ATMHandler(BaseHTTPRequestHandler):
             self._json_response(result)
 
         elif route_path == '/api/games/delete':
-            result = self.api.delete_game(body.get('game_id', ''))
+            purge_data = body.get('purge_data', False)
+            result = self.api.delete_game(body.get('game_id', ''), purge_data=purge_data)
             self._json_response(result)
 
         elif route_path == '/api/games/play':
-            result = self.api.play_game(body.get('game_id', ''))
+            result = self.api.play_game(body.get('game_id', ''), vanilla=bool(body.get('vanilla', False)))
             self._json_response(result)
 
         elif route_path == '/api/cache/qa-review':
@@ -234,6 +251,23 @@ class ATMHandler(BaseHTTPRequestHandler):
 
         elif route_path == '/api/settings':
             result = self.api.update_settings(**body)
+            self._json_response(result)
+
+        elif route_path == '/api/ai/test-connection':
+            result = self.api.test_ai_connection(
+                body.get('provider', 'gemini'),
+                api_key=body.get('api_key', None),
+                model=body.get('model', None),
+                base_url=body.get('base_url', None)
+            )
+            self._json_response(result)
+
+        elif route_path == '/api/ai/models':
+            result = self.api.fetch_available_models(
+                body.get('provider', 'gemini'),
+                api_key=body.get('api_key', None),
+                base_url=body.get('base_url', None)
+            )
             self._json_response(result)
 
         elif route_path == '/api/games/update-settings':
@@ -304,13 +338,17 @@ class ATMHandler(BaseHTTPRequestHandler):
 
         if os.path.isfile(filepath):
             if filepath.endswith('.css'):
-                mime_type = 'text/css'
+                mime_type = 'text/css; charset=utf-8'
             elif filepath.endswith('.js'):
-                mime_type = 'application/javascript'
+                mime_type = 'application/javascript; charset=utf-8'
             elif filepath.endswith('.html'):
-                mime_type = 'text/html'
+                mime_type = 'text/html; charset=utf-8'
+            elif filepath.endswith('.json'):
+                mime_type = 'application/json; charset=utf-8'
             else:
                 mime_type = mimetypes.guess_type(filepath)[0] or 'application/octet-stream'
+                if mime_type.startswith('text/'):
+                    mime_type += '; charset=utf-8'
                 
             with open(filepath, 'rb') as f:
                 content = f.read()
@@ -342,7 +380,16 @@ class ATMHandler(BaseHTTPRequestHandler):
     def _json_response(self, data, code=200):
         body = json.dumps(data, ensure_ascii=False).encode('utf-8')
         self.send_response(code)
-        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        self.send_header('Content-Length', len(body))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _plain_response(self, text: str, code: int = 200):
+        body = (text or "").encode('utf-8')
+        self.send_response(code)
+        self.send_header('Content-Type', 'text/plain; charset=utf-8')
         self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         self.send_header('Content-Length', len(body))
         self.end_headers()

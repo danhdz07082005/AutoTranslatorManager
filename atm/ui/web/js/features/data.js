@@ -12,14 +12,17 @@ window.ATM.Data = (function() {
             if (btnClearCache) {
                 btnClearCache.addEventListener('click', () => {
                     const input = document.getElementById('cache-keep-count');
-                    const keep = input ? parseInt(input.value) : 10;
+                    const rawVal = input ? parseInt(input.value, 10) : 10;
+                    const keep = (isNaN(rawVal) || rawVal < 0) ? 10 : rawVal;
                     window.ATM.api.post('data/clear', { type: 'cache', keep: keep })
                         .then(() => {
-                            if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.cache_cleared') || '', 'success');
+                            const clearedMsg = window.ATM.i18n ? window.ATM.i18n.t('toast.cache_cleared', 'Cache cleared successfully.') : 'Cache cleared successfully.';
+                            if (window.ATM.Toast) window.ATM.Toast.show(clearedMsg, 'success');
                             window.ATM.Data.refresh(true);
                         })
                         .catch((err) => {
-                            if (window.ATM.Toast) window.ATM.Toast.show(err.message || window.ATM.i18n.t('toast.clear_cache_error', 'Error clearing cache'), 'error');
+                            const clearErr = window.ATM.i18n ? window.ATM.i18n.t('toast.clear_cache_error', 'Error clearing cache') : 'Error clearing cache';
+                            if (window.ATM.Toast) window.ATM.Toast.show(err.message || clearErr, 'error');
                         });
                 });
             }
@@ -27,18 +30,20 @@ window.ATM.Data = (function() {
             const btnClearAllCache = document.getElementById('data-clear-all-cache-btn');
             if (btnClearAllCache) {
                 btnClearAllCache.addEventListener('click', async () => {
-                    const msg = window.ATM.i18n.t('data.clear_all_confirm') || window.ATM.i18n.t('data.clear_all_confirm', '');
+                    const msg = window.ATM.i18n ? window.ATM.i18n.t('data.clear_all_confirm', 'Are you sure you want to clear all cache?') : 'Are you sure you want to clear all cache?';
                     if (await window.ATM.Modals.confirm(msg)) {
                         window.ATM.api.post('data/clear', { type: 'cache', keep: 0 })
                             .then(() => {
-                                if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.cache_cleared') || '', 'success');
+                                const clearedMsg = window.ATM.i18n ? window.ATM.i18n.t('toast.cache_cleared', 'Cache cleared successfully.') : 'Cache cleared successfully.';
+                                if (window.ATM.Toast) window.ATM.Toast.show(clearedMsg, 'success');
                                 if (window.ATM.events) {
                                     window.ATM.events.publish('cache:cleared', {});
                                     window.ATM.events.publish('cache:synced', {});
                                 }
                                 window.ATM.Data.refresh(true);
                             }).catch((err) => {
-                                if (window.ATM.Toast) window.ATM.Toast.show(err.message || window.ATM.i18n.t('toast.clear_cache_error_all', 'Error clearing all cache'), 'error');
+                                const clearErrAll = window.ATM.i18n ? window.ATM.i18n.t('toast.clear_cache_error_all', 'Error clearing all cache') : 'Error clearing all cache';
+                                if (window.ATM.Toast) window.ATM.Toast.show(err.message || clearErrAll, 'error');
                             });
                     }
                 });
@@ -47,17 +52,19 @@ window.ATM.Data = (function() {
             const btnClearTM = document.getElementById('data-clear-tm-btn');
             if (btnClearTM) {
                 btnClearTM.addEventListener('click', async () => {
-                    const msg = window.ATM.i18n.t('data.clear_tm_confirm') || window.ATM.i18n.t('data.clear_tm_confirm', 'Clear all translation memory?');
+                    const msg = window.ATM.i18n ? window.ATM.i18n.t('data.clear_tm_confirm', 'Clear all translation memory?') : 'Clear all translation memory?';
                     if (await window.ATM.Modals.confirm(msg)) {
                         window.ATM.api.post('data/clear', { type: 'tm' })
                             .then(() => {
-                                if (window.ATM.Toast) window.ATM.Toast.show(window.ATM.i18n.t('toast.tm_cleared') || '', 'success');
+                                const tmClearedMsg = window.ATM.i18n ? window.ATM.i18n.t('toast.tm_cleared', 'Translation memory cleared.') : 'Translation memory cleared.';
+                                if (window.ATM.Toast) window.ATM.Toast.show(tmClearedMsg, 'success');
                                 if (window.ATM.events) {
                                     window.ATM.events.publish('glossary:changed', {});
                                 }
                                 window.ATM.Data.refresh(true);
                             }).catch((err) => {
-                                if (window.ATM.Toast) window.ATM.Toast.show(err.message || window.ATM.i18n.t('toast.tm_error', 'Error clearing TM'), 'error');
+                                const tmErr = window.ATM.i18n ? window.ATM.i18n.t('toast.tm_error', 'Error clearing TM') : 'Error clearing TM';
+                                if (window.ATM.Toast) window.ATM.Toast.show(err.message || tmErr, 'error');
                             });
                     }
                 });
@@ -67,8 +74,14 @@ window.ATM.Data = (function() {
             if (btnOpenFolder) {
                 btnOpenFolder.addEventListener('click', () => {
                     window.ATM.api.post('data/open_folder').catch((err) => {
-                        if (window.ATM.Toast) window.ATM.Toast.show(err.message || window.ATM.i18n.t('toast.folder_error', 'Error opening folder'), 'error');
+                        const folderErr = window.ATM.i18n ? window.ATM.i18n.t('toast.folder_error', 'Error opening folder') : 'Error opening folder';
+                        if (window.ATM.Toast) window.ATM.Toast.show(err.message || folderErr, 'error');
                     });
+                });
+            }
+            if (window.ATM.events) {
+                window.ATM.events.subscribe('lang:changed', () => {
+                    window.ATM.Data.refresh(true);
                 });
             }
         },
@@ -79,7 +92,6 @@ window.ATM.Data = (function() {
             const tmCount = document.getElementById('stat-memory-count');
             const tmSize = document.getElementById('stat-memory-size');
 
-            
             if (cacheCount) cacheCount.textContent = '';
             if (cacheSize) cacheSize.textContent = '';
             if (tmCount) tmCount.textContent = '';
@@ -97,12 +109,17 @@ window.ATM.Data = (function() {
 
                 const listContainer = document.getElementById('game-data-list');
                 if (listContainer) {
-                    listContainer.innerHTML = '';
+                    listContainer.textContent = '';
                     if (!res.games || res.games.length === 0) {
-                        listContainer.innerHTML = ``;
+                        const emptyDiv = document.createElement('div');
+                        emptyDiv.className = 'text-secondary';
+                        emptyDiv.style.padding = '10px';
+                        emptyDiv.setAttribute('data-i18n', 'data.no_games');
+                        emptyDiv.textContent = window.ATM.i18n ? window.ATM.i18n.t('data.no_games', 'No game data found.') : 'No game data found.';
+                        listContainer.appendChild(emptyDiv);
                     } else {
                         res.games.forEach(g => {
-                            const sizeKb = ((g.entries || 0) * 150 / 1024).toFixed(1); // Approximate 150 bytes per row
+                            const sizeKb = g.size_kb !== undefined ? Number(g.size_kb).toFixed(1) : ((g.entries || 0) * 150 / 1024).toFixed(1);
                             const row = document.createElement('div');
                             row.className = 'data-card';
                             row.style.display = 'flex';
@@ -111,34 +128,95 @@ window.ATM.Data = (function() {
                             row.style.padding = '10px';
                             row.style.marginBottom = '10px';
                             
-                            const nameText = window.ATM.i18n ? (window.ATM.i18n.t('data.game_name') || 'Tên Game: ') : 'Tên Game: ';
-                            const folderText = window.ATM.i18n ? (window.ATM.i18n.t('data.folder') || 'Thư mục: ') : 'Thư mục: ';
-                            const entriesText = window.ATM.i18n ? (window.ATM.i18n.t('data.entries_count') || 'Số câu: ') : 'Số câu: ';
-                            const termsText = window.ATM.i18n ? (window.ATM.i18n.t('data.terms_count') || 'Thuật ngữ: ') : 'Thuật ngữ: ';
-                            const sizeText = window.ATM.i18n ? (window.ATM.i18n.t('data.size_display') || 'Kích thước (Size): ') : 'Kích thước (Size): ';
+                            const nameText = window.ATM.i18n ? window.ATM.i18n.t('data.game_name', 'TÃªn Game: ') : 'TÃªn Game: ';
+                            const folderText = window.ATM.i18n ? window.ATM.i18n.t('data.folder', 'ThÆ° má»¥c: ') : 'ThÆ° má»¥c: ';
+                            const entriesText = window.ATM.i18n ? window.ATM.i18n.t('data.entries_count', 'Sá»‘ cÃ¢u: ') : 'Sá»‘ cÃ¢u: ';
+                            const termsText = window.ATM.i18n ? window.ATM.i18n.t('data.terms_count', 'Thuáº­t ngá»¯: ') : 'Thuáº­t ngá»¯: ';
+                            const sizeText = window.ATM.i18n ? window.ATM.i18n.t('data.size_display', 'KÃ­ch thÆ°á»›c (Size): ') : 'KÃ­ch thÆ°á»›c (Size): ';
                             
-                            row.innerHTML = `
-                                <div>
-                                    <div style="font-weight: bold; margin-bottom: 4px;">${nameText}${g.name} <span class="engine-badge" data-engine="${g.engine}">${g.engine}</span></div>
-                                    <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">${folderText}${g.folder}</div>
-                                    <div style="font-size: 12px; color: var(--text-secondary);">${entriesText}<strong>${g.entries}</strong> | ${termsText}<strong>${g.terms || 0}</strong> | ${sizeText}<strong>${sizeKb} KB</strong></div>
-                                </div>
-                                <div style="display: flex; gap: 8px;">
-                                    <button class="btn-accent btn-clear-keep" data-id="${g.id}" title="${window.ATM.i18n ? (window.ATM.i18n.t('data.keep_clear') || 'Clear & Keep N') : 'Clear & Keep'}">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                                    </button>
-                                    <button class="btn-delete btn-clear-all" data-id="${g.id}" title="${window.ATM.i18n ? (window.ATM.i18n.t('data.clear_all') || 'Clear All') : 'Clear All'}">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                    </button>
-                                </div>
-                            `;
+                            const infoDiv = document.createElement('div');
+
+                            const titleDiv = document.createElement('div');
+                            titleDiv.style.fontWeight = 'bold';
+                            titleDiv.style.marginBottom = '4px';
+                            titleDiv.textContent = `${nameText}${g.name || ''} `;
+
+                            const engineBadge = document.createElement('span');
+                            engineBadge.className = 'engine-badge';
+                            engineBadge.setAttribute('data-engine', g.engine || '');
+                            engineBadge.textContent = g.engine === 'Bakin' ? 'Bakin (BETA)' : (g.engine || '');
+                            titleDiv.appendChild(engineBadge);
+
+                            const folderDiv = document.createElement('div');
+                            folderDiv.style.fontSize = '12px';
+                            folderDiv.style.color = 'var(--text-secondary)';
+                            folderDiv.style.marginBottom = '4px';
+                            folderDiv.textContent = `${folderText}${g.folder || ''}`;
+
+                            const statsDiv = document.createElement('div');
+                            statsDiv.style.fontSize = '12px';
+                            statsDiv.style.color = 'var(--text-secondary)';
+
+                            const entriesSpan = document.createElement('span');
+                            entriesSpan.textContent = entriesText;
+                            const entriesStrong = document.createElement('strong');
+                            entriesStrong.textContent = String(g.entries || 0);
+
+                            const sep1 = document.createTextNode(' | ');
+
+                            const termsSpan = document.createElement('span');
+                            termsSpan.textContent = termsText;
+                            const termsStrong = document.createElement('strong');
+                            termsStrong.textContent = String(g.terms || 0);
+
+                            const sep2 = document.createTextNode(' | ');
+
+                            const sizeSpan = document.createElement('span');
+                            sizeSpan.textContent = sizeText;
+                            const sizeStrong = document.createElement('strong');
+                            sizeStrong.textContent = `${sizeKb} KB`;
+
+                            statsDiv.appendChild(entriesSpan);
+                            statsDiv.appendChild(entriesStrong);
+                            statsDiv.appendChild(sep1);
+                            statsDiv.appendChild(termsSpan);
+                            statsDiv.appendChild(termsStrong);
+                            statsDiv.appendChild(sep2);
+                            statsDiv.appendChild(sizeSpan);
+                            statsDiv.appendChild(sizeStrong);
+
+                            infoDiv.appendChild(titleDiv);
+                            infoDiv.appendChild(folderDiv);
+                            infoDiv.appendChild(statsDiv);
+
+                            const actionsDiv = document.createElement('div');
+                            actionsDiv.style.display = 'flex';
+                            actionsDiv.style.gap = '8px';
+
+                            const btnKeep = document.createElement('button');
+                            btnKeep.className = 'btn-secondary btn-clear-keep';
+                            btnKeep.setAttribute('data-id', g.id);
+                            btnKeep.title = window.ATM.i18n ? (window.ATM.i18n.t('data.keep_clear') || 'Clear & Keep N') : 'Clear & Keep';
+                            btnKeep.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>';
+
+                            const btnClearAll = document.createElement('button');
+                            btnClearAll.className = 'btn-delete btn-clear-all';
+                            btnClearAll.setAttribute('data-id', g.id);
+                            btnClearAll.title = window.ATM.i18n ? (window.ATM.i18n.t('data.clear_all') || 'Clear All') : 'Clear All';
+                            btnClearAll.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
+
+                            actionsDiv.appendChild(btnKeep);
+                            actionsDiv.appendChild(btnClearAll);
+
+                            row.appendChild(infoDiv);
+                            row.appendChild(actionsDiv);
                             listContainer.appendChild(row);
                         });
                         
                         listContainer.querySelectorAll('.btn-clear-all').forEach(btn => {
                             btn.addEventListener('click', async (e) => {
                                 const gameId = e.currentTarget.getAttribute('data-id');
-                                const msg = window.ATM.i18n ? window.ATM.i18n.t('data.clear_game_confirm', '') : '';
+                                const msg = window.ATM.i18n ? window.ATM.i18n.t('data.clear_game_confirm', 'Are you sure you want to clear this game data?') : 'Are you sure you want to clear this game data?';
                                 const agreed = await window.ATM.Modals.confirm(msg);
                                 if (agreed) {
                                     try {
@@ -151,10 +229,12 @@ window.ATM.Data = (function() {
                                                 window.ATM.events.publish('cache:updated', { gameId: gameId });
                                                 window.ATM.events.publish('editor:reload', { gameId: gameId });
                                             }
-                                            window.ATM.Data.refresh();
+                                            window.ATM.Data.refresh(true);
                                         }
                                     } catch (err) {
                                         console.error(err);
+                                        const errorPrefix = window.ATM.i18n ? window.ATM.i18n.t('toast.clear_error', 'Clear error: ') : 'Clear error: ';
+                                        if (window.ATM.Toast) window.ATM.Toast.show(errorPrefix + (err.message || 'Error'), 'error');
                                     }
                                 }
                             });
@@ -204,10 +284,4 @@ window.ATM.Data = (function() {
             }
         }
     };
-    
-    if (window.ATM.events) {
-        window.ATM.events.subscribe('lang:changed', () => {
-            loadDataStats(true);
-        });
-    }
 })();

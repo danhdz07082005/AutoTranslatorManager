@@ -99,6 +99,15 @@ class TranslationCache:
                     self.repo.set_batch(batch)
                     logger.info(f"Successfully migrated {len(batch)} entries to SQLite.")
                 
+                # Free memory immediately and clean up snapshot references
+                del batch
+                del entries
+                del payload
+                old_repo._snapshot = {}
+                del old_repo
+                import gc
+                gc.collect()
+
                 # Backup the old JSON file
                 shutil.move(self.legacy_json_path, self.legacy_json_path + ".bak")
             except Exception as e:

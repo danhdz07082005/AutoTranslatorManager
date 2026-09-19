@@ -9,17 +9,22 @@ def get_i18n_js_content():
         return f.read()
 
 def parse_keys_for_lang(content, lang_code):
-    """Trích xuất danh sách các key cho một ngôn ngữ cụ thể bằng regex đơn giản."""
-    # Tìm block của ngôn ngữ đó, ví dụ: vi: { ... }
-    # Cách đơn giản: lấy tất cả các chuỗi "key": "value"
-    pattern = rf"'{lang_code}':\s*{{(.*?)}}"
-    match = re.search(pattern, content, re.DOTALL)
-    if not match:
+    """Trích xuất danh sách các key cho một ngôn ngữ cụ thể."""
+    if lang_code == 'vi':
+        parts = content.split("'vi': {")
+        if len(parts) < 2:
+            return set()
+        block = parts[1].split("'en': {")[0]
+    elif lang_code == 'en':
+        parts = content.split("'en': {")
+        if len(parts) < 2:
+            return set()
+        # Takes content up to closing of dict
+        block = parts[1].split("};\n\n    let currentLang")[0]
+    else:
         return set()
-    
-    block = match.group(1)
-    # Lấy các keys, ví dụ "menu.library"
-    keys = re.findall(r'["\']([^"\']+)["\']:', block)
+
+    keys = re.findall(r'["\']([a-zA-Z0-9_\.]+)["\']\s*:', block)
     return set(keys)
 
 def test_i18n_completeness():

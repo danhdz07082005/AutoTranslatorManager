@@ -87,3 +87,71 @@ def test_qa_engine_token_invariant(tmp_path: Path):
     findings2 = engine.review_entry(source, translated_worse)
     assert len(findings2) == 1
     assert findings2[0]["confidence"] == "LIKELY"
+
+
+def test_qa_auto_seed_and_defaults(tmp_path: Path):
+    seed_file = tmp_path / "seeded_rules.json"
+    assert not seed_file.exists()
+    
+    registry = QARuleRegistry(str(seed_file), str(tmp_path / "user.json"))
+    assert seed_file.exists(), "system_rules.json phải được tự động tạo (auto-seeded)"
+    
+    active_rules = registry.get_active_rules()
+    rule_ids = {r.rule_id for r in active_rules}
+    assert "empty_translation" in rule_ids
+    assert "broken_rpg_maker_var" in rule_ids
+    assert "unclosed_html_color" in rule_ids
+    assert "consecutive_spaces" in rule_ids
+
+
+def test_api_review_qa_flow():
+    from atm.ui.api import BackendApi
+    api = BackendApi()
+    
+    entries = [
+        {"id": "1", "source": "Hello", "translated": ""},
+        {"id": "2", "source": "Get item \\v[1]", "translated": "Nhận được \\v[]"},
+        {"id": "3", "source": "<color=red>Fire</color>", "translated": "<color=red>Lửa"},
+        {"id": "4", "source": "Good  morning", "translated": "Chào  buổi sáng"},
+        {"id": "5", "source": "Safe sentence", "translated": "Câu chuẩn không lỗi"},
+        {"id": "6", "source": "Untranslated row", "translated": None}, # None handling test
+        {"id": "7", "source": "Multiline Tag", "translated": "<color=red>Line 1\nLine 2</color>"} # Multiline DOTALL test
+    ]
+    
+    res = api.review_qa(entries)
+    assert res["status"] == "success"
+    data = res["data"]
+    
+    # 1: empty_translation with Vietnamese message from description
+    assert "1" in data
+    empty_f = [f for f in data["1"] if f["rule_id"] == "empty_translation"]
+    assert len(empty_f) > 0
+    assert empty_f[0]["message"] == "Bản dịch bị bỏ trống"
+    
+    # 2: broken_rpg_maker_var
+    assert "2" in data
+    assert any(f["rule_id"] == "broken_rpg_maker_var" for f in data["2"])
+    
+    # 3: unclosed_html_color
+    assert "3" in data
+    assert any(f["rule_id"] == "unclosed_html_color" for f in data["3"])
+    
+    # 4: consecutive_spaces
+    assert "4" in data
+    assert any(f["rule_id"] == "consecutive_spaces" for f in data["4"])
+    
+    # 5: No findings
+    assert "5" not in data
+
+    # 6: None translated properly flagged as empty_translation without crashing
+    assert "6" in data
+    assert any(f["rule_id"] == "empty_translation" for f in data["6"])
+
+    # 7: Multiline tag correctly matched without false positive unclosed error
+    assert "7" not in data
+
+    # 8: Invalid payload check
+    invalid_res = api.review_qa("not a list")
+    assert invalid_res["status"] == "error"
+
+

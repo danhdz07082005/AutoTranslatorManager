@@ -180,9 +180,8 @@ class RPGMakerTranslator:
             return self._translator_factory(profile, self.settings)
 
         translator_id = getattr(profile, "translator", "google")
-        if translator_id == "deepl" and self.settings and getattr(self.settings, "deepl_api_key", ""):
-            return DeepLTranslator(self.settings.deepl_api_key)
-        return GoogleTranslator()
+        from atm.core.translation import get_translator
+        return get_translator(translator_id, self.settings, profile=profile)
 
     def _find_data_dirs(self, game_dir: Path) -> tuple[Path, Path] | None:
         candidates = (
@@ -430,22 +429,21 @@ class RPGMakerTranslator:
                     if match:
                         try:
                             plugins_arr = json.loads(match.group(1))
-                            plugins_arr.append({"name": "ATM_Overlay", "status": True, "description": "AutoTranslatorManager overlay", "parameters": {}})
+                            plugins_arr.insert(0, {"name": "ATM_Overlay", "status": True, "description": "AutoTranslatorManager overlay", "parameters": {}})
                             new_arr_str = json.dumps(plugins_arr, indent=0, ensure_ascii=False)
                             new_content = content[:match.start(1)] + new_arr_str + content[match.end(1):]
                             plugins_js_path.write_text(new_content, encoding="utf-8-sig")
-                            logger.info("Patched plugins.js to include ATM_Overlay.")
+                            logger.info("Patched plugins.js to include ATM_Overlay at index 0.")
                         except Exception as parse_e:
                             logger.warning(f"JSON parsing plugins.js failed: {parse_e}, trying fallback...")
-                            last_bracket = content.rfind("]")
-                            if last_bracket != -1:
+                            first_bracket = content.find("[")
+                            if first_bracket != -1:
                                 plugin_entry = '{"name":"ATM_Overlay","status":true,"description":"AutoTranslatorManager overlay","parameters":{}}'
-                                inner_content = content[:last_bracket].strip()
-                                needs_comma = not inner_content.endswith("[") and not inner_content.endswith(",")
-                                prefix = ",\n" if needs_comma else "\n"
-                                new_content = content[:last_bracket] + prefix + plugin_entry + "\n" + content[last_bracket:]
+                                inner_content = content[first_bracket + 1:].lstrip()
+                                prefix = ",\n" if inner_content and not inner_content.startswith("]") else "\n"
+                                new_content = content[:first_bracket + 1] + "\n" + plugin_entry + prefix + content[first_bracket + 1:]
                                 plugins_js_path.write_text(new_content, encoding="utf-8-sig")
-                                logger.info("Patched plugins.js to include ATM_Overlay (fallback).")
+                                logger.info("Patched plugins.js to include ATM_Overlay at index 0 (fallback).")
             except Exception as e:
                 logger.error(f"Failed to patch plugins.js: {e}")
 
@@ -455,8 +453,8 @@ class RPGMakerTranslator:
  * @author ATM
  *
  * @help
- * Loads {self.OVERLAY_FILENAME} and swaps only text being drawn by common UI
- * windows. Original database strings remain intact for script logic.
+ * Loads {self.OVERLAY_FILENAME} and swaps text in memory and during draw routines.
+ * Original database strings on disk remain intact for script logic.
  */
 (function() {{
   "use strict";
@@ -474,9 +472,19 @@ class RPGMakerTranslator:
       var ready = _Scene_Boot_isReady.call(this);
       if (ready && !ATMOverlay.patched && window.$dataATMOverlay) {{
           ATMOverlay.buildIndexes(window.$dataATMOverlay.entries);
+          ATMOverlay.patchDataObjects();
           ATMOverlay.patched = true;
       }}
       return ready;
+  }};
+
+  var _DataManager_onLoad = DataManager.onLoad;
+  DataManager.onLoad = function(object) {{
+      _DataManager_onLoad.call(this, object);
+      if (object === window.$dataATMOverlay && object.entries) {{
+          ATMOverlay.buildIndexes(object.entries);
+          ATMOverlay.patchDataObjects();
+      }}
   }};
 
   ATMOverlay.buildIndexes = function(entries) {{
@@ -490,7 +498,7 @@ class RPGMakerTranslator:
       }});
   }};
 
-  var translateText = function(text) {{
+  var translateText = ATMOverlay.translateText = function(text) {{
       if (typeof text !== 'string') return text;
       if (Object.prototype.hasOwnProperty.call(ATMOverlay.byOriginal, text)) {{
           return ATMOverlay.byOriginal[text];
@@ -500,6 +508,49 @@ class RPGMakerTranslator:
           return ATMOverlay.byLower[lowerText];
       }}
       return text;
+  }};
+
+  ATMOverlay.patchDataObjects = function() {{
+      // 1. Vá trực tiếp $dataSystem trong RAM để mọi menu/UI và plugin bên thứ ba nhận bản dịch
+      if (window.$dataSystem) {{
+          var sys = window.$dataSystem;
+          if (sys.gameTitle) sys.gameTitle = translateText(sys.gameTitle);
+          if (sys.currencyUnit) sys.currencyUnit = translateText(sys.currencyUnit);
+
+          if (sys.terms) {{
+              ['basic', 'commands', 'params', 'messages'].forEach(function(group) {{
+                  if (sys.terms[group]) {{
+                      if (Array.isArray(sys.terms[group])) {{
+                          for (var i = 0; i < sys.terms[group].length; i++) {{
+                              if (sys.terms[group][i]) sys.terms[group][i] = translateText(sys.terms[group][i]);
+                          }}
+                      }} else if (typeof sys.terms[group] === 'object') {{
+                          Object.keys(sys.terms[group]).forEach(function(k) {{
+                              if (sys.terms[group][k]) sys.terms[group][k] = translateText(sys.terms[group][k]);
+                          }});
+                      }}
+                  }}
+              }});
+          }}
+
+          ['elements', 'skillTypes', 'weaponTypes', 'armorTypes', 'equipTypes'].forEach(function(prop) {{
+              if (Array.isArray(sys[prop])) {{
+                  for (var i = 0; i < sys[prop].length; i++) {{
+                      if (sys[prop][i]) sys[prop][i] = translateText(sys[prop][i]);
+                  }}
+              }}
+          }});
+      }}
+
+      // 2. Vá $dataMapInfos trong RAM
+      if (window.$dataMapInfos && Array.isArray(window.$dataMapInfos)) {{
+          for (var j = 0; j < window.$dataMapInfos.length; j++) {{
+              var mapInfo = window.$dataMapInfos[j];
+              if (mapInfo && mapInfo.name) {{
+                  mapInfo.name = translateText(mapInfo.name);
+              }}
+          }}
+      }}
   }};
 
   var drawText = Window_Base.prototype.drawText;

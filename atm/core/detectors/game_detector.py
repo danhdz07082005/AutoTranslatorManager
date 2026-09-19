@@ -15,13 +15,65 @@ class GameDetector:
             
         game_dir = os.path.dirname(exe_path)
         exe_name = os.path.basename(exe_path)
-        data_dir_name = exe_name.replace(".exe", "_Data")
+        base_name = exe_name[:-4] if exe_name.lower().endswith(".exe") else exe_name
+        data_dir_name = f"{base_name}_Data"
         data_dir_path = os.path.join(game_dir, data_dir_name)
         
-        # 1. Kiểm tra Unity
-        if os.path.exists(data_dir_path):
-            il2cpp_path = os.path.join(data_dir_path, "il2cpp_data")
-            if os.path.exists(il2cpp_path) or os.path.exists(os.path.join(game_dir, "GameAssembly.dll")):
+        has_unity_player = os.path.exists(os.path.join(game_dir, "UnityPlayer.dll"))
+        has_game_assembly = os.path.exists(os.path.join(game_dir, "GameAssembly.dll"))
+
+        def is_valid_unity_data_dir(path: str) -> bool:
+            """Xác minh thư mục _Data có chữ ký đặc trưng của Unity không."""
+            if not os.path.isdir(path):
+                return False
+            unity_signatures = [
+                "Managed", "il2cpp_data", "globalgamemanagers",
+                "globalgamemanagers.assets", "data.unity3d",
+                "boot.config", "resources.assets", "app.info"
+            ]
+            try:
+                for sig in unity_signatures:
+                    if os.path.exists(os.path.join(path, sig)):
+                        return True
+            except Exception:
+                pass
+            return False
+
+        # 1. Kiểm tra Unity (Hỗ trợ Steam Launcher mismatch mà không gây false-positive)
+        unity_data_path = None
+        if os.path.exists(data_dir_path) and os.path.isdir(data_dir_path):
+            unity_data_path = data_dir_path
+        else:
+            # Fallback quét tìm thư mục Data của game Steam (loại trừ các thư mục dữ liệu phi-Unity như Save_Data, User_Data)
+            ignored_prefixes = ("save", "user", "config", "log", "sound", "voice", "raw")
+            try:
+                candidates = []
+                for item in os.listdir(game_dir):
+                    item_lower = item.lower()
+                    if item.endswith("_Data") and not any(item_lower.startswith(p) for p in ignored_prefixes):
+                        candidate_path = os.path.join(game_dir, item)
+                        if os.path.isdir(candidate_path):
+                            candidates.append(candidate_path)
+
+                for cand in candidates:
+                    if has_unity_player or has_game_assembly or is_valid_unity_data_dir(cand):
+                        unity_data_path = cand
+                        break
+                if not unity_data_path and candidates and (has_unity_player or has_game_assembly):
+                    unity_data_path = candidates[0]
+            except Exception:
+                pass
+
+        # Chỉ phân loại là Unity nếu có anchor (UnityPlayer.dll/GameAssembly.dll) hoặc thư mục data hợp lệ
+        is_unity = (
+            has_unity_player or
+            has_game_assembly or
+            (unity_data_path and (unity_data_path == data_dir_path or is_valid_unity_data_dir(unity_data_path)))
+        )
+
+        if is_unity:
+            il2cpp_path = os.path.join(unity_data_path, "il2cpp_data") if unity_data_path else None
+            if (il2cpp_path and os.path.exists(il2cpp_path)) or has_game_assembly:
                 logger.info(f"Detected Unity IL2CPP game: {exe_name}")
                 return "Unity IL2CPP"
             else:

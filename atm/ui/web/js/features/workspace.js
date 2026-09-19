@@ -35,7 +35,7 @@ window.ATM.features = window.ATM.features || {};
                         const engineSpan = document.createElement('span');
                         engineSpan.className = 'engine-badge';
                         engineSpan.dataset.engine = game.engine || 'Unknown';
-                        engineSpan.textContent = game.engine || 'Unknown';
+                        engineSpan.textContent = game.engine === 'Bakin' ? 'Bakin (BETA)' : (game.engine || 'Unknown');
                         subtitleEl.appendChild(engineSpan);
                         subtitleEl.appendChild(document.createTextNode(' \u00a0|\u00a0 Translator: '));
                         const transSpan = document.createElement('span');
@@ -137,9 +137,9 @@ window.ATM.features = window.ATM.features || {};
                         .catch(e => {
                             if (window.ATM.Toast) {
                                 let fallback = i18n ? i18n.t('error.sync_failed') : 'Sync Error';
-                                window.ATM.Toast.show(e.error || fallback, 'error');
+                                const errMsg = (e && (e.error || e.message)) || fallback;
+                                window.ATM.Toast.show(errMsg, 'error');
                             }
-                            if (window.ATM.polling) window.ATM.polling.pollTranslation(currentGame.id);
                         });
                 }
             });
@@ -168,14 +168,14 @@ window.ATM.features = window.ATM.features || {};
             tabGlossary.addEventListener('click', async () => {
                 if (window.ATM.Editor && window.ATM.Editor.confirmDiscard && !(await window.ATM.Editor.confirmDiscard())) return;
                 setActiveTab(tabGlossary);
-                if(window.ATM.Glossary) window.ATM.Glossary.open(game.id);
+                startGlossary(game.id);
             });
         }
         if (tabTm) {
             tabTm.addEventListener('click', async () => {
                 if (window.ATM.Editor && window.ATM.Editor.confirmDiscard && !(await window.ATM.Editor.confirmDiscard())) return;
                 setActiveTab(tabTm);
-                if(window.ATM.Modals) window.ATM.Modals.open('translation-memory-modal');
+                startTM(game.id);
             });
         }
         
@@ -272,6 +272,40 @@ window.ATM.features = window.ATM.features || {};
             }
             if (window.ATM.Editor) {
                 window.ATM.Editor.open(gameId);
+            }
+        }
+    }
+
+    function startGlossary(gameId) {
+        if (window.ATM.Editor && window.ATM.Editor.close) {
+            window.ATM.Editor.close();
+        }
+        const mountPoint = document.getElementById('editor-workspace-mount');
+        const template = document.getElementById('workspace-glossary-template');
+        if (mountPoint && template) {
+            mountPoint.replaceChildren(template.content.cloneNode(true));
+            if (window.ATM.i18n && typeof window.ATM.i18n.updateDOM === 'function') {
+                window.ATM.i18n.updateDOM();
+            }
+            if (window.ATM.Glossary && window.ATM.Glossary.mount) {
+                window.ATM.Glossary.mount(gameId);
+            }
+        }
+    }
+
+    function startTM(gameId) {
+        if (window.ATM.Editor && window.ATM.Editor.close) {
+            window.ATM.Editor.close();
+        }
+        const mountPoint = document.getElementById('editor-workspace-mount');
+        const template = document.getElementById('workspace-tm-template');
+        if (mountPoint && template) {
+            mountPoint.replaceChildren(template.content.cloneNode(true));
+            if (window.ATM.i18n && typeof window.ATM.i18n.updateDOM === 'function') {
+                window.ATM.i18n.updateDOM();
+            }
+            if (window.ATM.TM && window.ATM.TM.mount) {
+                window.ATM.TM.mount(gameId);
             }
         }
     }

@@ -73,20 +73,34 @@ window.ATM.Modals = (function() {
             activeModal = null;
             if (previousFocus) previousFocus.focus(); // Trả lại focus
         },
-        confirm: (message) => {
+        confirm: (message, options = {}) => {
             return new Promise((resolve) => {
                 const modal = document.getElementById('confirm-modal');
                 const msgEl = document.getElementById('confirm-message');
                 const btnYes = document.getElementById('confirm-yes');
                 const btnNo = document.getElementById('confirm-no');
                 
+                // Checkbox elements
+                const cbContainer = document.getElementById('confirm-checkbox-container');
+                const cbInput = document.getElementById('confirm-checkbox');
+                const cbLabel = document.getElementById('confirm-checkbox-label');
+                
                 if (!modal || !msgEl || !btnYes || !btnNo) {
                     console.error("Missing confirm modal elements:", {modal, msgEl, btnYes, btnNo});
-                    resolve(false);
+                    if (options.checkboxLabel) resolve({ agreed: false, checked: false });
+                    else resolve(false);
                     return;
                 }
                 
                 msgEl.textContent = message;
+                
+                if (options.checkboxLabel && cbContainer && cbInput && cbLabel) {
+                    cbLabel.textContent = options.checkboxLabel;
+                    cbInput.checked = false;
+                    cbContainer.style.display = 'block';
+                } else if (cbContainer) {
+                    cbContainer.style.display = 'none';
+                }
                 
                 const cleanup = () => {
                     btnYes.removeEventListener('click', onYes);
@@ -94,8 +108,22 @@ window.ATM.Modals = (function() {
                     window.ATM.Modals.close('confirm-modal');
                 };
                 
-                const onYes = () => { cleanup(); resolve(true); };
-                const onNo = () => { cleanup(); resolve(false); };
+                const onYes = () => {
+                    cleanup();
+                    if (options.checkboxLabel && cbInput) {
+                        resolve({ agreed: true, checked: cbInput.checked });
+                    } else {
+                        resolve(true);
+                    }
+                };
+                const onNo = () => {
+                    cleanup();
+                    if (options.checkboxLabel) {
+                        resolve({ agreed: false, checked: false });
+                    } else {
+                        resolve(false);
+                    }
+                };
                 
                 btnYes.addEventListener('click', onYes);
                 btnNo.addEventListener('click', onNo);

@@ -37,6 +37,127 @@ SUPPORTED_LANGUAGES = {
 }
 
 
+def detect_key_mismatch(provider: str, api_key: str):
+    """Phát hiện nếu người dùng dán nhầm API key của hãng khác."""
+    if not api_key:
+        return None
+    key = api_key.strip()
+    provider = (provider or "").lower()
+
+    if key.startswith("AIzaSy"):
+        if provider != "gemini":
+            return {
+                "detected_provider": "gemini",
+                "detected_name": "Google Gemini",
+                "warning": f"API Key bắt đầu bằng 'AIzaSy' có vẻ là của Google Gemini, không phải của {provider.upper()}."
+            }
+    elif key.startswith("sk-ant-"):
+        if provider != "claude":
+            return {
+                "detected_provider": "claude",
+                "detected_name": "Anthropic Claude",
+                "warning": f"API Key bắt đầu bằng 'sk-ant-' có vẻ là của Anthropic Claude, không phải của {provider.upper()}."
+            }
+    elif key.endswith(":fx"):
+        if provider != "deepl":
+            return {
+                "detected_provider": "deepl",
+                "detected_name": "DeepL (Free Tier)",
+                "warning": f"API Key kết thúc bằng ':fx' có vẻ là của DeepL Free, không phải của {provider.upper()}."
+            }
+    return None
+
+
+def detect_model_mismatch(provider: str, model: str):
+    """Phát hiện nếu người dùng nhập model thuộc hãng khác."""
+    if not model:
+        return None
+    m = model.strip().lower()
+    prov = (provider or "").lower()
+    if prov == "custom_llm":
+        return None
+
+    detected_prov = None
+    detected_name = None
+
+    if m.startswith("gemini-") or m.startswith("models/gemini"):
+        detected_prov = "gemini"
+        detected_name = "Google Gemini"
+    elif m.startswith("claude-"):
+        detected_prov = "claude"
+        detected_name = "Anthropic Claude"
+    elif m.startswith("deepseek-"):
+        detected_prov = "deepseek"
+        detected_name = "DeepSeek"
+    elif m.startswith("moonshot-") or m.startswith("kimi-"):
+        detected_prov = "kimi"
+        detected_name = "Moonshot Kimi"
+    elif m.startswith("gpt-") or m.startswith("o1-") or m.startswith("o3-") or m.startswith("o4-") or m.startswith("chatgpt-"):
+        detected_prov = "openai"
+        detected_name = "OpenAI"
+
+    if detected_prov and detected_prov != prov:
+        prov_names = {
+            "gemini": "Google Gemini",
+            "claude": "Anthropic Claude",
+            "openai": "OpenAI",
+            "deepseek": "DeepSeek",
+            "kimi": "Moonshot Kimi",
+        }
+        prov_display = prov_names.get(prov, prov.upper())
+        return {
+            "detected_provider": detected_prov,
+            "detected_name": detected_name,
+            "warning": f"Mô hình '{model.strip()}' có vẻ là của {detected_name}, không phải của {prov_display}."
+        }
+    return None
+
+
+def validate_api_key(provider: str, api_key: str):
+    """Kiểm tra tính hợp lệ của API key theo từng hãng (định dạng, độ dài tối thiểu).
+    Trả về (is_valid, error_message).
+    """
+    if not api_key:
+        return True, ""
+    key = api_key.strip()
+    if not key:
+        return True, ""
+
+    prov = (provider or "").lower()
+
+    # Kiểm tra dán nhầm key của hãng khác (Soft Warning - không chặn)
+    mismatch = detect_key_mismatch(prov, key)
+    if mismatch:
+        return True, mismatch["warning"]
+
+    if prov == "gemini":
+        if not key.startswith("AIzaSy"):
+            return False, "Khóa Google Gemini không hợp lệ (phải bắt đầu bằng 'AIzaSy')."
+        if len(key) < 30:
+            return False, "Khóa Google Gemini quá ngắn (độ dài tối thiểu 30 ký tự)."
+    elif prov == "claude":
+        if not key.startswith("sk-ant-"):
+            return False, "Khóa Anthropic Claude không hợp lệ (phải bắt đầu bằng 'sk-ant-')."
+        if len(key) < 30:
+            return False, "Khóa Anthropic Claude quá ngắn (độ dài tối thiểu 30 ký tự)."
+    elif prov in ("openai", "deepseek", "kimi"):
+        if not key.startswith("sk-"):
+            return False, f"Khóa {prov.upper()} không hợp lệ (phải bắt đầu bằng 'sk-')."
+        if len(key) < 20:
+            return False, f"Khóa {prov.upper()} quá ngắn (độ dài tối thiểu 20 ký tự)."
+    elif prov == "deepl":
+        if len(key) < 20:
+            return False, "Khóa DeepL API quá ngắn (độ dài tối thiểu 20 ký tự)."
+    elif prov == "custom_llm":
+        if len(key) < 3:
+            return False, "Khóa Custom LLM quá ngắn (tối thiểu 3 ký tự nếu nhập)."
+    else:
+        if len(key) < 10:
+            return False, "Khóa API không hợp lệ (độ dài quá ngắn)."
+
+    return True, ""
+
+
 class BackendApi:
     def __init__(self):
         self.profile_repo = ProfileRepository()
@@ -47,13 +168,46 @@ class BackendApi:
         self.translation_status = {}  # game_id -> {"progress": int, "total": int, "message": str, "done": bool}
         self.translation_threads = {}  # game_id -> threading.Thread
         self.cancel_flags = {}  # game_id -> bool
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self.job_manager = JobManager(max_workers=4)
         # In-memory fingerprint cache: {game_id: (fingerprint_str, computed_at_timestamp)}
         # Avoids O(N) disk I/O on every get_games() call. Invalidated when a game completes translation.
         self._fingerprint_cache = {}
         # Recover zombie jobs from before last restart
         self._recover_jobs()
+        
+        try:
+            from atm.container import container
+            from atm.core.events.event_bus import SystemEvents
+            bus = container.get("EventBus")
+            if bus:
+                def on_error(data):
+                    if data and isinstance(data, dict) and "game_id" in data:
+                        g_id = data["game_id"]
+                        err_code = data.get("error_code", "translation.failed")
+                        err_details = data.get("error_details", data.get("error", "Unknown error"))
+                        with self._lock:
+                            if g_id not in self.translation_status:
+                                self.translation_status[g_id] = {}
+                            self.translation_status[g_id].update({
+                                "done": True,
+                                "error": True,
+                                "code": err_code,
+                                "params": {"details": err_details}
+                            })
+                bus.subscribe(SystemEvents.ERROR_OCCURRED, on_error)
+        except Exception:
+            pass
+
+    def _get_game_dir(self, profile) -> str:
+        """Safely resolve game folder directory from profile path or exe_path."""
+        if not profile:
+            return ""
+        if getattr(profile, "path", None) and os.path.isdir(profile.path):
+            return profile.path
+        if getattr(profile, "exe_path", None):
+            return os.path.dirname(profile.exe_path)
+        return ""
 
     def is_idle(self) -> bool:
         """Kiểm tra xem hệ thống có đang rảnh rỗi không (không có game nào đang dịch/chạy nền)."""
@@ -98,21 +252,83 @@ class BackendApi:
         """Trả về cấu hình hiện tại"""
         settings = self.settings_repo.load()
         data = settings.model_dump()
-        has_key = bool(data.get("deepl_api_key"))
-        if "deepl_api_key" in data:
-            del data["deepl_api_key"]
-        data["deepl_api_key_configured"] = has_key
+        for key_field in [
+            "deepl_api_key",
+            "gemini_api_key",
+            "deepseek_api_key",
+            "openai_api_key",
+            "claude_api_key",
+            "kimi_api_key",
+            "custom_llm_api_key",
+        ]:
+            data[f"{key_field}_configured"] = bool(data.get(key_field))
+            data.pop(key_field, None)
+        data["custom_llm_configured"] = bool(data.get("custom_llm_model") and data.get("custom_llm_base_url"))
         return data
 
     def update_settings(self, **kwargs):
         """Cập nhật cấu hình"""
+        # Validate API key formats if provided
+        key_warnings = []
+        for prov in ["gemini", "deepseek", "openai", "claude", "kimi", "deepl", "custom_llm"]:
+            key_name = f"{prov}_api_key"
+            if key_name in kwargs and kwargs[key_name]:
+                val = str(kwargs[key_name]).strip()
+                is_valid, msg = validate_api_key(prov, val)
+                if not is_valid:
+                    return {
+                        "status": "error",
+                        "error": msg,
+                        "code": "error.invalid_api_key_format",
+                        "params": {"provider": prov}
+                    }
+                elif msg:
+                    key_warnings.append(msg)
+
+        # Validate Model mismatch and normalize casing if provided
+        for prov in ["gemini", "deepseek", "openai", "claude", "kimi"]:
+            m_name = f"{prov}_model"
+            if m_name in kwargs and kwargs[m_name]:
+                m_val = str(kwargs[m_name]).strip().lower()
+                kwargs[m_name] = m_val
+                mismatch = detect_model_mismatch(prov, m_val)
+                if mismatch:
+                    return {
+                        "status": "error",
+                        "error": mismatch["warning"],
+                        "code": "error.invalid_model_format",
+                        "params": {"provider": prov, "model": m_val}
+                    }
+
         settings = self.settings_repo.load()
-        if "dark_mode" in kwargs:
-            settings.dark_mode = kwargs["dark_mode"]
-        if "deepl_api_key" in kwargs:
-            settings.deepl_api_key = kwargs["deepl_api_key"]
-        if "ui_language" in kwargs:
-            settings.ui_language = kwargs["ui_language"]
+        for key in [
+            "dark_mode",
+            "ui_language",
+            "deepl_api_key",
+            "gemini_api_key",
+            "gemini_model",
+            "gemini_base_url",
+            "deepseek_api_key",
+            "deepseek_model",
+            "deepseek_base_url",
+            "openai_api_key",
+            "openai_model",
+            "openai_base_url",
+            "claude_api_key",
+            "claude_model",
+            "claude_base_url",
+            "kimi_api_key",
+            "kimi_model",
+            "kimi_base_url",
+            "custom_llm_api_key",
+            "custom_llm_base_url",
+            "custom_llm_model",
+        ]:
+            if key in kwargs:
+                val = kwargs[key]
+                if val is not None:
+                    setattr(settings, key, val)
+
         if "translation_memory_threshold" in kwargs:
             try:
                 threshold = float(kwargs["translation_memory_threshold"])
@@ -123,13 +339,252 @@ class BackendApi:
                 return {"status": "error", "error": "Invalid translation-memory threshold", "code": "error.invalid_threshold"}
         
         self.settings_repo.save(settings)
-        return {"status": "success"}
+        res = {"status": "success"}
+        if key_warnings:
+            res["warning"] = " | ".join(key_warnings)
+        return res
+
+    def detect_key_mismatch(self, provider: str, api_key: str):
+        return detect_key_mismatch(provider, api_key)
+
+    def detect_model_mismatch(self, provider: str, model: str):
+        return detect_model_mismatch(provider, model)
+
+    def validate_api_key(self, provider: str, api_key: str):
+        return validate_api_key(provider, api_key)
+
+    def test_ai_connection(self, provider: str, api_key: str = None, model: str = None, base_url: str = None):
+        """Kiểm tra kết nối tới nhà cung cấp AI."""
+        import time
+        from atm.core.translation.translators import LLMTranslator
+        
+        settings = self.settings_repo.load()
+        provider = (provider or "gemini").lower()
+        
+        # Nếu không truyền key, lấy key đã lưu trong settings
+        if not api_key:
+            api_key = getattr(settings, f"{provider}_api_key", "")
+            
+        if not model:
+            model = getattr(settings, f"{provider}_model", None)
+            
+        if not base_url:
+            base_url = getattr(settings, f"{provider}_base_url", "")
+        if not base_url and provider == "custom_llm":
+            base_url = "http://localhost:11434/v1"
+
+        if not api_key and provider != "custom_llm":
+            return {"status": "error", "error": "API Key is required", "code": "error.api_key_missing"}
+
+        # Kiểm tra tính hợp lệ của key
+        if api_key:
+            is_valid, val_err = validate_api_key(provider, api_key)
+            if not is_valid:
+                return {
+                    "status": "error",
+                    "error": val_err,
+                    "code": "error.invalid_api_key_format"
+                }
+
+        # Kiểm tra dán nhầm key
+        mismatch = self.detect_key_mismatch(provider, api_key)
+
+        # Kiểm tra nhập nhầm model và chuẩn hóa chữ thường
+        if model:
+            if provider in ("gemini", "openai", "deepseek", "claude", "kimi"):
+                model = model.strip().lower()
+            else:
+                model = model.strip()
+            model_mismatch = detect_model_mismatch(provider, model)
+            if model_mismatch:
+                return {
+                    "status": "error",
+                    "error": model_mismatch["warning"],
+                    "code": "error.invalid_model_format"
+                }
+
+        if provider == "deepl":
+            if not api_key:
+                return {"status": "error", "error": "DeepL API Key is required", "code": "error.api_key_missing"}
+            from atm.core.translation.translators import DeepLTranslator
+            translator = DeepLTranslator(api_key=api_key)
+            start_time = time.time()
+            try:
+                res = translator.translate_batch(["Hello world"], target_lang="VI", source_lang="EN")
+                latency_ms = int((time.time() - start_time) * 1000)
+                if res and res[0] and res[0].strip():
+                    return {
+                        "status": "success",
+                        "provider": "deepl",
+                        "model": "DeepL API",
+                        "latency_ms": latency_ms,
+                        "result": res[0]
+                    }
+                else:
+                    return {"status": "error", "error": "Empty response received from DeepL", "code": "error.api_empty_response", "latency_ms": latency_ms}
+            except Exception as e:
+                latency_ms = int((time.time() - start_time) * 1000)
+                return {"status": "error", "error": str(e), "code": "error.api_connection_failed", "latency_ms": latency_ms}
+
+        translator = LLMTranslator(
+            provider=provider,
+            api_key=api_key or "",
+            model=model,
+            base_url=base_url,
+            timeout=8.0,
+        )
+
+        start_time = time.time()
+        try:
+            res = translator._do_translate_batch(
+                ["Hello world"], 
+                target_lang="vi", 
+                source_lang="en",
+                disable_fallback=True
+            )
+            latency_ms = int((time.time() - start_time) * 1000)
+            if res and res[0] and res[0].strip():
+                ret = {
+                    "status": "success",
+                    "provider": provider,
+                    "model": translator.model,
+                    "latency_ms": latency_ms,
+                    "result": res[0]
+                }
+                if mismatch:
+                    ret["warning"] = mismatch["warning"]
+                return ret
+            else:
+                return {
+                    "status": "error",
+                    "error": "Empty response received from AI model",
+                    "code": "error.api_empty_response",
+                    "latency_ms": latency_ms
+                }
+        except Exception as e:
+            latency_ms = int((time.time() - start_time) * 1000)
+            logger.error(f"Test AI connection failed for {provider}: {e}")
+            err_msg = str(e)
+            if "10061" in err_msg or "actively refused" in err_msg:
+                target_host = base_url or "http://localhost:11434/v1"
+                err_msg = f"Connection refused at {target_host}. Please make sure your local LLM server (e.g. Ollama/LM Studio) is running."
+            if mismatch:
+                err_msg += f" ({mismatch['warning']})"
+            return {
+                "status": "error",
+                "error": err_msg,
+                "code": "error.api_connection_failed",
+                "latency_ms": latency_ms
+            }
+
+    def fetch_available_models(self, provider: str, api_key: str = None, base_url: str = None):
+        """Lấy danh sách các model khả dụng từ máy chủ API của nhà cung cấp."""
+        import json
+        import urllib.request
+        import urllib.error
+
+        settings = self.settings_repo.load()
+        provider = (provider or "gemini").lower()
+        if not api_key:
+            api_key = getattr(settings, f"{provider}_api_key", "")
+        if not base_url:
+            base_url = getattr(settings, f"{provider}_base_url", "")
+
+        if not api_key and provider != "custom_llm":
+            return {
+                "status": "error",
+                "error": "API Key is required to fetch models",
+                "code": "error.api_key_missing"
+            }
+
+        try:
+            if provider == "gemini":
+                url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+                req = urllib.request.Request(url, headers={"User-Agent": "ATM-Client/2.0"})
+                with urllib.request.urlopen(req, timeout=12.0) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    models_list = []
+                    for item in data.get("models", []):
+                        methods = item.get("supportedGenerationMethods", [])
+                        if "generateContent" in methods:
+                            name = item.get("name", "")
+                            if name.startswith("models/"):
+                                name = name[7:]
+                            if not any(x in name for x in ("embedding", "aqa", "imagen", "tts", "whisper")):
+                                models_list.append(name)
+                    models_list.sort(reverse=True)
+                    return {"status": "success", "provider": provider, "models": models_list}
+
+            elif provider == "claude":
+                endpoint = (base_url or "https://api.anthropic.com/v1").rstrip("/") + "/models"
+                headers = {
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "User-Agent": "ATM-Client/2.0"
+                }
+                req = urllib.request.Request(endpoint, headers=headers)
+                with urllib.request.urlopen(req, timeout=12.0) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    raw = data.get("data", [])
+                    models_list = [m.get("id") for m in raw if isinstance(m, dict) and m.get("id")]
+                    return {"status": "success", "provider": provider, "models": models_list}
+
+            else:
+                default_urls = {
+                    "openai": "https://api.openai.com/v1",
+                    "deepseek": "https://api.deepseek.com",
+                    "kimi": "https://api.moonshot.cn/v1",
+                    "custom_llm": "http://localhost:11434/v1",
+                }
+                url_root = (base_url or default_urls.get(provider, "https://api.openai.com/v1")).rstrip("/")
+                endpoint = f"{url_root}/models"
+                headers = {"User-Agent": "ATM-Client/2.0"}
+                if api_key:
+                    headers["Authorization"] = f"Bearer {api_key}"
+                req = urllib.request.Request(endpoint, headers=headers)
+                with urllib.request.urlopen(req, timeout=12.0) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    raw_items = data.get("data", []) if isinstance(data, dict) else data
+                    models_list = []
+                    if isinstance(raw_items, list):
+                        for m in raw_items:
+                            if isinstance(m, dict) and "id" in m:
+                                mid = m["id"]
+                                if not any(x in mid.lower() for x in ("whisper", "tts", "dall-e", "embedding", "text-embedding", "babbage", "davinci", "moderation")):
+                                    models_list.append(mid)
+                            elif isinstance(m, str):
+                                models_list.append(m)
+                    models_list.sort(reverse=True)
+                    return {"status": "success", "provider": provider, "models": models_list}
+
+        except urllib.error.HTTPError as e:
+            err_body = ""
+            try:
+                raw = e.read().decode("utf-8", errors="ignore")
+                parsed = json.loads(raw)
+                if isinstance(parsed, dict):
+                    err_obj = parsed.get("error") or parsed.get("message")
+                    if isinstance(err_obj, dict):
+                        err_body = err_obj.get("message") or str(err_obj)
+                    else:
+                        err_body = str(err_obj)
+            except Exception:
+                pass
+            detail = f": {err_body}" if err_body else ""
+            if e.code in (401, 403):
+                return {"status": "error", "error": f"Invalid API Key or unauthorized account{detail}", "code": "error.api_unauthorized"}
+            return {"status": "error", "error": f"Failed to fetch models from provider{detail}", "code": "error.api_connection_failed"}
+        except Exception as e:
+            return {"status": "error", "error": str(e), "code": "error.api_connection_failed"}
+
 
     def get_games(self):
         """Trả về danh sách game profile cho JS"""
         profiles = self.profile_repo.get_all()
         result = []
         for p in profiles:
+            if getattr(p, 'is_deleted', False):
+                continue
             p_dict = p.model_dump()
             p_dict.pop('glossary', None)
             job = self.job_repo.load(p.id)
@@ -156,6 +611,13 @@ class BackendApi:
                     deployer = self.active_deployers[p.id]
                     if getattr(deployer, "is_deploying", False) or deployer.monitor.is_monitoring:
                         p_dict["runtime_state"] = "TRANSLATING"
+                        try:
+                            from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+                            from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+                            gl_repo = SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
+                            p_dict["runtime_lines"] = gl_repo.count_by_game(p.id)
+                        except Exception:
+                            p_dict["runtime_lines"] = 0
                 
             # --- KIỂM TRA MẶT VẬT LÝ (WATERMARK) ---
             if p_dict["runtime_state"] == "COMPLETE":
@@ -209,6 +671,10 @@ class BackendApi:
             existing_profiles = self.profile_repo.get_all()
             for existing in existing_profiles:
                 if existing.exe_path and os.path.normpath(existing.exe_path) == os.path.normpath(file_path):
+                    if getattr(existing, 'is_deleted', False):
+                        existing.is_deleted = False
+                        self.profile_repo.save(existing)
+                        return {"status": "success", "profile": existing.model_dump()}
                     logger.warning(f"Game already exists: {file_path}")
                     return {"status": "error", "error": "Game already exists in the system!", "code": "toast.duplicate_game"}
 
@@ -262,6 +728,28 @@ class BackendApi:
             return {"status": "error", "error": "Game profile not found", "code": "error.game_not_found"}
         if not profile.output_lang:
             return {"status": "error", "error": "Please select target language (output_lang) before starting translation.", "code": "error.target_lang_missing"}
+
+        # Validate AI / DeepL API Key configuration
+        translator_id = (getattr(profile, "translator", "google") or "google").lower()
+        if translator_id in ("gemini", "deepseek", "openai", "claude", "kimi", "deepl"):
+            settings = self.settings_repo.load()
+            key_attr = f"{translator_id}_api_key"
+            api_key = getattr(settings, key_attr, "")
+            if not api_key:
+                provider_display = {
+                    "gemini": "Google Gemini",
+                    "deepseek": "DeepSeek",
+                    "openai": "OpenAI",
+                    "claude": "Anthropic Claude",
+                    "kimi": "Kimi Moonshot",
+                    "deepl": "DeepL",
+                }.get(translator_id, translator_id.upper())
+                return {
+                    "status": "error",
+                    "error": f"API Key for {provider_display} is not configured. Please configure it in AI Hub (Settings) before starting.",
+                    "code": "toast.no_ai_key",
+                    "params": {"provider": provider_display}
+                }
 
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
@@ -391,8 +879,8 @@ class BackendApi:
                         # Thêm dấu ấn (Watermark)
                         import json
                         import datetime
-                        game_dir = os.path.dirname(profile.exe_path)
-                        marker_path = os.path.join(game_dir, '.atm_translated')
+                        game_dir = self._get_game_dir(profile)
+                        marker_path = os.path.join(game_dir, '.atm_translated') if game_dir else ""
                         with open(marker_path, 'w', encoding='utf-8') as f:
                             json.dump({
                                 "version": 1,
@@ -470,7 +958,7 @@ class BackendApi:
             return {"status": "translating"}
             
         if profile.engine in ("Unity Mono", "Unity IL2CPP"):
-            folder_path = os.path.dirname(profile.exe_path)
+            folder_path = self._get_game_dir(profile)
             if not all(ord(c) < 128 for c in folder_path):
                 return {
                     "status": "unicode_error", 
@@ -485,7 +973,6 @@ class BackendApi:
         else:
             return {"status": "error", "error": "Unsupported engine: " + profile.engine, "code": "error.engine_not_supported"}
 
-        # Khởi tạo Deployer
         deployer = GameDeployer()
         with self._lock:
             self.active_deployers[game_id] = deployer
@@ -494,6 +981,8 @@ class BackendApi:
         def _run_unity_deploy():
             try:
                 deployer.deploy_and_launch(profile, payload_dir)
+                if deployer.monitor and deployer.monitor.monitor_thread:
+                    deployer.monitor.monitor_thread.join()
             except Exception as e:
                 logger.error(f"Unity deployer crashed for {game_id}: {e}", exc_info=True)
                 with self._lock:
@@ -513,6 +1002,164 @@ class BackendApi:
         t = threading.Thread(target=_run_unity_deploy, daemon=True)
         t.start()
         return {"status": "success"}
+
+    def translate_unity_text(self, text: str, from_lang: str = "auto", to_lang: str = "vi", game_id: str = None) -> str:
+        """Local Gateway endpoint xử lý yêu cầu dịch thời gian thực từ XUnity CustomTranslate."""
+        if not text or not text.strip():
+            return text
+
+        # 1. Tìm profile của game đang chạy (ưu tiên theo game_id định danh)
+        active_profile = None
+        with self._lock:
+            if game_id:
+                active_profile = self.profile_repo.get_by_id(game_id)
+            if not active_profile:
+                for g_id, dep in self.active_deployers.items():
+                    target_id = getattr(dep, "current_game_id", None) or g_id
+                    active_profile = self.profile_repo.get_by_id(target_id)
+                    if active_profile:
+                        break
+
+        source_lang = from_lang or (active_profile.input_lang if active_profile else "auto") or "auto"
+        target_lang = to_lang or (active_profile.output_lang if active_profile else "vi") or "vi"
+
+        # 2. Kiểm tra Glossary riêng của game TRƯỚC TIÊN (Game Glossary Priority)
+        if active_profile and hasattr(active_profile, "glossary") and isinstance(active_profile.glossary, dict):
+            glossary_val = active_profile.glossary.get(text)
+            
+            if not glossary_val:
+                cache_valid = (
+                    hasattr(active_profile, "_lower_glossary") and 
+                    getattr(active_profile, "_last_glossary_id", None) == id(active_profile.glossary) and
+                    getattr(active_profile, "_last_glossary_len", -1) == len(active_profile.glossary)
+                )
+                if not cache_valid:
+                    try:
+                        active_profile._lower_glossary = {k.lower(): v for k, v in active_profile.glossary.items() if isinstance(k, str)}
+                        active_profile._last_glossary_id = id(active_profile.glossary)
+                        active_profile._last_glossary_len = len(active_profile.glossary)
+                    except RuntimeError:
+                        pass # Concurrently modified (e.g., term deleted by UI). Skip rebuild this frame.
+                
+                if hasattr(active_profile, "_lower_glossary"):
+                    glossary_val = active_profile._lower_glossary.get(text.lower())
+                        
+            if glossary_val and isinstance(glossary_val, str) and glossary_val.strip():
+                try:
+                    from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+                    from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+                    gl_repo = SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
+                    gl_repo.insert_or_ignore(
+                        game_id=active_profile.id,
+                        original=text,
+                        translated=glossary_val,
+                        category="glossary",
+                        source_file="Unity_Runtime [Glossary]"
+                    )
+                except Exception as ge:
+                    logger.debug(f"Failed to record unity runtime glossary line in game_lines: {ge}")
+                return glossary_val
+
+        # 3. Kiểm tra Cache toàn cục (O(1))
+        from atm.core.translation.cache_manager import TranslationCache
+        cache = TranslationCache()
+        cached = cache.get(source_lang, target_lang, text, category="dialogue")
+        if not cached:
+            cached = cache.get(source_lang, target_lang, text, category="default")
+        if cached:
+            return cached
+
+        # 4. Xác định Translator phù hợp
+        translator_id = (getattr(active_profile, "translator", "google") if active_profile else "google") or "google"
+        translator = None
+        settings = self.settings_repo.load()
+
+        if translator_id in ("gemini", "deepseek", "openai", "claude", "kimi", "custom_llm"):
+            from atm.core.translation.translators import LLMTranslator
+            api_key = getattr(settings, f"{translator_id}_api_key", "")
+            base_url = getattr(settings, f"{translator_id}_base_url", "")
+            model = getattr(settings, f"{translator_id}_model", "")
+            glossary = getattr(active_profile, "glossary", {}) if active_profile else {}
+            translator = LLMTranslator(
+                provider=translator_id,
+                api_key=api_key,
+                base_url=base_url,
+                model=model,
+                glossary=glossary
+            )
+        elif translator_id == "deepl":
+            from atm.core.translation.translators import DeepLTranslator
+            translator = DeepLTranslator(api_key=settings.deepl_api_key)
+        else:
+            from atm.core.translation.translators import GoogleTranslator
+            translator = GoogleTranslator()
+
+        # 5. Dịch câu
+        glossary_maps = {}
+        if translator_id not in ("gemini", "deepseek", "openai", "claude", "kimi", "custom_llm") and active_profile and getattr(active_profile, "glossary", None):
+            try:
+                from atm.core.translation.pipeline import protect_glossary_terms, restore_glossary_terms
+                text, glossary_maps = protect_glossary_terms(text, active_profile.glossary)
+            except Exception as e:
+                logger.debug(f"Failed to protect glossary terms: {e}")
+
+        try:
+            results = translator.translate_batch([text], target_lang, source_lang, category="dialogue", is_realtime=True)
+            if results and results[0]:
+                translated = results[0]
+                if glossary_maps:
+                    try:
+                        from atm.core.translation.pipeline import restore_glossary_terms
+                        translated = restore_glossary_terms(translated, glossary_maps)
+                    except Exception as e:
+                        logger.debug(f"Failed to restore glossary terms: {e}")
+                        
+                cache.set(source_lang, target_lang, text, translated, category="dialogue")
+                if active_profile:
+                    try:
+                        from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+                        from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+                        gl_repo = SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
+                        gl_repo.insert_or_ignore(
+                            game_id=active_profile.id,
+                            original=text,
+                            translated=translated,
+                            category="dialogue",
+                            source_file=f"Unity_Runtime [{translator_id}]"
+                        )
+                    except Exception as ge:
+                        logger.debug(f"Failed to record unity runtime line in game_lines: {ge}")
+                return translated
+        except Exception as e:
+            logger.error(f"Error translating unity text '{text[:30]}...': {e}")
+
+        # 6. Fallback sang Google Translator nếu LLM thất bại (có ghi provenance)
+        try:
+            from atm.core.translation.translators import GoogleTranslator
+            fb = GoogleTranslator()
+            fb_res = fb.translate_batch([text], target_lang, source_lang, category="dialogue", is_realtime=True)
+            if fb_res and fb_res[0]:
+                cache.set(source_lang, target_lang, text, fb_res[0], category="dialogue")
+                if active_profile:
+                    try:
+                        from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+                        from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+                        gl_repo = SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
+                        gl_repo.insert_or_ignore(
+                            game_id=active_profile.id,
+                            original=text,
+                            translated=fb_res[0],
+                            category="dialogue",
+                            source_file=f"Unity_Runtime [{translator_id}_fallback_to_google]"
+                        )
+                    except Exception as ge:
+                        logger.debug(f"Failed to record unity runtime fallback line in game_lines: {ge}")
+                return fb_res[0]
+        except Exception:
+            pass
+
+        return text
+
 
     def fix_unicode_path(self, game_id: str):
         profile = self.profile_repo.get_by_id(game_id)
@@ -587,10 +1234,19 @@ class BackendApi:
             if game_id in self.active_deployers:
                 deployer = self.active_deployers[game_id]
                 if getattr(deployer, "is_deploying", False) or deployer.monitor.is_monitoring:
+                    count = 0
+                    try:
+                        from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+                        from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+                        gl_repo = SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
+                        count = gl_repo.count_by_game(game_id)
+                    except Exception:
+                        pass
                     return {
                         "progress": 50,
                         "total": 100,
                         "code": "translation.realtime_running",
+                        "translated_lines": count,
                         "done": False,
                         "error": False
                     }
@@ -673,6 +1329,13 @@ class BackendApi:
                 if not is_done:
                     return {"status": "error", "error": "Timeout waiting for translation thread to stop."}
                 
+                # Ensure the thread is completely dead before clearing the cancel flag.
+                # If we clear the flag while the thread is still saving teardown data, 
+                # it will skip the graceful cancellation block and mark itself as 'failed'.
+                old_thread = self.translation_threads.get(game_id)
+                if old_thread and old_thread.is_alive():
+                    old_thread.join(timeout=5.0)
+                
                 # Restart it to apply glossary
                 logger.info(f"[Smart Sync] Restarting offline thread for {game_id} to apply new Glossary/Cache...")
                 with self._lock:
@@ -694,22 +1357,30 @@ class BackendApi:
         elif profile.engine in ("Unity Mono", "Unity IL2CPP"):
             logger.info(f"[Smart Sync] Writing updated cache to BepInEx for {game_id}...")
             try:
-                game_dir = os.path.dirname(profile.exe_path)
+                game_dir = self._get_game_dir(profile)
                 lang = profile.output_lang or "vi"
                 trans_dir = os.path.join(game_dir, "BepInEx", "Translation", lang, "Text")
                 os.makedirs(trans_dir, exist_ok=True)
                 trans_file = os.path.join(trans_dir, "_AutoGeneratedTranslations.txt")
+                subs_file = os.path.join(trans_dir, "_Substitutions.txt")
                 
                 # Fetch dictionary and translations
                 glossary = profile.glossary or {}
                 repo = self._get_game_lines_repo()
                 lines = repo.get_all_by_game(game_id)
                 
-                # Combine them (Glossary takes precedence)
+                # Combine them (Glossary takes precedence for EXACT match)
                 combined = {**lines, **glossary}
                 
                 with open(trans_file, 'w', encoding='utf-8-sig') as f:
                     for k, v in combined.items():
+                        # Basic escaping for BepInEx
+                        safe_k = str(k).replace('\n', '\\n').replace('\r', '\\r')
+                        safe_v = str(v).replace('\n', '\\n').replace('\r', '\\r')
+                        f.write(f"{safe_k}={safe_v}\n")
+                        
+                with open(subs_file, 'w', encoding='utf-8-sig') as f:
+                    for k, v in glossary.items():
                         # Basic escaping for BepInEx
                         safe_k = str(k).replace('\n', '\\n').replace('\r', '\\r')
                         safe_v = str(v).replace('\n', '\\n').replace('\r', '\\r')
@@ -722,41 +1393,142 @@ class BackendApi:
         
         return {"status": "success", "message": "Glossary and Cache synced successfully", "is_running": False}
 
-    def play_game(self, game_id):
-        """Khởi chạy game đã dịch"""
+    def play_game(self, game_id, vanilla: bool = False):
+        """Khởi chạy game đã dịch hoặc bản gốc (detached process)"""
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
-            return {"status": "error", "error": "Game not found", "code": "error.game_not_found"}
-        if not profile.output_lang:
-            return {"status": "error", "error": "Target language not configured (output_lang).", "code": "error.target_lang_missing"}
-        
-        # Unity games must be deployed with BepInEx every time they are played
-        if profile.engine in ("Unity Mono", "Unity IL2CPP", "Bakin"):
+            return {"status": "error", "error": "Game profile not found", "code": "error.game_not_found"}
+
+        with self._lock:
+            # Prevent launching if the game is currently translating
+            is_running_deployer = (
+                game_id in getattr(self, "active_deployers", {})
+                and (
+                    getattr(self.active_deployers[game_id], "is_deploying", False)
+                    or getattr(self.active_deployers[game_id].monitor, "is_monitoring", False)
+                )
+            )
+            is_running_offline = (
+                game_id in getattr(self, "translation_status", {})
+                and not self.translation_status[game_id].get("done", True)
+            )
+            is_running_thread = (
+                game_id in getattr(self, "translation_threads", {})
+                and self.translation_threads[game_id].is_alive()
+            )
+            if is_running_offline or is_running_thread or is_running_deployer:
+                return {
+                    "status": "error",
+                    "error": "Game is currently translating. Please wait or stop translation before playing.",
+                    "code": "toast.game_translating"
+                }
+
+        if not profile.exe_path or not os.path.isfile(profile.exe_path):
+            return {
+                "status": "error",
+                "error": f"Executable not found: {profile.exe_path}",
+                "code": "error.exe_not_found"
+            }
+
+        # Unity games must be deployed with BepInEx when played with translations
+        if not vanilla and profile.engine in ("Unity Mono", "Unity IL2CPP"):
             return self.start_game(game_id, auto_launch=True)
-            
-        # Verify marker for offline engines
-        game_dir = os.path.dirname(profile.exe_path)
-        marker_path = os.path.join(game_dir, '.atm_translated')
-        if not os.path.exists(marker_path):
-            return {"status": "error", "error": "Game has been modified or not fully translated."}
-            
+
+        game_dir = self._get_game_dir(profile)
+        marker_path = os.path.join(game_dir, '.atm_translated') if game_dir else ""
+        if marker_path and not os.path.exists(marker_path):
+            logger.info(f"Playing game {game_id} in vanilla/partial state (.atm_translated marker not found)")
+
+        # RPG Maker Safety Guard: ensure missing ATM_Overlay.js doesn't cause game crash
+        if profile.engine == "RPG Maker" and game_dir:
+            for pjs in [os.path.join(game_dir, "www", "js", "plugins.js"), os.path.join(game_dir, "js", "plugins.js")]:
+                if os.path.exists(pjs):
+                    plugin_file = os.path.join(os.path.dirname(pjs), "plugins", "ATM_Overlay.js")
+                    if not os.path.exists(plugin_file):
+                        try:
+                            with open(pjs, "r", encoding="utf-8-sig") as pf:
+                                p_content = pf.read()
+                            if "ATM_Overlay" in p_content:
+                                import re, json
+                                match = re.search(r'(?s)var\s+\$plugins\s*=\s*(\[.*\])\s*;', p_content)
+                                if match:
+                                    arr = json.loads(match.group(1))
+                                    clean_arr = [x for x in arr if x.get("name") != "ATM_Overlay"]
+                                    new_p_content = p_content[:match.start(1)] + json.dumps(clean_arr, indent=0, ensure_ascii=False) + p_content[match.end(1):]
+                                    with open(pjs, "w", encoding="utf-8-sig") as pf:
+                                        pf.write(new_p_content)
+                                    logger.info(f"[Play Game Guard] Cleaned missing ATM_Overlay from {pjs}")
+                        except Exception as ge:
+                            logger.error(f"[Play Game Guard] Failed to check/clean plugins.js: {ge}")
+
         try:
             import subprocess
-            # Detached process to allow ATM to close without closing the game
-            CREATE_NO_WINDOW = 0x08000000
-            DETACHED_PROCESS = 0x00000008
-            subprocess.Popen([profile.exe_path], cwd=game_dir, creationflags=DETACHED_PROCESS)
+            popen_kwargs = {"cwd": game_dir, "close_fds": True}
+            if os.name == 'nt':
+                DETACHED_PROCESS = 0x00000008
+                CREATE_NEW_PROCESS_GROUP = 0x00000200
+                popen_kwargs["creationflags"] = DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+            else:
+                popen_kwargs["start_new_session"] = True
+            subprocess.Popen([profile.exe_path], **popen_kwargs)
             return {"status": "success"}
         except Exception as e:
             logger.error(f"Failed to play game {game_id}: {e}")
             return {"status": "error", "error": str(e)}
 
-    def delete_game(self, game_id):
-        """Xóa game profile (cả file JSON)"""
+    def get_delete_info(self, game_id):
+        profile = self.profile_repo.get_by_id(game_id)
+        if not profile:
+            return {"status": "error", "error": "Game not found"}
+            
+        size_bytes = 0
+        
+        # 1. Estimate SQLite DB size for this game
+        try:
+            from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+            from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+            db_path = os.path.join(TRANSLATIONS_DIR, "translation_cache.db")
+            if os.path.exists(db_path):
+                repo = SQLiteGameLinesRepository(db_path)
+                with repo._get_connection() as conn:
+                    cursor = conn.cursor()
+                    # Rough estimate: length of original and translated strings + 100 bytes overhead per row
+                    cursor.execute("SELECT COUNT(*) FROM game_lines WHERE game_id = ?", (game_id,))
+                    game_count = cursor.fetchone()[0] or 0
+                    if game_count > 0:
+                        cursor.execute("SELECT COUNT(*) FROM game_lines")
+                        total_count = cursor.fetchone()[0] or 1
+                        total_size = os.path.getsize(db_path)
+                        wal_path = db_path + "-wal"
+                        if os.path.exists(wal_path):
+                            total_size += os.path.getsize(wal_path)
+                        # Proportional size based on row count
+                        size_bytes += int((game_count / total_count) * total_size)
+        except Exception as e:
+            logger.debug(f"Error calculating DB size: {e}")
+            
+        # 2. Metadata folder size
+        try:
+            from atm.storage.repositories.translation_repository import TranslationRepository
+            repo = TranslationRepository()
+            game_dir = repo.get_game_translation_dir(profile.game_name)
+            if os.path.exists(game_dir):
+                for dirpath, _, filenames in os.walk(game_dir):
+                    for f in filenames:
+                        fp = os.path.join(dirpath, f)
+                        if not os.path.islink(fp):
+                            size_bytes += os.path.getsize(fp)
+        except Exception as e:
+            logger.debug(f"Error calculating folder size: {e}")
+            
+        size_mb = size_bytes / (1024 * 1024)
+        return {"status": "success", "size_mb": round(size_mb, 2)}
+
+    def delete_game(self, game_id, purge_data=False):
+        """Xóa game profile (cả file JSON) và tùy chọn xóa sạch data"""
         try:
             # Check if running and wait for it to stop
             with self._lock:
-                # Clean up dead deployers first
                 if game_id in self.active_deployers:
                     dep = self.active_deployers[game_id]
                     if not getattr(dep, "is_deploying", False) and not dep.monitor.is_monitoring:
@@ -764,32 +1536,70 @@ class BackendApi:
                 
                 is_running_offline = game_id in self.translation_status and not self.translation_status[game_id].get("done", True)
                 is_running_unity = game_id in self.active_deployers
+                old_thread = self.translation_threads.get(game_id)
+                is_cancelled = self.cancel_flags.get(game_id, False)
             
+            if is_running_offline and is_cancelled and old_thread and old_thread.is_alive():
+                logger.info(f"[Delete] Waiting for cancelled translation thread of {game_id} to terminate...")
+                old_thread.join(timeout=5.0)
+                with self._lock:
+                    is_running_offline = game_id in self.translation_status and not self.translation_status[game_id].get("done", True)
+
             if is_running_offline or is_running_unity:
                 return {"status": "error", "error": "Game is currently running or translating. Please stop it before deleting.", "code": "toast.delete_running_error"}
             
-            # Xóa toàn bộ dữ liệu của game (game_lines, glossary khỏi TM, thư mục metadata)
+            profile = self.profile_repo.get_by_id(game_id)
+            game_dir = None
+            if profile:
+                if getattr(profile, "path", None) and os.path.isdir(profile.path):
+                    game_dir = profile.path
+                elif getattr(profile, "exe_path", None):
+                    parent = os.path.dirname(profile.exe_path)
+                    if os.path.isdir(parent):
+                        game_dir = parent
+            
+            if game_dir and os.path.isdir(game_dir):
+                marker_file = os.path.join(game_dir, ".atm_translated")
+                if os.path.exists(marker_file):
+                    try: os.remove(marker_file)
+                    except Exception: pass
+                    
+            # 1. Khôi phục thư mục game về nguyên bản (Revert external state)
             try:
-                self.clear_game_full(game_id)
-            except Exception as e:
-                logger.error(f"Error clearing full game data on delete: {e}")
+                self._revert_game_directory(profile, game_dir)
+            except Exception as revert_err:
+                logger.error(f"Error reverting game directory for {game_id}: {revert_err}")
 
-            # Xóa bằng ID (tên file mới)
-            deleted = self.profile_repo.delete(game_id)
+            # 2. Xóa toàn bộ dữ liệu của game (Internal State) nếu purge_data = True
+            if purge_data:
+                try:
+                    self._clear_game_full_internal(game_id, profile)
+                except Exception as e:
+                    logger.error(f"Error clearing full game data on delete: {e}")
+            else:
+                logger.info(f"Retaining translation data for {game_id} (purge_data=False).")
 
-            # Dọn cả file profile cũ (tên theo game_name) nếu còn sót
-            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            profiles_dir = os.path.join(base_dir, "data", "profiles")
+            # 3. Xóa job repository file nếu có
+            try:
+                self.job_repo.delete(game_id)
+            except Exception: pass
+
+            # 4. Xóa bảng ID profile
+            if purge_data:
+                deleted = self.profile_repo.delete(game_id)
+            else:
+                profile.is_deleted = True
+                self.profile_repo.save(profile)
+                deleted = True
+
+            # Dọn các file profile cũ
+            from atm.utils.paths import get_profiles_dir
+            profiles_dir = get_profiles_dir()
             if os.path.isdir(profiles_dir):
                 for f in os.listdir(profiles_dir):
                     if f.endswith(".json"):
                         fpath = os.path.join(profiles_dir, f)
                         try:
-                            import json
-                            with open(fpath, "r", encoding="utf-8") as fp:
-                                data = json.load(fp)
-                            if data.get("id") == game_id:
-                                os.remove(fpath)
                                 logger.info(f"Cleaned old profile file: {f}")
                         except Exception:
                             pass
@@ -800,8 +1610,91 @@ class BackendApi:
             logger.error(f"Delete error: {e}")
             return {"status": "error", "error": str(e)}
 
+    def _revert_game_directory(self, profile, game_dir):
+        if not profile or not game_dir or not os.path.isdir(game_dir): return
+        import shutil
+        engine = getattr(profile, "engine", "")
+        if engine == "RPG Maker":
+            candidates = [
+                (os.path.join(game_dir, "www", "data"), os.path.join(game_dir, "www", "data_backup")),
+                (os.path.join(game_dir, "data"), os.path.join(game_dir, "data_backup")),
+            ]
+            for data_dir, backup_dir in candidates:
+                if os.path.isdir(backup_dir):
+                    try:
+                        if os.path.isdir(data_dir): shutil.rmtree(data_dir)
+                        shutil.copytree(backup_dir, data_dir)
+                        shutil.rmtree(backup_dir)
+                    except Exception: pass
+            for p in [os.path.join(game_dir, "www", "js", "plugins", "ATM_Overlay.js"), os.path.join(game_dir, "js", "plugins", "ATM_Overlay.js")]:
+                if os.path.exists(p):
+                    try: os.remove(p)
+                    except: pass
+            for o in [os.path.join(game_dir, "www", "data", "ATM_Overlay.json"), os.path.join(game_dir, "data", "ATM_Overlay.json")]:
+                if os.path.exists(o):
+                    try: os.remove(o)
+                    except: pass
+            # Unpatch plugins.js
+            for plugins_js in [os.path.join(game_dir, "www", "js", "plugins.js"), os.path.join(game_dir, "js", "plugins.js")]:
+                if os.path.exists(plugins_js):
+                    try:
+                        with open(plugins_js, "r", encoding="utf-8-sig") as pf:
+                            p_content = pf.read()
+                        if "ATM_Overlay" in p_content:
+                            import re, json
+                            match = re.search(r'(?s)var\s+\$plugins\s*=\s*(\[.*\])\s*;', p_content)
+                            if match:
+                                plugins_arr = json.loads(match.group(1))
+                                clean_arr = [x for x in plugins_arr if x.get("name") != "ATM_Overlay"]
+                                new_content = p_content[:match.start(1)] + json.dumps(clean_arr, indent=0, ensure_ascii=False) + p_content[match.end(1):]
+                                with open(plugins_js, "w", encoding="utf-8-sig") as pf:
+                                    pf.write(new_content)
+                                logger.info(f"[Revert] Successfully removed ATM_Overlay from {plugins_js}")
+                    except Exception as pe:
+                        logger.error(f"[Revert] Failed to unpatch {plugins_js}: {pe}")
+        elif engine == "RenPy":
+            output_lang = getattr(profile, "output_lang", "vi")
+            for d in [os.path.join(game_dir, "game", "tl", output_lang), os.path.join(game_dir, "game", "tl", f"atm_{output_lang}")]:
+                if os.path.isdir(d):
+                    try: shutil.rmtree(d)
+                    except: pass
+
+    def _clear_game_full_internal(self, game_id: str, profile):
+        try:
+            from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
+            from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
+            from atm.core.translation.cache_manager import TranslationCache
+            game_lines_repo = SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
+            deleted_originals = game_lines_repo.clear_by_game(game_id, keep_count=0)
+            if deleted_originals:
+                TranslationCache().batch_delete_exact(deleted_originals)
+                try:
+                    from atm.core.translation.translation_memory import TranslationMemory
+                    TranslationMemory().batch_forget(deleted_originals)
+                except: pass
+        except: pass
         
-    def _get_game_lines_repo(self):
+        glossary_terms = list((profile.glossary or {}).keys())
+        if glossary_terms:
+            try:
+                from atm.core.translation.translation_memory import TranslationMemory
+                TranslationMemory().batch_forget(glossary_terms, category="glossary")
+            except: pass
+                
+        from atm.storage.repositories.translation_repository import TranslationRepository
+        game_metadata_dir = TranslationRepository().get_game_translation_dir(profile.game_name)
+        if os.path.exists(game_metadata_dir):
+            import shutil
+            try: shutil.rmtree(game_metadata_dir)
+            except OSError: pass
+
+    def clear_game_full(self, game_id: str):
+        profile = self.profile_repo.get_by_id(game_id)
+        if profile:
+            self._clear_game_full_internal(game_id, profile)
+        return {"status": "success"}
+
+    def clear_game_data(self, game_id):
         from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
         from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
         return SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
@@ -903,18 +1796,26 @@ class BackendApi:
 
     def review_qa(self, entries):
         """Quét lỗi QA trên một batch entries"""
-        from atm.core.qa.registry import QARuleRegistry
-        from atm.core.qa.engine import QAEngine
-        
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        sys_rules = os.path.join(base_dir, "data", "qa", "system_rules.json")
-        user_rules = os.path.join(base_dir, "data", "qa", "user_rules.json")
-        
-        registry = QARuleRegistry(sys_rules, user_rules)
-        engine = QAEngine(registry)
-        
-        results = engine.review_batch(entries)
-        return {"status": "success", "data": results}
+        try:
+            from atm.core.qa.registry import QARuleRegistry
+            from atm.core.qa.engine import QAEngine
+            from atm.utils.paths import get_qa_dir
+            
+            if not isinstance(entries, list):
+                return {"status": "error", "error": "Entries must be a list", "code": "error.invalid_payload"}
+
+            qa_dir = get_qa_dir()
+            sys_rules = os.path.join(qa_dir, "system_rules.json")
+            user_rules = os.path.join(qa_dir, "user_rules.json")
+            
+            registry = QARuleRegistry(sys_rules, user_rules)
+            engine = QAEngine(registry)
+            
+            results = engine.review_batch(entries)
+            return {"status": "success", "data": results}
+        except Exception as e:
+            logger.error(f"Failed to review QA: {e}", exc_info=True)
+            return {"status": "error", "error": str(e)}
 
     def export_glossary(self, game_id: str, format_type: str = 'csv'):
         from atm.core.translation.glossary_manager import GlossaryManager
@@ -1352,7 +2253,7 @@ class BackendApi:
         """Internal: perform actual disk I/O to compute fingerprint. Do not call directly."""
         try:
             import hashlib
-            game_dir = os.path.dirname(profile.exe_path)
+            game_dir = self._get_game_dir(profile)
             
             if not os.path.exists(game_dir):
                 return "sha256:missing_dir"
@@ -1415,7 +2316,7 @@ class BackendApi:
         from atm.core.engines.registry import EngineRegistry
         try:
             auditor = EngineRegistry.get_auditor(profile.engine)
-            extractor = EngineRegistry.get_extractor(profile.engine, os.path.dirname(profile.exe_path))
+            extractor = EngineRegistry.get_extractor(profile.engine, self._get_game_dir(profile))
             entries = extractor.extract()
             # TODO(Phase 2): Implement real cache lookup for translation_status
             # Currently returns raw extracted entries (0% coverage by default)
@@ -1431,7 +2332,7 @@ class BackendApi:
         from atm.core.engines.registry import EngineRegistry
         
         def _extract_worker(job, cancel_token, g_id):
-            extractor = EngineRegistry.get_extractor(profile.engine, os.path.dirname(profile.exe_path))
+            extractor = EngineRegistry.get_extractor(profile.engine, self._get_game_dir(profile))
             entries = extractor.extract(job_tracker=job)
             
             # Insert extracted entries into game_lines
@@ -1461,7 +2362,7 @@ class BackendApi:
         from atm.core.engines.registry import EngineRegistry
         
         def _patch_worker(job, cancel_token, g_id):
-            injector = EngineRegistry.get_injector(profile.engine, os.path.dirname(profile.exe_path))
+            injector = EngineRegistry.get_injector(profile.engine, self._get_game_dir(profile))
             # TODO: Load actual entries from cache/payloads before injecting. 
             # Currently injecting empty list [] as a placeholder.
             injector.inject([], job_tracker=job)

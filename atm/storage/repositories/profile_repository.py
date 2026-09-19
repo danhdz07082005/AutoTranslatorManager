@@ -20,13 +20,18 @@ class ProfileRepository:
             os.makedirs(PROFILES_DIR, exist_ok=True)
             
     def get_all(self) -> List[GameProfile]:
-        profiles = []
+        profiles_with_time = []
         for filename in os.listdir(PROFILES_DIR):
             if filename.endswith(".json"):
+                filepath = os.path.join(PROFILES_DIR, filename)
                 profile = self.load(filename)
                 if profile:
-                    profiles.append(profile)
-        return profiles
+                    mtime = os.path.getmtime(filepath)
+                    profiles_with_time.append((mtime, profile))
+        
+        # Sort by modification time ascending (FIFO - Oldest first)
+        profiles_with_time.sort(key=lambda x: x[0], reverse=False)
+        return [p for _, p in profiles_with_time]
         
     def load(self, filename: str) -> Optional[GameProfile]:
         filepath = os.path.join(PROFILES_DIR, filename)

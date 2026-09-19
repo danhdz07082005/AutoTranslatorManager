@@ -29,6 +29,8 @@ class QAEngine:
 
     def review_entry(self, source_text: str, translated_text: str) -> List[Dict[str, Any]]:
         findings = []
+        source_text = source_text or ""
+        translated_text = translated_text or ""
         rules = self.registry.get_active_rules()
         
         for rule in rules:
@@ -44,7 +46,7 @@ class QAEngine:
                         "source": rule.source,
                         "severity": rule.severity,
                         "confidence": "AMBIGUOUS",
-                        "message": f"Matches forbidden pattern.",
+                        "message": rule.description or "Matches forbidden pattern.",
                         "suggestion": None
                     })
             elif rule.type == 'regex_replace':
@@ -59,19 +61,23 @@ class QAEngine:
                             "source": rule.source,
                             "severity": rule.severity,
                             "confidence": confidence,
-                            "message": "Suggested format fix available.",
+                            "message": rule.description or "Suggested format fix available.",
                             "suggestion": suggestion
                         })
         return findings
 
-    def review_batch(self, entries: List[Dict[str, str]]) -> Dict[str, List[Dict[str, Any]]]:
+    def review_batch(self, entries: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
         """
         entries = [{"id": "xyz", "source": "...", "translated": "..."}, ...]
         Returns { "xyz": [findings] }
         """
+        if not entries or not isinstance(entries, list):
+            return {}
         results = {}
         for entry in entries:
-            f = self.review_entry(entry["source"], entry["translated"])
+            if not isinstance(entry, dict) or "id" not in entry:
+                continue
+            f = self.review_entry(entry.get("source"), entry.get("translated"))
             if f:
-                results[entry["id"]] = f
+                results[str(entry["id"])] = f
         return results

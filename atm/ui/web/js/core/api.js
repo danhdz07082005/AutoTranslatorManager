@@ -85,8 +85,9 @@ window.ATM.store = {
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     const i18n = window.ATM.i18n;
-                    const localizedMsg = (errorData.code && i18n ? i18n.t(errorData.code) : null)
-                        || (errorData.error && i18n ? i18n.t(errorData.error) : null)
+                    const params = errorData.params || { error: errorData.error || '' };
+                    const localizedMsg = (errorData.code && i18n ? i18n.t(errorData.code, params) : null)
+                        || (errorData.error && i18n ? i18n.t(errorData.error, params) : null)
                         || errorData.error
                         || `HTTP Error: ${response.status}`;
                     const err = new BackendError(localizedMsg, response.status, errorData.code);
@@ -96,8 +97,9 @@ window.ATM.store = {
                 const data = await response.json();
                 if (data.status === 'error') {
                     const i18n = window.ATM.i18n;
-                    const localizedMsg = (data.code && i18n ? i18n.t(data.code) : null)
-                        || (data.error && i18n ? i18n.t(data.error) : null)
+                    const params = data.params || { error: data.error || '' };
+                    const localizedMsg = (data.code && i18n ? i18n.t(data.code, params) : null)
+                        || (data.error && i18n ? i18n.t(data.error, params) : null)
                         || data.error
                         || (i18n ? i18n.t('toast.server_error') : 'Server error');
                     const err = new BackendError(localizedMsg, response.status, data.code);
@@ -128,8 +130,9 @@ window.ATM.store = {
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     const i18n = window.ATM.i18n;
-                    const localizedMsg = (errorData.code && i18n ? i18n.t(errorData.code) : null)
-                        || (errorData.error && i18n ? i18n.t(errorData.error) : null)
+                    const params = errorData.params || { error: errorData.error || '' };
+                    const localizedMsg = (errorData.code && i18n ? i18n.t(errorData.code, params) : null)
+                        || (errorData.error && i18n ? i18n.t(errorData.error, params) : null)
                         || errorData.error
                         || `HTTP Error: ${response.status}`;
                     const err = new BackendError(localizedMsg, response.status, errorData.code);
@@ -139,8 +142,9 @@ window.ATM.store = {
                 const resData = await response.json();
                 if (resData.status === 'error') {
                     const i18n = window.ATM.i18n;
-                    const localizedMsg = (resData.code && i18n ? i18n.t(resData.code) : null)
-                        || (resData.error && i18n ? i18n.t(resData.error) : null)
+                    const params = resData.params || { error: resData.error || '' };
+                    const localizedMsg = (resData.code && i18n ? i18n.t(resData.code, params) : null)
+                        || (resData.error && i18n ? i18n.t(resData.error, params) : null)
                         || resData.error
                         || (i18n ? i18n.t('toast.server_error') : 'Server error');
                     const err = new BackendError(localizedMsg, response.status, resData.code);

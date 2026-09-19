@@ -24,7 +24,7 @@ class ProcessMonitor:
         try:
             self.on_exit_callback = on_exit_callback
             logger.info(f"Starting process: {exe_path} in {cwd}")
-            self.process = subprocess.Popen(exe_path, cwd=cwd)
+            self.process = subprocess.Popen([exe_path], cwd=cwd)
             self.is_monitoring = True
             
             def wait_for_exit() -> None:

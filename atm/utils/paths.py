@@ -42,3 +42,9 @@ def get_translations_dir() -> str:
     path = os.path.join(get_app_data_dir(), 'translations')
     os.makedirs(path, exist_ok=True)
     return path
+
+def get_qa_dir() -> str:
+    path = os.path.join(get_app_data_dir(), 'qa')
+    os.makedirs(path, exist_ok=True)
+    return path
+
