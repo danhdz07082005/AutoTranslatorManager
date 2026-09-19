@@ -233,6 +233,13 @@ class ATMHandler(BaseHTTPRequestHandler):
             )
             self._json_response(result)
 
+        elif route_path == '/api/glossary/delete-multiple':
+            result = self.api.delete_glossary_terms(
+                body.get('game_id', ''),
+                body.get('terms', [])
+            )
+            self._json_response(result)
+
         elif route_path == '/api/tm/update':
             result = self.api.update_cache_entry(
                 body.get('game_id', ''),

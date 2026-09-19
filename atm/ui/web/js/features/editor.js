@@ -259,6 +259,12 @@ window.ATM.Editor = (function() {
                 qaFindings = {};
                 conflictStates = {};
                 renderList();
+            } else {
+                entries = [];
+                renderList();
+                if (window.ATM.Toast && res && res.error) {
+                    window.ATM.Toast.show(res.error, "error");
+                }
             }
         } catch (e) {
             if (e.name !== 'NetworkError' && e.name !== '') {

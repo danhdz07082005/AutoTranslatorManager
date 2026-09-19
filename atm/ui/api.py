@@ -1694,7 +1694,7 @@ class BackendApi:
             self._clear_game_full_internal(game_id, profile)
         return {"status": "success"}
 
-    def clear_game_data(self, game_id):
+    def _get_game_lines_repo(self):
         from atm.storage.repositories.translation_repository import TRANSLATIONS_DIR
         from atm.storage.repositories.sqlite_game_lines import SQLiteGameLinesRepository
         return SQLiteGameLinesRepository(os.path.join(TRANSLATIONS_DIR, "translation_cache.db"))
@@ -1895,6 +1895,42 @@ class BackendApi:
                     logger.warning(f"Failed to remove term '{term}' from TranslationMemory: {tme}")
                     
         return {"status": "success"}
+
+    def delete_glossary_terms(self, game_id: str, terms: list):
+        profile = self.profile_repo.get_by_id(game_id)
+        if not profile:
+            return {"status": "error", "error": "Game not found", "code": "error.game_not_found"}
+        if not profile.output_lang:
+            return {"status": "error", "error": "Target language not configured (output_lang).", "code": "error.target_lang_missing"}
+        if hasattr(profile, "glossary") and isinstance(profile.glossary, dict):
+            deleted_terms = []
+            for term in terms:
+                if term in profile.glossary:
+                    del profile.glossary[term]
+                    deleted_terms.append(term)
+            
+            if deleted_terms:
+                self.profile_repo.save(profile)
+                
+                # Batch invalidate cache for deleted terms
+                try:
+                    from atm.core.translation.cache_manager import TranslationCache
+                    cache = TranslationCache()
+                    count = cache.batch_invalidate_by_terms(profile.input_lang or "auto", profile.output_lang, deleted_terms)
+                    logger.info(f"Batch invalidated {count} cache entries for {len(deleted_terms)} terms")
+                except Exception as e:
+                    logger.error(f"Failed to batch invalidate cache: {e}")
+                    
+                # Forget from Translation Memory
+                try:
+                    from atm.core.translation.translation_memory import TranslationMemory
+                    tm = TranslationMemory()
+                    for term in deleted_terms:
+                        tm.forget(term, category="glossary")
+                except Exception as tme:
+                    logger.warning(f"Failed to remove terms from TranslationMemory: {tme}")
+                    
+        return {"status": "success", "count": len(terms)}
 
     def update_cache_entry(self, game_id, key, value):
         """Cập nhật một mục trong Cache từ Grid Editor"""

@@ -780,8 +780,14 @@
                     <h3 data-i18n="glossary.title" style="margin:0 0 4px 0; font-size:16px;"></h3>
                     <p data-i18n="glossary.desc" style="color:var(--text-secondary); font-size:13px; margin:0;"></p>
                 </div>
-                <div style="display:flex; gap:8px;">
+                <div style="display:flex; gap:8px; align-items:center;">
                     <input type="file" id="glossary-import-file" accept=".csv" style="display:none;">
+                    <button class="btn-outline-theme" id="glossary-select-mode-btn" style="padding:6px 12px; font-size:13px;" data-i18n="glossary.btn_select"></button>
+                    <div id="glossary-selection-controls" style="display:none; gap:8px; align-items:center;">
+                        <button class="btn-outline-theme" id="glossary-select-all-btn" style="padding:6px 12px; font-size:13px;" data-i18n="glossary.btn_select_all"></button>
+                        <button class="btn-outline-danger" id="glossary-delete-selected-btn" style="padding:6px 12px; font-size:13px;" data-i18n="glossary.btn_delete_selected"></button>
+                        <button class="btn-outline-secondary" id="glossary-cancel-select-btn" style="padding:6px 12px; font-size:13px;" data-i18n="glossary.btn_cancel_select"></button>
+                    </div>
                     <button class="btn-accent" id="glossary-import-btn" style="padding:6px 12px; font-size:13px;" data-i18n="glossary.import"></button>
                     <button class="btn-accent" id="glossary-export-btn" style="padding:6px 12px; font-size:13px;" data-i18n="glossary.export"></button>
                 </div>
