@@ -411,39 +411,18 @@ class RPGMakerTranslator:
         os.replace(tmp_path, overlay_path)
 
     def _install_overlay_plugin(self, game_dir: Path, data_dir: Path) -> None:
-        js_dir = data_dir.parent / "js" / "plugins"
-        js_dir.mkdir(parents=True, exist_ok=True)
-        plugin_path = js_dir / self.OVERLAY_PLUGIN_FILENAME
-        tmp_path = plugin_path.with_suffix(plugin_path.suffix + ".tmp")
-        tmp_path.write_text(self._overlay_plugin_source(data_dir), encoding="utf-8")
-        os.replace(tmp_path, plugin_path)
-
-        # Patch plugins.js
+        # Instead of creating a separate ATM_Overlay.js file which might fail to load in some
+        # environments (like Chrome Extension web servers caching directories or NW.js permissions),
+        # we append the overlay code directly to the bottom of plugins.js.
         plugins_js_path = data_dir.parent / "js" / "plugins.js"
         if plugins_js_path.exists():
             try:
                 content = plugins_js_path.read_text(encoding="utf-8-sig")
-                if "ATM_Overlay" not in content:
-                    import re, json
-                    match = re.search(r'(?s)var\s+\$plugins\s*=\s*(\[.*\])\s*;', content)
-                    if match:
-                        try:
-                            plugins_arr = json.loads(match.group(1))
-                            plugins_arr.insert(0, {"name": "ATM_Overlay", "status": True, "description": "AutoTranslatorManager overlay", "parameters": {}})
-                            new_arr_str = json.dumps(plugins_arr, indent=0, ensure_ascii=False)
-                            new_content = content[:match.start(1)] + new_arr_str + content[match.end(1):]
-                            plugins_js_path.write_text(new_content, encoding="utf-8-sig")
-                            logger.info("Patched plugins.js to include ATM_Overlay at index 0.")
-                        except Exception as parse_e:
-                            logger.warning(f"JSON parsing plugins.js failed: {parse_e}, trying fallback...")
-                            first_bracket = content.find("[")
-                            if first_bracket != -1:
-                                plugin_entry = '{"name":"ATM_Overlay","status":true,"description":"AutoTranslatorManager overlay","parameters":{}}'
-                                inner_content = content[first_bracket + 1:].lstrip()
-                                prefix = ",\n" if inner_content and not inner_content.startswith("]") else "\n"
-                                new_content = content[:first_bracket + 1] + "\n" + plugin_entry + prefix + content[first_bracket + 1:]
-                                plugins_js_path.write_text(new_content, encoding="utf-8-sig")
-                                logger.info("Patched plugins.js to include ATM_Overlay at index 0 (fallback).")
+                if "ATMOverlay.patched" not in content:
+                    overlay_code = self._overlay_plugin_source(data_dir)
+                    new_content = content + "\n\n" + overlay_code
+                    plugins_js_path.write_text(new_content, encoding="utf-8-sig")
+                    logger.info("Appended ATM_Overlay directly into plugins.js to prevent loading errors.")
             except Exception as e:
                 logger.error(f"Failed to patch plugins.js: {e}")
 

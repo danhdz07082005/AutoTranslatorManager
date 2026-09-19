@@ -27,7 +27,7 @@ class GlossaryManager:
         else:
             raise ValueError("Unsupported format")
 
-    def preview_import(self, game_id: str, content: str, format_type: str) -> Dict[str, Any]:
+    def preview_import(self, game_id: str, content: str, format_type: str, base64_content: str = "") -> Dict[str, Any]:
         profile = self.profile_repo.get_by_id(game_id)
         if not profile:
             raise ValueError("Game not found")
@@ -37,6 +37,9 @@ class GlossaryManager:
         parsed_entries = []
         if format_type == 'json':
             try:
+                if base64_content:
+                    import base64
+                    content = base64.b64decode(base64_content).decode('utf-8')
                 data = json.loads(content)
                 for item in data:
                     parsed_entries.append({"source": item['source'], "target": item['target']})
@@ -44,6 +47,21 @@ class GlossaryManager:
                 raise ValueError(f"Invalid JSON: {e}")
         elif format_type == 'csv':
             try:
+                if base64_content:
+                    import base64
+                    raw_bytes = base64.b64decode(base64_content)
+                    try:
+                        import chardet
+                        detected = chardet.detect(raw_bytes)
+                        encoding = detected['encoding'] or 'utf-8'
+                        content = raw_bytes.decode(encoding)
+                    except ImportError:
+                        # Fallback if chardet is not installed
+                        try:
+                            content = raw_bytes.decode('utf-8')
+                        except UnicodeDecodeError:
+                            content = raw_bytes.decode('windows-1252', errors='replace')
+                
                 reader = csv.DictReader(io.StringIO(content))
                 for row in reader:
                     parsed_entries.append({"source": row.get('source', ''), "target": row.get('target', '')})

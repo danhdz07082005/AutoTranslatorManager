@@ -214,7 +214,8 @@ class ATMHandler(BaseHTTPRequestHandler):
             result = self.api.preview_glossary_import(
                 body.get('game_id', ''),
                 body.get('content', ''),
-                body.get('format', 'csv')
+                body.get('format', 'csv'),
+                base64_content=body.get('base64_content', '')
             )
             self._json_response(result)
 

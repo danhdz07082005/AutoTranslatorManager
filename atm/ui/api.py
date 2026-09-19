@@ -1345,13 +1345,8 @@ class BackendApi:
                     return res
                 return {"status": "success", "message": "Smart re-scan triggered for offline engine.", "is_running": True}
             else:
-                logger.info(f"[Smart Sync] Triggering re-scan for completed offline game {game_id}...")
-                with self._lock:
-                    self.cancel_flags[game_id] = False
-                res = self.start_game(game_id, auto_launch=False)
-                if res.get("status") == "error":
-                    return res
-                return {"status": "success", "message": "Applying new translations to game files...", "is_running": True}
+                logger.info(f"[Smart Sync] Offline game {game_id} is stopped. Glossary synced to memory. Manual start required to apply translations.")
+                return {"status": "success", "message": "Glossary synced. Please click Start to apply changes.", "is_running": False}
                 
         # 2. Nếu là game Unity -> Đổ file Cache xuống ổ cứng cho BepInEx
         elif profile.engine in ("Unity Mono", "Unity IL2CPP"):
@@ -1826,11 +1821,11 @@ class BackendApi:
         except Exception as e:
             return {"status": "error", "error": str(e)}
 
-    def preview_glossary_import(self, game_id: str, content: str, format_type: str):
+    def preview_glossary_import(self, game_id: str, content: str, format_type: str, base64_content: str = ""):
         from atm.core.translation.glossary_manager import GlossaryManager
         try:
             manager = GlossaryManager(self.profile_repo)
-            preview = manager.preview_import(game_id, content, format_type)
+            preview = manager.preview_import(game_id, content, format_type, base64_content=base64_content)
             return {"status": "success", "data": preview}
         except Exception as e:
             return {"status": "error", "error": str(e)}

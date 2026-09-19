@@ -444,25 +444,20 @@ window.ATM.Glossary = (function() {
                 const reader = new FileReader();
                 reader.onload = async (ev) => {
                     const buffer = ev.target.result;
-                    let content = '';
-                    try {
-                        const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
-                        content = utf8Decoder.decode(buffer);
-                    } catch (_) {
-                        // Fallback for Windows-1252 (ANSI) or Excel CSV
-                        const ansiDecoder = new TextDecoder('windows-1252', { fatal: false });
-                        content = ansiDecoder.decode(buffer);
+                    // We do not decode in JS because JS TextDecoder cannot reliably detect CJK encodings (Shift-JIS, GBK, etc.) without an external library.
+                    // Instead, we send the raw bytes as base64 to the backend, where Python's chardet can easily handle it.
+                    const uint8Array = new Uint8Array(buffer);
+                    let binaryString = '';
+                    const chunkSize = 8192;
+                    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+                        binaryString += String.fromCharCode.apply(null, uint8Array.subarray(i, i + chunkSize));
                     }
-
-                    // Strip UTF-8 BOM if present
-                    if (content.charCodeAt(0) === 0xFEFF) {
-                        content = content.slice(1);
-                    }
+                    const base64Content = btoa(binaryString);
 
                     try {
                         const res = await window.ATM.api.post('glossary/preview', {
                             game_id: currentGameId,
-                            content: content,
+                            base64_content: base64Content,
                             format: 'csv'
                         });
                         
